@@ -149,7 +149,7 @@ def summarize(rows):
 
 
 RESULT_COLUMNS = ["predicted_status", "predicted_denial_codes", "reasons", "suggested_actions", "proposed_changes",
-                  "normalisation_changes", "input_issues", "warnings", "user_status", "user_denial_codes", "user_note"]
+                  "normalisation_changes", "user_edits", "input_issues", "warnings", "user_status", "user_denial_codes", "user_note"]
 
 
 def export_csv(rows, original_fieldnames):
@@ -167,6 +167,7 @@ def export_csv(rows, original_fieldnames):
             proposed_changes=json.dumps({k: v["value"] for k, v in r["proposed_changes"].items()}) if r["proposed_changes"] else "",
             normalisation_changes="; ".join(f"{c['field']}: {c['before']!r}->{c['after']!r}" for c in r["changes"]),
             input_issues="; ".join(f"{i['field']}: {i['message']}" for i in r["issues"]),
+            user_edits="; ".join(f"{k}={v!r}" for k, v in (r.get("edits") or {}).items()),
             warnings=" | ".join(r["warnings"]), user_status=ov.get("status", ""),
             user_denial_codes=";".join(ov.get("denial_codes") or []) if ov else "", user_note=ov.get("note", ""))
         writer.writerow(line)
