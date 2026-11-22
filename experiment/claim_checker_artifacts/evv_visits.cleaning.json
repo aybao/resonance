@@ -1,0 +1,18 @@
+{
+  "source": "/home/angela/Documents/cvs/resonance/Resonance - graduate preparation data/evv_visits.csv",
+  "output": "/home/angela/Documents/cvs/resonance/experiment/claim_checker_artifacts/evv_visits.csv",
+  "input_rows": 5076,
+  "output_rows": 5076,
+  "duplicates_removed": 0,
+  "changed_cells_by_field": {},
+  "changed_source_rows": 0,
+  "unresolved_count": 0,
+  "assumptions": [
+    "Slash dates mean US MM/DD/YYYY",
+    "Keep first fully identical canonical row; preserve ordering",
+    "Do not infer missing values or alter business outcomes"
+  ],
+  "changes": [],
+  "removed_duplicates": [],
+  "unresolved": []
+}

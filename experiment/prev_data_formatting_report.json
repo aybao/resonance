@@ -1,0 +1,584 @@
+{
+  "contract": "Supplied synthetic export; ISO canonical dates; slash dates explicitly US month/day/year. No source data changed.",
+  "row_counts": {
+    "authorizations.csv": 780,
+    "evv_visits.csv": 5076,
+    "sorted_prev_data_cleaned.csv": 2740
+  },
+  "issue_counts": {
+    "missing_business_input": 63
+  },
+  "severity_counts": {
+    "info": 63
+  },
+  "affected_rows": 63,
+  "issues": [
+    {
+      "file": "sorted_prev_data_cleaned.csv",
+      "line": 58,
+      "field": "auth_id",
+      "kind": "missing_business_input",
+      "severity": "info",
+      "value": "",
+      "message": "Keep for authorization denial check; not a formatting failure"
+    },
+    {
+      "file": "sorted_prev_data_cleaned.csv",
+      "line": 72,
+      "field": "auth_id",
+      "kind": "missing_business_input",
+      "severity": "info",
+      "value": "",
+      "message": "Keep for authorization denial check; not a formatting failure"
+    },
+    {
+      "file": "sorted_prev_data_cleaned.csv",
+      "line": 80,
+      "field": "auth_id",
+      "kind": "missing_business_input",
+      "severity": "info",
+      "value": "",
+      "message": "Keep for authorization denial check; not a formatting failure"
+    },
+    {
+      "file": "sorted_prev_data_cleaned.csv",
+      "line": 119,
+      "field": "auth_id",
+      "kind": "missing_business_input",
+      "severity": "info",
+      "value": "",
+      "message": "Keep for authorization denial check; not a formatting failure"
+    },
+    {
+      "file": "sorted_prev_data_cleaned.csv",
+      "line": 157,
+      "field": "auth_id",
+      "kind": "missing_business_input",
+      "severity": "info",
+      "value": "",
+      "message": "Keep for authorization denial check; not a formatting failure"
+    },
+    {
+      "file": "sorted_prev_data_cleaned.csv",
+      "line": 197,
+      "field": "auth_id",
+      "kind": "missing_business_input",
+      "severity": "info",
+      "value": "",
+      "message": "Keep for authorization denial check; not a formatting failure"
+    },
+    {
+      "file": "sorted_prev_data_cleaned.csv",
+      "line": 270,
+      "field": "auth_id",
+      "kind": "missing_business_input",
+      "severity": "info",
+      "value": "",
+      "message": "Keep for authorization denial check; not a formatting failure"
+    },
+    {
+      "file": "sorted_prev_data_cleaned.csv",
+      "line": 397,
+      "field": "auth_id",
+      "kind": "missing_business_input",
+      "severity": "info",
+      "value": "",
+      "message": "Keep for authorization denial check; not a formatting failure"
+    },
+    {
+      "file": "sorted_prev_data_cleaned.csv",
+      "line": 418,
+      "field": "auth_id",
+      "kind": "missing_business_input",
+      "severity": "info",
+      "value": "",
+      "message": "Keep for authorization denial check; not a formatting failure"
+    },
+    {
+      "file": "sorted_prev_data_cleaned.csv",
+      "line": 499,
+      "field": "auth_id",
+      "kind": "missing_business_input",
+      "severity": "info",
+      "value": "",
+      "message": "Keep for authorization denial check; not a formatting failure"
+    },
+    {
+      "file": "sorted_prev_data_cleaned.csv",
+      "line": 587,
+      "field": "auth_id",
+      "kind": "missing_business_input",
+      "severity": "info",
+      "value": "",
+      "message": "Keep for authorization denial check; not a formatting failure"
+    },
+    {
+      "file": "sorted_prev_data_cleaned.csv",
+      "line": 606,
+      "field": "auth_id",
+      "kind": "missing_business_input",
+      "severity": "info",
+      "value": "",
+      "message": "Keep for authorization denial check; not a formatting failure"
+    },
+    {
+      "file": "sorted_prev_data_cleaned.csv",
+      "line": 637,
+      "field": "auth_id",
+      "kind": "missing_business_input",
+      "severity": "info",
+      "value": "",
+      "message": "Keep for authorization denial check; not a formatting failure"
+    },
+    {
+      "file": "sorted_prev_data_cleaned.csv",
+      "line": 649,
+      "field": "auth_id",
+      "kind": "missing_business_input",
+      "severity": "info",
+      "value": "",
+      "message": "Keep for authorization denial check; not a formatting failure"
+    },
+    {
+      "file": "sorted_prev_data_cleaned.csv",
+      "line": 689,
+      "field": "auth_id",
+      "kind": "missing_business_input",
+      "severity": "info",
+      "value": "",
+      "message": "Keep for authorization denial check; not a formatting failure"
+    },
+    {
+      "file": "sorted_prev_data_cleaned.csv",
+      "line": 768,
+      "field": "auth_id",
+      "kind": "missing_business_input",
+      "severity": "info",
+      "value": "",
+      "message": "Keep for authorization denial check; not a formatting failure"
+    },
+    {
+      "file": "sorted_prev_data_cleaned.csv",
+      "line": 772,
+      "field": "auth_id",
+      "kind": "missing_business_input",
+      "severity": "info",
+      "value": "",
+      "message": "Keep for authorization denial check; not a formatting failure"
+    },
+    {
+      "file": "sorted_prev_data_cleaned.csv",
+      "line": 775,
+      "field": "auth_id",
+      "kind": "missing_business_input",
+      "severity": "info",
+      "value": "",
+      "message": "Keep for authorization denial check; not a formatting failure"
+    },
+    {
+      "file": "sorted_prev_data_cleaned.csv",
+      "line": 788,
+      "field": "auth_id",
+      "kind": "missing_business_input",
+      "severity": "info",
+      "value": "",
+      "message": "Keep for authorization denial check; not a formatting failure"
+    },
+    {
+      "file": "sorted_prev_data_cleaned.csv",
+      "line": 928,
+      "field": "auth_id",
+      "kind": "missing_business_input",
+      "severity": "info",
+      "value": "",
+      "message": "Keep for authorization denial check; not a formatting failure"
+    },
+    {
+      "file": "sorted_prev_data_cleaned.csv",
+      "line": 933,
+      "field": "auth_id",
+      "kind": "missing_business_input",
+      "severity": "info",
+      "value": "",
+      "message": "Keep for authorization denial check; not a formatting failure"
+    },
+    {
+      "file": "sorted_prev_data_cleaned.csv",
+      "line": 952,
+      "field": "auth_id",
+      "kind": "missing_business_input",
+      "severity": "info",
+      "value": "",
+      "message": "Keep for authorization denial check; not a formatting failure"
+    },
+    {
+      "file": "sorted_prev_data_cleaned.csv",
+      "line": 957,
+      "field": "auth_id",
+      "kind": "missing_business_input",
+      "severity": "info",
+      "value": "",
+      "message": "Keep for authorization denial check; not a formatting failure"
+    },
+    {
+      "file": "sorted_prev_data_cleaned.csv",
+      "line": 1073,
+      "field": "auth_id",
+      "kind": "missing_business_input",
+      "severity": "info",
+      "value": "",
+      "message": "Keep for authorization denial check; not a formatting failure"
+    },
+    {
+      "file": "sorted_prev_data_cleaned.csv",
+      "line": 1077,
+      "field": "auth_id",
+      "kind": "missing_business_input",
+      "severity": "info",
+      "value": "",
+      "message": "Keep for authorization denial check; not a formatting failure"
+    },
+    {
+      "file": "sorted_prev_data_cleaned.csv",
+      "line": 1078,
+      "field": "auth_id",
+      "kind": "missing_business_input",
+      "severity": "info",
+      "value": "",
+      "message": "Keep for authorization denial check; not a formatting failure"
+    },
+    {
+      "file": "sorted_prev_data_cleaned.csv",
+      "line": 1104,
+      "field": "auth_id",
+      "kind": "missing_business_input",
+      "severity": "info",
+      "value": "",
+      "message": "Keep for authorization denial check; not a formatting failure"
+    },
+    {
+      "file": "sorted_prev_data_cleaned.csv",
+      "line": 1179,
+      "field": "auth_id",
+      "kind": "missing_business_input",
+      "severity": "info",
+      "value": "",
+      "message": "Keep for authorization denial check; not a formatting failure"
+    },
+    {
+      "file": "sorted_prev_data_cleaned.csv",
+      "line": 1189,
+      "field": "auth_id",
+      "kind": "missing_business_input",
+      "severity": "info",
+      "value": "",
+      "message": "Keep for authorization denial check; not a formatting failure"
+    },
+    {
+      "file": "sorted_prev_data_cleaned.csv",
+      "line": 1231,
+      "field": "auth_id",
+      "kind": "missing_business_input",
+      "severity": "info",
+      "value": "",
+      "message": "Keep for authorization denial check; not a formatting failure"
+    },
+    {
+      "file": "sorted_prev_data_cleaned.csv",
+      "line": 1276,
+      "field": "auth_id",
+      "kind": "missing_business_input",
+      "severity": "info",
+      "value": "",
+      "message": "Keep for authorization denial check; not a formatting failure"
+    },
+    {
+      "file": "sorted_prev_data_cleaned.csv",
+      "line": 1281,
+      "field": "auth_id",
+      "kind": "missing_business_input",
+      "severity": "info",
+      "value": "",
+      "message": "Keep for authorization denial check; not a formatting failure"
+    },
+    {
+      "file": "sorted_prev_data_cleaned.csv",
+      "line": 1490,
+      "field": "auth_id",
+      "kind": "missing_business_input",
+      "severity": "info",
+      "value": "",
+      "message": "Keep for authorization denial check; not a formatting failure"
+    },
+    {
+      "file": "sorted_prev_data_cleaned.csv",
+      "line": 1545,
+      "field": "auth_id",
+      "kind": "missing_business_input",
+      "severity": "info",
+      "value": "",
+      "message": "Keep for authorization denial check; not a formatting failure"
+    },
+    {
+      "file": "sorted_prev_data_cleaned.csv",
+      "line": 1608,
+      "field": "auth_id",
+      "kind": "missing_business_input",
+      "severity": "info",
+      "value": "",
+      "message": "Keep for authorization denial check; not a formatting failure"
+    },
+    {
+      "file": "sorted_prev_data_cleaned.csv",
+      "line": 1617,
+      "field": "auth_id",
+      "kind": "missing_business_input",
+      "severity": "info",
+      "value": "",
+      "message": "Keep for authorization denial check; not a formatting failure"
+    },
+    {
+      "file": "sorted_prev_data_cleaned.csv",
+      "line": 1630,
+      "field": "auth_id",
+      "kind": "missing_business_input",
+      "severity": "info",
+      "value": "",
+      "message": "Keep for authorization denial check; not a formatting failure"
+    },
+    {
+      "file": "sorted_prev_data_cleaned.csv",
+      "line": 1641,
+      "field": "auth_id",
+      "kind": "missing_business_input",
+      "severity": "info",
+      "value": "",
+      "message": "Keep for authorization denial check; not a formatting failure"
+    },
+    {
+      "file": "sorted_prev_data_cleaned.csv",
+      "line": 1643,
+      "field": "auth_id",
+      "kind": "missing_business_input",
+      "severity": "info",
+      "value": "",
+      "message": "Keep for authorization denial check; not a formatting failure"
+    },
+    {
+      "file": "sorted_prev_data_cleaned.csv",
+      "line": 1681,
+      "field": "auth_id",
+      "kind": "missing_business_input",
+      "severity": "info",
+      "value": "",
+      "message": "Keep for authorization denial check; not a formatting failure"
+    },
+    {
+      "file": "sorted_prev_data_cleaned.csv",
+      "line": 1752,
+      "field": "auth_id",
+      "kind": "missing_business_input",
+      "severity": "info",
+      "value": "",
+      "message": "Keep for authorization denial check; not a formatting failure"
+    },
+    {
+      "file": "sorted_prev_data_cleaned.csv",
+      "line": 1843,
+      "field": "auth_id",
+      "kind": "missing_business_input",
+      "severity": "info",
+      "value": "",
+      "message": "Keep for authorization denial check; not a formatting failure"
+    },
+    {
+      "file": "sorted_prev_data_cleaned.csv",
+      "line": 1852,
+      "field": "auth_id",
+      "kind": "missing_business_input",
+      "severity": "info",
+      "value": "",
+      "message": "Keep for authorization denial check; not a formatting failure"
+    },
+    {
+      "file": "sorted_prev_data_cleaned.csv",
+      "line": 1923,
+      "field": "auth_id",
+      "kind": "missing_business_input",
+      "severity": "info",
+      "value": "",
+      "message": "Keep for authorization denial check; not a formatting failure"
+    },
+    {
+      "file": "sorted_prev_data_cleaned.csv",
+      "line": 1937,
+      "field": "auth_id",
+      "kind": "missing_business_input",
+      "severity": "info",
+      "value": "",
+      "message": "Keep for authorization denial check; not a formatting failure"
+    },
+    {
+      "file": "sorted_prev_data_cleaned.csv",
+      "line": 1974,
+      "field": "auth_id",
+      "kind": "missing_business_input",
+      "severity": "info",
+      "value": "",
+      "message": "Keep for authorization denial check; not a formatting failure"
+    },
+    {
+      "file": "sorted_prev_data_cleaned.csv",
+      "line": 2005,
+      "field": "auth_id",
+      "kind": "missing_business_input",
+      "severity": "info",
+      "value": "",
+      "message": "Keep for authorization denial check; not a formatting failure"
+    },
+    {
+      "file": "sorted_prev_data_cleaned.csv",
+      "line": 2008,
+      "field": "auth_id",
+      "kind": "missing_business_input",
+      "severity": "info",
+      "value": "",
+      "message": "Keep for authorization denial check; not a formatting failure"
+    },
+    {
+      "file": "sorted_prev_data_cleaned.csv",
+      "line": 2020,
+      "field": "auth_id",
+      "kind": "missing_business_input",
+      "severity": "info",
+      "value": "",
+      "message": "Keep for authorization denial check; not a formatting failure"
+    },
+    {
+      "file": "sorted_prev_data_cleaned.csv",
+      "line": 2054,
+      "field": "auth_id",
+      "kind": "missing_business_input",
+      "severity": "info",
+      "value": "",
+      "message": "Keep for authorization denial check; not a formatting failure"
+    },
+    {
+      "file": "sorted_prev_data_cleaned.csv",
+      "line": 2122,
+      "field": "auth_id",
+      "kind": "missing_business_input",
+      "severity": "info",
+      "value": "",
+      "message": "Keep for authorization denial check; not a formatting failure"
+    },
+    {
+      "file": "sorted_prev_data_cleaned.csv",
+      "line": 2142,
+      "field": "auth_id",
+      "kind": "missing_business_input",
+      "severity": "info",
+      "value": "",
+      "message": "Keep for authorization denial check; not a formatting failure"
+    },
+    {
+      "file": "sorted_prev_data_cleaned.csv",
+      "line": 2174,
+      "field": "auth_id",
+      "kind": "missing_business_input",
+      "severity": "info",
+      "value": "",
+      "message": "Keep for authorization denial check; not a formatting failure"
+    },
+    {
+      "file": "sorted_prev_data_cleaned.csv",
+      "line": 2186,
+      "field": "auth_id",
+      "kind": "missing_business_input",
+      "severity": "info",
+      "value": "",
+      "message": "Keep for authorization denial check; not a formatting failure"
+    },
+    {
+      "file": "sorted_prev_data_cleaned.csv",
+      "line": 2295,
+      "field": "auth_id",
+      "kind": "missing_business_input",
+      "severity": "info",
+      "value": "",
+      "message": "Keep for authorization denial check; not a formatting failure"
+    },
+    {
+      "file": "sorted_prev_data_cleaned.csv",
+      "line": 2355,
+      "field": "auth_id",
+      "kind": "missing_business_input",
+      "severity": "info",
+      "value": "",
+      "message": "Keep for authorization denial check; not a formatting failure"
+    },
+    {
+      "file": "sorted_prev_data_cleaned.csv",
+      "line": 2362,
+      "field": "auth_id",
+      "kind": "missing_business_input",
+      "severity": "info",
+      "value": "",
+      "message": "Keep for authorization denial check; not a formatting failure"
+    },
+    {
+      "file": "sorted_prev_data_cleaned.csv",
+      "line": 2415,
+      "field": "auth_id",
+      "kind": "missing_business_input",
+      "severity": "info",
+      "value": "",
+      "message": "Keep for authorization denial check; not a formatting failure"
+    },
+    {
+      "file": "sorted_prev_data_cleaned.csv",
+      "line": 2418,
+      "field": "auth_id",
+      "kind": "missing_business_input",
+      "severity": "info",
+      "value": "",
+      "message": "Keep for authorization denial check; not a formatting failure"
+    },
+    {
+      "file": "sorted_prev_data_cleaned.csv",
+      "line": 2423,
+      "field": "auth_id",
+      "kind": "missing_business_input",
+      "severity": "info",
+      "value": "",
+      "message": "Keep for authorization denial check; not a formatting failure"
+    },
+    {
+      "file": "sorted_prev_data_cleaned.csv",
+      "line": 2513,
+      "field": "auth_id",
+      "kind": "missing_business_input",
+      "severity": "info",
+      "value": "",
+      "message": "Keep for authorization denial check; not a formatting failure"
+    },
+    {
+      "file": "sorted_prev_data_cleaned.csv",
+      "line": 2663,
+      "field": "auth_id",
+      "kind": "missing_business_input",
+      "severity": "info",
+      "value": "",
+      "message": "Keep for authorization denial check; not a formatting failure"
+    },
+    {
+      "file": "sorted_prev_data_cleaned.csv",
+      "line": 2709,
+      "field": "auth_id",
+      "kind": "missing_business_input",
+      "severity": "info",
+      "value": "",
+      "message": "Keep for authorization denial check; not a formatting failure"
+    }
+  ]
+}

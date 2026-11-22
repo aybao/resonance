@@ -1,0 +1,3619 @@
+{
+  "source": "/home/angela/Documents/cvs/resonance/experiment/sorted_test_data.csv",
+  "output": "/home/angela/Documents/cvs/resonance/experiment/claim_checker_artifacts/sorted_test_data.csv",
+  "input_rows": 1097,
+  "output_rows": 1090,
+  "duplicates_removed": 7,
+  "changed_cells_by_field": {
+    "payer": 253,
+    "modifier": 42,
+    "date_of_service": 133,
+    "submitted_date": 114,
+    "service_code": 51
+  },
+  "changed_source_rows": 482,
+  "unresolved_count": 0,
+  "assumptions": [
+    "Slash dates mean US MM/DD/YYYY",
+    "Keep first fully identical canonical row; preserve ordering",
+    "Do not infer missing values or alter business outcomes"
+  ],
+  "changes": [
+    {
+      "line": 3,
+      "field": "payer",
+      "before": "Harbor Medicaid Plan",
+      "after": "PY02"
+    },
+    {
+      "line": 4,
+      "field": "modifier",
+      "before": "U1 ",
+      "after": "U1"
+    },
+    {
+      "line": 7,
+      "field": "payer",
+      "before": "NORTHWIND HP",
+      "after": "PY01"
+    },
+    {
+      "line": 9,
+      "field": "date_of_service",
+      "before": "09/17/2026",
+      "after": "2026-09-17"
+    },
+    {
+      "line": 10,
+      "field": "payer",
+      "before": "Harbor Medicaid",
+      "after": "PY02"
+    },
+    {
+      "line": 10,
+      "field": "date_of_service",
+      "before": "09/18/2026",
+      "after": "2026-09-18"
+    },
+    {
+      "line": 12,
+      "field": "payer",
+      "before": "Harbor Medicaid",
+      "after": "PY02"
+    },
+    {
+      "line": 13,
+      "field": "date_of_service",
+      "before": "09/08/2026",
+      "after": "2026-09-08"
+    },
+    {
+      "line": 13,
+      "field": "submitted_date",
+      "before": "10/01/2026",
+      "after": "2026-10-01"
+    },
+    {
+      "line": 14,
+      "field": "service_code",
+      "before": "T1019 ",
+      "after": "T1019"
+    },
+    {
+      "line": 15,
+      "field": "payer",
+      "before": "Harbor Medicaid Plan",
+      "after": "PY02"
+    },
+    {
+      "line": 15,
+      "field": "submitted_date",
+      "before": "10/01/2026",
+      "after": "2026-10-01"
+    },
+    {
+      "line": 17,
+      "field": "payer",
+      "before": "Harbor Medicaid Plan",
+      "after": "PY02"
+    },
+    {
+      "line": 18,
+      "field": "modifier",
+      "before": "U1 ",
+      "after": "U1"
+    },
+    {
+      "line": 23,
+      "field": "payer",
+      "before": "Harbor Medicaid Plan",
+      "after": "PY02"
+    },
+    {
+      "line": 25,
+      "field": "submitted_date",
+      "before": "10/01/2026",
+      "after": "2026-10-01"
+    },
+    {
+      "line": 26,
+      "field": "payer",
+      "before": "Harbor Medicaid",
+      "after": "PY02"
+    },
+    {
+      "line": 28,
+      "field": "submitted_date",
+      "before": "10/02/2026",
+      "after": "2026-10-02"
+    },
+    {
+      "line": 30,
+      "field": "payer",
+      "before": "Harbor Medicaid",
+      "after": "PY02"
+    },
+    {
+      "line": 31,
+      "field": "payer",
+      "before": "NORTHWIND HP",
+      "after": "PY01"
+    },
+    {
+      "line": 32,
+      "field": "submitted_date",
+      "before": "10/02/2026",
+      "after": "2026-10-02"
+    },
+    {
+      "line": 38,
+      "field": "submitted_date",
+      "before": "10/02/2026",
+      "after": "2026-10-02"
+    },
+    {
+      "line": 43,
+      "field": "date_of_service",
+      "before": "08/25/2026",
+      "after": "2026-08-25"
+    },
+    {
+      "line": 43,
+      "field": "modifier",
+      "before": "U1 ",
+      "after": "U1"
+    },
+    {
+      "line": 44,
+      "field": "submitted_date",
+      "before": "10/02/2026",
+      "after": "2026-10-02"
+    },
+    {
+      "line": 46,
+      "field": "payer",
+      "before": "NORTHWIND HP",
+      "after": "PY01"
+    },
+    {
+      "line": 46,
+      "field": "submitted_date",
+      "before": "10/02/2026",
+      "after": "2026-10-02"
+    },
+    {
+      "line": 47,
+      "field": "payer",
+      "before": "NORTHWIND HP",
+      "after": "PY01"
+    },
+    {
+      "line": 48,
+      "field": "submitted_date",
+      "before": "10/02/2026",
+      "after": "2026-10-02"
+    },
+    {
+      "line": 52,
+      "field": "payer",
+      "before": "Northwind Health Plan",
+      "after": "PY01"
+    },
+    {
+      "line": 53,
+      "field": "submitted_date",
+      "before": "10/03/2026",
+      "after": "2026-10-03"
+    },
+    {
+      "line": 55,
+      "field": "payer",
+      "before": "Northwind Health Plan",
+      "after": "PY01"
+    },
+    {
+      "line": 56,
+      "field": "modifier",
+      "before": "U2 ",
+      "after": "U2"
+    },
+    {
+      "line": 57,
+      "field": "payer",
+      "before": "NORTHWIND HP",
+      "after": "PY01"
+    },
+    {
+      "line": 57,
+      "field": "submitted_date",
+      "before": "10/03/2026",
+      "after": "2026-10-03"
+    },
+    {
+      "line": 58,
+      "field": "submitted_date",
+      "before": "10/03/2026",
+      "after": "2026-10-03"
+    },
+    {
+      "line": 61,
+      "field": "service_code",
+      "before": "S5125 ",
+      "after": "S5125"
+    },
+    {
+      "line": 61,
+      "field": "submitted_date",
+      "before": "10/03/2026",
+      "after": "2026-10-03"
+    },
+    {
+      "line": 68,
+      "field": "modifier",
+      "before": "u1",
+      "after": "U1"
+    },
+    {
+      "line": 71,
+      "field": "payer",
+      "before": "Harbor Medicaid",
+      "after": "PY02"
+    },
+    {
+      "line": 71,
+      "field": "service_code",
+      "before": "S5125 ",
+      "after": "S5125"
+    },
+    {
+      "line": 74,
+      "field": "payer",
+      "before": "NORTHWIND HP",
+      "after": "PY01"
+    },
+    {
+      "line": 74,
+      "field": "service_code",
+      "before": "T1005 ",
+      "after": "T1005"
+    },
+    {
+      "line": 76,
+      "field": "payer",
+      "before": "Northwind Health Plan",
+      "after": "PY01"
+    },
+    {
+      "line": 76,
+      "field": "service_code",
+      "before": "T1005 ",
+      "after": "T1005"
+    },
+    {
+      "line": 78,
+      "field": "payer",
+      "before": "Harbor Medicaid Plan",
+      "after": "PY02"
+    },
+    {
+      "line": 78,
+      "field": "service_code",
+      "before": "S5125 ",
+      "after": "S5125"
+    },
+    {
+      "line": 79,
+      "field": "date_of_service",
+      "before": "07/26/2026",
+      "after": "2026-07-26"
+    },
+    {
+      "line": 81,
+      "field": "submitted_date",
+      "before": "10/04/2026",
+      "after": "2026-10-04"
+    },
+    {
+      "line": 82,
+      "field": "date_of_service",
+      "before": "08/07/2026",
+      "after": "2026-08-07"
+    },
+    {
+      "line": 83,
+      "field": "service_code",
+      "before": "T1019 ",
+      "after": "T1019"
+    },
+    {
+      "line": 84,
+      "field": "service_code",
+      "before": "T1005 ",
+      "after": "T1005"
+    },
+    {
+      "line": 87,
+      "field": "service_code",
+      "before": "T1005 ",
+      "after": "T1005"
+    },
+    {
+      "line": 87,
+      "field": "date_of_service",
+      "before": "09/16/2026",
+      "after": "2026-09-16"
+    },
+    {
+      "line": 91,
+      "field": "payer",
+      "before": "SUMMIT CARE",
+      "after": "PY03"
+    },
+    {
+      "line": 91,
+      "field": "service_code",
+      "before": "T1019 ",
+      "after": "T1019"
+    },
+    {
+      "line": 91,
+      "field": "date_of_service",
+      "before": "09/18/2026",
+      "after": "2026-09-18"
+    },
+    {
+      "line": 92,
+      "field": "payer",
+      "before": "Harbor Medicaid",
+      "after": "PY02"
+    },
+    {
+      "line": 94,
+      "field": "payer",
+      "before": "SUMMIT CARE",
+      "after": "PY03"
+    },
+    {
+      "line": 96,
+      "field": "payer",
+      "before": "Northwind Health Plan",
+      "after": "PY01"
+    },
+    {
+      "line": 97,
+      "field": "date_of_service",
+      "before": "09/25/2026",
+      "after": "2026-09-25"
+    },
+    {
+      "line": 97,
+      "field": "submitted_date",
+      "before": "10/05/2026",
+      "after": "2026-10-05"
+    },
+    {
+      "line": 101,
+      "field": "date_of_service",
+      "before": "08/16/2026",
+      "after": "2026-08-16"
+    },
+    {
+      "line": 101,
+      "field": "modifier",
+      "before": "U2 ",
+      "after": "U2"
+    },
+    {
+      "line": 102,
+      "field": "service_code",
+      "before": "T1019 ",
+      "after": "T1019"
+    },
+    {
+      "line": 106,
+      "field": "date_of_service",
+      "before": "09/18/2026",
+      "after": "2026-09-18"
+    },
+    {
+      "line": 107,
+      "field": "payer",
+      "before": "Summit Care Partners",
+      "after": "PY03"
+    },
+    {
+      "line": 107,
+      "field": "submitted_date",
+      "before": "10/05/2026",
+      "after": "2026-10-05"
+    },
+    {
+      "line": 108,
+      "field": "payer",
+      "before": "Summit Care Partners",
+      "after": "PY03"
+    },
+    {
+      "line": 109,
+      "field": "payer",
+      "before": "Summit Care Partners",
+      "after": "PY03"
+    },
+    {
+      "line": 111,
+      "field": "payer",
+      "before": "Harbor Medicaid Plan",
+      "after": "PY02"
+    },
+    {
+      "line": 111,
+      "field": "date_of_service",
+      "before": "08/28/2026",
+      "after": "2026-08-28"
+    },
+    {
+      "line": 112,
+      "field": "payer",
+      "before": "NORTHWIND HP",
+      "after": "PY01"
+    },
+    {
+      "line": 112,
+      "field": "service_code",
+      "before": "T1019 ",
+      "after": "T1019"
+    },
+    {
+      "line": 114,
+      "field": "submitted_date",
+      "before": "10/05/2026",
+      "after": "2026-10-05"
+    },
+    {
+      "line": 118,
+      "field": "payer",
+      "before": "Harbor Medicaid",
+      "after": "PY02"
+    },
+    {
+      "line": 122,
+      "field": "payer",
+      "before": "NORTHWIND HP",
+      "after": "PY01"
+    },
+    {
+      "line": 126,
+      "field": "payer",
+      "before": "Northwind Health Plan",
+      "after": "PY01"
+    },
+    {
+      "line": 126,
+      "field": "service_code",
+      "before": "T1019 ",
+      "after": "T1019"
+    },
+    {
+      "line": 130,
+      "field": "modifier",
+      "before": "U1 ",
+      "after": "U1"
+    },
+    {
+      "line": 132,
+      "field": "date_of_service",
+      "before": "08/13/2026",
+      "after": "2026-08-13"
+    },
+    {
+      "line": 133,
+      "field": "payer",
+      "before": "SUMMIT CARE",
+      "after": "PY03"
+    },
+    {
+      "line": 134,
+      "field": "payer",
+      "before": "SUMMIT CARE",
+      "after": "PY03"
+    },
+    {
+      "line": 135,
+      "field": "submitted_date",
+      "before": "10/06/2026",
+      "after": "2026-10-06"
+    },
+    {
+      "line": 136,
+      "field": "submitted_date",
+      "before": "10/06/2026",
+      "after": "2026-10-06"
+    },
+    {
+      "line": 138,
+      "field": "payer",
+      "before": "Harbor Medicaid Plan",
+      "after": "PY02"
+    },
+    {
+      "line": 140,
+      "field": "payer",
+      "before": "Harbor Medicaid Plan",
+      "after": "PY02"
+    },
+    {
+      "line": 140,
+      "field": "date_of_service",
+      "before": "10/05/2026",
+      "after": "2026-10-05"
+    },
+    {
+      "line": 150,
+      "field": "date_of_service",
+      "before": "10/06/2026",
+      "after": "2026-10-06"
+    },
+    {
+      "line": 151,
+      "field": "submitted_date",
+      "before": "10/07/2026",
+      "after": "2026-10-07"
+    },
+    {
+      "line": 157,
+      "field": "date_of_service",
+      "before": "09/28/2026",
+      "after": "2026-09-28"
+    },
+    {
+      "line": 158,
+      "field": "submitted_date",
+      "before": "10/07/2026",
+      "after": "2026-10-07"
+    },
+    {
+      "line": 159,
+      "field": "payer",
+      "before": "NORTHWIND HP",
+      "after": "PY01"
+    },
+    {
+      "line": 162,
+      "field": "payer",
+      "before": "Northwind Health Plan",
+      "after": "PY01"
+    },
+    {
+      "line": 163,
+      "field": "date_of_service",
+      "before": "09/29/2026",
+      "after": "2026-09-29"
+    },
+    {
+      "line": 164,
+      "field": "payer",
+      "before": "Harbor Medicaid Plan",
+      "after": "PY02"
+    },
+    {
+      "line": 165,
+      "field": "date_of_service",
+      "before": "09/29/2026",
+      "after": "2026-09-29"
+    },
+    {
+      "line": 166,
+      "field": "date_of_service",
+      "before": "09/04/2026",
+      "after": "2026-09-04"
+    },
+    {
+      "line": 170,
+      "field": "submitted_date",
+      "before": "10/07/2026",
+      "after": "2026-10-07"
+    },
+    {
+      "line": 173,
+      "field": "payer",
+      "before": "NORTHWIND HP",
+      "after": "PY01"
+    },
+    {
+      "line": 175,
+      "field": "payer",
+      "before": "Summit Care Partners",
+      "after": "PY03"
+    },
+    {
+      "line": 175,
+      "field": "date_of_service",
+      "before": "10/01/2026",
+      "after": "2026-10-01"
+    },
+    {
+      "line": 181,
+      "field": "payer",
+      "before": "Harbor Medicaid",
+      "after": "PY02"
+    },
+    {
+      "line": 184,
+      "field": "payer",
+      "before": "SUMMIT CARE",
+      "after": "PY03"
+    },
+    {
+      "line": 187,
+      "field": "payer",
+      "before": "Summit Care Partners",
+      "after": "PY03"
+    },
+    {
+      "line": 187,
+      "field": "date_of_service",
+      "before": "10/01/2026",
+      "after": "2026-10-01"
+    },
+    {
+      "line": 188,
+      "field": "payer",
+      "before": "Harbor Medicaid Plan",
+      "after": "PY02"
+    },
+    {
+      "line": 189,
+      "field": "date_of_service",
+      "before": "10/06/2026",
+      "after": "2026-10-06"
+    },
+    {
+      "line": 196,
+      "field": "payer",
+      "before": "SUMMIT CARE",
+      "after": "PY03"
+    },
+    {
+      "line": 198,
+      "field": "payer",
+      "before": "SUMMIT CARE",
+      "after": "PY03"
+    },
+    {
+      "line": 198,
+      "field": "service_code",
+      "before": "T1005 ",
+      "after": "T1005"
+    },
+    {
+      "line": 199,
+      "field": "submitted_date",
+      "before": "10/08/2026",
+      "after": "2026-10-08"
+    },
+    {
+      "line": 203,
+      "field": "payer",
+      "before": "SUMMIT CARE",
+      "after": "PY03"
+    },
+    {
+      "line": 203,
+      "field": "modifier",
+      "before": " U1",
+      "after": "U1"
+    },
+    {
+      "line": 204,
+      "field": "submitted_date",
+      "before": "10/09/2026",
+      "after": "2026-10-09"
+    },
+    {
+      "line": 208,
+      "field": "date_of_service",
+      "before": "10/02/2026",
+      "after": "2026-10-02"
+    },
+    {
+      "line": 214,
+      "field": "submitted_date",
+      "before": "10/09/2026",
+      "after": "2026-10-09"
+    },
+    {
+      "line": 215,
+      "field": "payer",
+      "before": "NORTHWIND HP",
+      "after": "PY01"
+    },
+    {
+      "line": 215,
+      "field": "service_code",
+      "before": "T1005 ",
+      "after": "T1005"
+    },
+    {
+      "line": 219,
+      "field": "payer",
+      "before": "Harbor Medicaid Plan",
+      "after": "PY02"
+    },
+    {
+      "line": 219,
+      "field": "date_of_service",
+      "before": "09/30/2026",
+      "after": "2026-09-30"
+    },
+    {
+      "line": 222,
+      "field": "payer",
+      "before": "NORTHWIND HP",
+      "after": "PY01"
+    },
+    {
+      "line": 225,
+      "field": "payer",
+      "before": "NORTHWIND HP",
+      "after": "PY01"
+    },
+    {
+      "line": 226,
+      "field": "submitted_date",
+      "before": "10/10/2026",
+      "after": "2026-10-10"
+    },
+    {
+      "line": 228,
+      "field": "payer",
+      "before": "Harbor Medicaid",
+      "after": "PY02"
+    },
+    {
+      "line": 233,
+      "field": "date_of_service",
+      "before": "10/08/2026",
+      "after": "2026-10-08"
+    },
+    {
+      "line": 235,
+      "field": "payer",
+      "before": "NORTHWIND HP",
+      "after": "PY01"
+    },
+    {
+      "line": 238,
+      "field": "payer",
+      "before": "SUMMIT CARE",
+      "after": "PY03"
+    },
+    {
+      "line": 240,
+      "field": "payer",
+      "before": "Harbor Medicaid Plan",
+      "after": "PY02"
+    },
+    {
+      "line": 240,
+      "field": "date_of_service",
+      "before": "09/29/2026",
+      "after": "2026-09-29"
+    },
+    {
+      "line": 242,
+      "field": "submitted_date",
+      "before": "10/10/2026",
+      "after": "2026-10-10"
+    },
+    {
+      "line": 243,
+      "field": "payer",
+      "before": "Summit Care Partners",
+      "after": "PY03"
+    },
+    {
+      "line": 246,
+      "field": "payer",
+      "before": "Harbor Medicaid Plan",
+      "after": "PY02"
+    },
+    {
+      "line": 247,
+      "field": "payer",
+      "before": "Harbor Medicaid Plan",
+      "after": "PY02"
+    },
+    {
+      "line": 250,
+      "field": "modifier",
+      "before": " U1",
+      "after": "U1"
+    },
+    {
+      "line": 253,
+      "field": "payer",
+      "before": "SUMMIT CARE",
+      "after": "PY03"
+    },
+    {
+      "line": 256,
+      "field": "payer",
+      "before": "SUMMIT CARE",
+      "after": "PY03"
+    },
+    {
+      "line": 256,
+      "field": "date_of_service",
+      "before": "08/25/2026",
+      "after": "2026-08-25"
+    },
+    {
+      "line": 258,
+      "field": "date_of_service",
+      "before": "09/22/2026",
+      "after": "2026-09-22"
+    },
+    {
+      "line": 260,
+      "field": "payer",
+      "before": "Harbor Medicaid",
+      "after": "PY02"
+    },
+    {
+      "line": 263,
+      "field": "payer",
+      "before": "Northwind Health Plan",
+      "after": "PY01"
+    },
+    {
+      "line": 263,
+      "field": "submitted_date",
+      "before": "10/11/2026",
+      "after": "2026-10-11"
+    },
+    {
+      "line": 266,
+      "field": "payer",
+      "before": "Harbor Medicaid",
+      "after": "PY02"
+    },
+    {
+      "line": 269,
+      "field": "payer",
+      "before": "Summit Care Partners",
+      "after": "PY03"
+    },
+    {
+      "line": 270,
+      "field": "payer",
+      "before": "NORTHWIND HP",
+      "after": "PY01"
+    },
+    {
+      "line": 270,
+      "field": "date_of_service",
+      "before": "09/24/2026",
+      "after": "2026-09-24"
+    },
+    {
+      "line": 270,
+      "field": "submitted_date",
+      "before": "10/11/2026",
+      "after": "2026-10-11"
+    },
+    {
+      "line": 272,
+      "field": "date_of_service",
+      "before": "10/06/2026",
+      "after": "2026-10-06"
+    },
+    {
+      "line": 273,
+      "field": "submitted_date",
+      "before": "10/11/2026",
+      "after": "2026-10-11"
+    },
+    {
+      "line": 278,
+      "field": "date_of_service",
+      "before": "09/27/2026",
+      "after": "2026-09-27"
+    },
+    {
+      "line": 279,
+      "field": "date_of_service",
+      "before": "09/27/2026",
+      "after": "2026-09-27"
+    },
+    {
+      "line": 280,
+      "field": "payer",
+      "before": "Harbor Medicaid Plan",
+      "after": "PY02"
+    },
+    {
+      "line": 280,
+      "field": "date_of_service",
+      "before": "09/14/2026",
+      "after": "2026-09-14"
+    },
+    {
+      "line": 281,
+      "field": "service_code",
+      "before": "T1005 ",
+      "after": "T1005"
+    },
+    {
+      "line": 285,
+      "field": "payer",
+      "before": "Summit Care Partners",
+      "after": "PY03"
+    },
+    {
+      "line": 288,
+      "field": "submitted_date",
+      "before": "10/12/2026",
+      "after": "2026-10-12"
+    },
+    {
+      "line": 291,
+      "field": "payer",
+      "before": "Northwind Health Plan",
+      "after": "PY01"
+    },
+    {
+      "line": 293,
+      "field": "payer",
+      "before": "Harbor Medicaid",
+      "after": "PY02"
+    },
+    {
+      "line": 294,
+      "field": "date_of_service",
+      "before": "10/07/2026",
+      "after": "2026-10-07"
+    },
+    {
+      "line": 298,
+      "field": "date_of_service",
+      "before": "09/23/2026",
+      "after": "2026-09-23"
+    },
+    {
+      "line": 304,
+      "field": "service_code",
+      "before": "T1019 ",
+      "after": "T1019"
+    },
+    {
+      "line": 306,
+      "field": "payer",
+      "before": "Northwind Health Plan",
+      "after": "PY01"
+    },
+    {
+      "line": 307,
+      "field": "date_of_service",
+      "before": "09/18/2026",
+      "after": "2026-09-18"
+    },
+    {
+      "line": 308,
+      "field": "date_of_service",
+      "before": "10/07/2026",
+      "after": "2026-10-07"
+    },
+    {
+      "line": 310,
+      "field": "payer",
+      "before": "NORTHWIND HP",
+      "after": "PY01"
+    },
+    {
+      "line": 310,
+      "field": "service_code",
+      "before": "S5125 ",
+      "after": "S5125"
+    },
+    {
+      "line": 320,
+      "field": "date_of_service",
+      "before": "09/11/2026",
+      "after": "2026-09-11"
+    },
+    {
+      "line": 320,
+      "field": "submitted_date",
+      "before": "10/13/2026",
+      "after": "2026-10-13"
+    },
+    {
+      "line": 322,
+      "field": "service_code",
+      "before": "T1019 ",
+      "after": "T1019"
+    },
+    {
+      "line": 323,
+      "field": "payer",
+      "before": "Northwind Health Plan",
+      "after": "PY01"
+    },
+    {
+      "line": 326,
+      "field": "payer",
+      "before": "Harbor Medicaid",
+      "after": "PY02"
+    },
+    {
+      "line": 331,
+      "field": "submitted_date",
+      "before": "10/14/2026",
+      "after": "2026-10-14"
+    },
+    {
+      "line": 333,
+      "field": "modifier",
+      "before": " U1",
+      "after": "U1"
+    },
+    {
+      "line": 336,
+      "field": "payer",
+      "before": "Harbor Medicaid",
+      "after": "PY02"
+    },
+    {
+      "line": 337,
+      "field": "date_of_service",
+      "before": "09/25/2026",
+      "after": "2026-09-25"
+    },
+    {
+      "line": 342,
+      "field": "submitted_date",
+      "before": "10/14/2026",
+      "after": "2026-10-14"
+    },
+    {
+      "line": 350,
+      "field": "payer",
+      "before": "NORTHWIND HP",
+      "after": "PY01"
+    },
+    {
+      "line": 352,
+      "field": "submitted_date",
+      "before": "10/15/2026",
+      "after": "2026-10-15"
+    },
+    {
+      "line": 353,
+      "field": "payer",
+      "before": "Summit Care Partners",
+      "after": "PY03"
+    },
+    {
+      "line": 354,
+      "field": "date_of_service",
+      "before": "10/06/2026",
+      "after": "2026-10-06"
+    },
+    {
+      "line": 357,
+      "field": "service_code",
+      "before": "T1019 ",
+      "after": "T1019"
+    },
+    {
+      "line": 364,
+      "field": "modifier",
+      "before": " U1",
+      "after": "U1"
+    },
+    {
+      "line": 366,
+      "field": "submitted_date",
+      "before": "10/15/2026",
+      "after": "2026-10-15"
+    },
+    {
+      "line": 367,
+      "field": "modifier",
+      "before": " U2",
+      "after": "U2"
+    },
+    {
+      "line": 369,
+      "field": "date_of_service",
+      "before": "10/06/2026",
+      "after": "2026-10-06"
+    },
+    {
+      "line": 372,
+      "field": "submitted_date",
+      "before": "10/15/2026",
+      "after": "2026-10-15"
+    },
+    {
+      "line": 374,
+      "field": "payer",
+      "before": "Harbor Medicaid Plan",
+      "after": "PY02"
+    },
+    {
+      "line": 376,
+      "field": "submitted_date",
+      "before": "10/16/2026",
+      "after": "2026-10-16"
+    },
+    {
+      "line": 377,
+      "field": "modifier",
+      "before": " U1",
+      "after": "U1"
+    },
+    {
+      "line": 379,
+      "field": "payer",
+      "before": "Harbor Medicaid Plan",
+      "after": "PY02"
+    },
+    {
+      "line": 381,
+      "field": "payer",
+      "before": "Northwind Health Plan",
+      "after": "PY01"
+    },
+    {
+      "line": 381,
+      "field": "date_of_service",
+      "before": "09/27/2026",
+      "after": "2026-09-27"
+    },
+    {
+      "line": 382,
+      "field": "payer",
+      "before": "SUMMIT CARE",
+      "after": "PY03"
+    },
+    {
+      "line": 382,
+      "field": "submitted_date",
+      "before": "10/16/2026",
+      "after": "2026-10-16"
+    },
+    {
+      "line": 385,
+      "field": "payer",
+      "before": "Northwind Health Plan",
+      "after": "PY01"
+    },
+    {
+      "line": 385,
+      "field": "modifier",
+      "before": "u1",
+      "after": "U1"
+    },
+    {
+      "line": 386,
+      "field": "date_of_service",
+      "before": "10/12/2026",
+      "after": "2026-10-12"
+    },
+    {
+      "line": 388,
+      "field": "payer",
+      "before": "Harbor Medicaid Plan",
+      "after": "PY02"
+    },
+    {
+      "line": 388,
+      "field": "date_of_service",
+      "before": "10/13/2026",
+      "after": "2026-10-13"
+    },
+    {
+      "line": 389,
+      "field": "submitted_date",
+      "before": "10/16/2026",
+      "after": "2026-10-16"
+    },
+    {
+      "line": 393,
+      "field": "payer",
+      "before": "Harbor Medicaid Plan",
+      "after": "PY02"
+    },
+    {
+      "line": 396,
+      "field": "date_of_service",
+      "before": "07/24/2026",
+      "after": "2026-07-24"
+    },
+    {
+      "line": 398,
+      "field": "date_of_service",
+      "before": "10/03/2026",
+      "after": "2026-10-03"
+    },
+    {
+      "line": 399,
+      "field": "payer",
+      "before": "Northwind Health Plan",
+      "after": "PY01"
+    },
+    {
+      "line": 399,
+      "field": "date_of_service",
+      "before": "10/14/2026",
+      "after": "2026-10-14"
+    },
+    {
+      "line": 401,
+      "field": "modifier",
+      "before": "u3",
+      "after": "U3"
+    },
+    {
+      "line": 403,
+      "field": "service_code",
+      "before": "T1005 ",
+      "after": "T1005"
+    },
+    {
+      "line": 404,
+      "field": "date_of_service",
+      "before": "09/03/2026",
+      "after": "2026-09-03"
+    },
+    {
+      "line": 405,
+      "field": "date_of_service",
+      "before": "10/13/2026",
+      "after": "2026-10-13"
+    },
+    {
+      "line": 408,
+      "field": "date_of_service",
+      "before": "10/09/2026",
+      "after": "2026-10-09"
+    },
+    {
+      "line": 408,
+      "field": "modifier",
+      "before": "U2 ",
+      "after": "U2"
+    },
+    {
+      "line": 411,
+      "field": "date_of_service",
+      "before": "10/08/2026",
+      "after": "2026-10-08"
+    },
+    {
+      "line": 412,
+      "field": "payer",
+      "before": "Harbor Medicaid Plan",
+      "after": "PY02"
+    },
+    {
+      "line": 413,
+      "field": "date_of_service",
+      "before": "09/10/2026",
+      "after": "2026-09-10"
+    },
+    {
+      "line": 417,
+      "field": "date_of_service",
+      "before": "09/16/2026",
+      "after": "2026-09-16"
+    },
+    {
+      "line": 418,
+      "field": "submitted_date",
+      "before": "10/17/2026",
+      "after": "2026-10-17"
+    },
+    {
+      "line": 419,
+      "field": "payer",
+      "before": "NORTHWIND HP",
+      "after": "PY01"
+    },
+    {
+      "line": 420,
+      "field": "payer",
+      "before": "SUMMIT CARE",
+      "after": "PY03"
+    },
+    {
+      "line": 422,
+      "field": "payer",
+      "before": "NORTHWIND HP",
+      "after": "PY01"
+    },
+    {
+      "line": 424,
+      "field": "payer",
+      "before": "Summit Care Partners",
+      "after": "PY03"
+    },
+    {
+      "line": 426,
+      "field": "payer",
+      "before": "SUMMIT CARE",
+      "after": "PY03"
+    },
+    {
+      "line": 426,
+      "field": "submitted_date",
+      "before": "10/17/2026",
+      "after": "2026-10-17"
+    },
+    {
+      "line": 428,
+      "field": "payer",
+      "before": "Summit Care Partners",
+      "after": "PY03"
+    },
+    {
+      "line": 431,
+      "field": "payer",
+      "before": "Harbor Medicaid Plan",
+      "after": "PY02"
+    },
+    {
+      "line": 432,
+      "field": "submitted_date",
+      "before": "10/18/2026",
+      "after": "2026-10-18"
+    },
+    {
+      "line": 434,
+      "field": "date_of_service",
+      "before": "10/06/2026",
+      "after": "2026-10-06"
+    },
+    {
+      "line": 435,
+      "field": "payer",
+      "before": "Harbor Medicaid Plan",
+      "after": "PY02"
+    },
+    {
+      "line": 437,
+      "field": "payer",
+      "before": "NORTHWIND HP",
+      "after": "PY01"
+    },
+    {
+      "line": 440,
+      "field": "date_of_service",
+      "before": "09/29/2026",
+      "after": "2026-09-29"
+    },
+    {
+      "line": 443,
+      "field": "payer",
+      "before": "SUMMIT CARE",
+      "after": "PY03"
+    },
+    {
+      "line": 444,
+      "field": "service_code",
+      "before": "T1005 ",
+      "after": "T1005"
+    },
+    {
+      "line": 447,
+      "field": "payer",
+      "before": "SUMMIT CARE",
+      "after": "PY03"
+    },
+    {
+      "line": 450,
+      "field": "payer",
+      "before": "Northwind Health Plan",
+      "after": "PY01"
+    },
+    {
+      "line": 450,
+      "field": "date_of_service",
+      "before": "09/29/2026",
+      "after": "2026-09-29"
+    },
+    {
+      "line": 452,
+      "field": "payer",
+      "before": "Northwind Health Plan",
+      "after": "PY01"
+    },
+    {
+      "line": 453,
+      "field": "submitted_date",
+      "before": "10/18/2026",
+      "after": "2026-10-18"
+    },
+    {
+      "line": 454,
+      "field": "payer",
+      "before": "Harbor Medicaid",
+      "after": "PY02"
+    },
+    {
+      "line": 460,
+      "field": "date_of_service",
+      "before": "09/21/2026",
+      "after": "2026-09-21"
+    },
+    {
+      "line": 464,
+      "field": "payer",
+      "before": "Harbor Medicaid",
+      "after": "PY02"
+    },
+    {
+      "line": 464,
+      "field": "date_of_service",
+      "before": "10/01/2026",
+      "after": "2026-10-01"
+    },
+    {
+      "line": 464,
+      "field": "submitted_date",
+      "before": "10/19/2026",
+      "after": "2026-10-19"
+    },
+    {
+      "line": 464,
+      "field": "modifier",
+      "before": " U2",
+      "after": "U2"
+    },
+    {
+      "line": 466,
+      "field": "payer",
+      "before": "NORTHWIND HP",
+      "after": "PY01"
+    },
+    {
+      "line": 468,
+      "field": "payer",
+      "before": "NORTHWIND HP",
+      "after": "PY01"
+    },
+    {
+      "line": 471,
+      "field": "submitted_date",
+      "before": "10/19/2026",
+      "after": "2026-10-19"
+    },
+    {
+      "line": 474,
+      "field": "date_of_service",
+      "before": "10/10/2026",
+      "after": "2026-10-10"
+    },
+    {
+      "line": 475,
+      "field": "modifier",
+      "before": " U1",
+      "after": "U1"
+    },
+    {
+      "line": 478,
+      "field": "payer",
+      "before": "NORTHWIND HP",
+      "after": "PY01"
+    },
+    {
+      "line": 479,
+      "field": "submitted_date",
+      "before": "10/19/2026",
+      "after": "2026-10-19"
+    },
+    {
+      "line": 482,
+      "field": "date_of_service",
+      "before": "10/14/2026",
+      "after": "2026-10-14"
+    },
+    {
+      "line": 483,
+      "field": "payer",
+      "before": "Harbor Medicaid",
+      "after": "PY02"
+    },
+    {
+      "line": 485,
+      "field": "payer",
+      "before": "Summit Care Partners",
+      "after": "PY03"
+    },
+    {
+      "line": 485,
+      "field": "submitted_date",
+      "before": "10/19/2026",
+      "after": "2026-10-19"
+    },
+    {
+      "line": 487,
+      "field": "date_of_service",
+      "before": "10/13/2026",
+      "after": "2026-10-13"
+    },
+    {
+      "line": 488,
+      "field": "payer",
+      "before": "NORTHWIND HP",
+      "after": "PY01"
+    },
+    {
+      "line": 489,
+      "field": "date_of_service",
+      "before": "10/12/2026",
+      "after": "2026-10-12"
+    },
+    {
+      "line": 490,
+      "field": "payer",
+      "before": "Summit Care Partners",
+      "after": "PY03"
+    },
+    {
+      "line": 492,
+      "field": "payer",
+      "before": "Northwind Health Plan",
+      "after": "PY01"
+    },
+    {
+      "line": 493,
+      "field": "payer",
+      "before": "Harbor Medicaid",
+      "after": "PY02"
+    },
+    {
+      "line": 495,
+      "field": "payer",
+      "before": "Northwind Health Plan",
+      "after": "PY01"
+    },
+    {
+      "line": 499,
+      "field": "submitted_date",
+      "before": "10/20/2026",
+      "after": "2026-10-20"
+    },
+    {
+      "line": 505,
+      "field": "submitted_date",
+      "before": "10/20/2026",
+      "after": "2026-10-20"
+    },
+    {
+      "line": 506,
+      "field": "payer",
+      "before": "Harbor Medicaid",
+      "after": "PY02"
+    },
+    {
+      "line": 506,
+      "field": "date_of_service",
+      "before": "09/30/2026",
+      "after": "2026-09-30"
+    },
+    {
+      "line": 511,
+      "field": "submitted_date",
+      "before": "10/20/2026",
+      "after": "2026-10-20"
+    },
+    {
+      "line": 511,
+      "field": "modifier",
+      "before": "U2 ",
+      "after": "U2"
+    },
+    {
+      "line": 519,
+      "field": "payer",
+      "before": "NORTHWIND HP",
+      "after": "PY01"
+    },
+    {
+      "line": 520,
+      "field": "payer",
+      "before": "Northwind Health Plan",
+      "after": "PY01"
+    },
+    {
+      "line": 522,
+      "field": "payer",
+      "before": "Northwind Health Plan",
+      "after": "PY01"
+    },
+    {
+      "line": 523,
+      "field": "payer",
+      "before": "Harbor Medicaid Plan",
+      "after": "PY02"
+    },
+    {
+      "line": 525,
+      "field": "payer",
+      "before": "Summit Care Partners",
+      "after": "PY03"
+    },
+    {
+      "line": 525,
+      "field": "date_of_service",
+      "before": "10/20/2026",
+      "after": "2026-10-20"
+    },
+    {
+      "line": 529,
+      "field": "payer",
+      "before": "Harbor Medicaid",
+      "after": "PY02"
+    },
+    {
+      "line": 529,
+      "field": "date_of_service",
+      "before": "08/13/2026",
+      "after": "2026-08-13"
+    },
+    {
+      "line": 529,
+      "field": "submitted_date",
+      "before": "10/21/2026",
+      "after": "2026-10-21"
+    },
+    {
+      "line": 530,
+      "field": "payer",
+      "before": "Harbor Medicaid",
+      "after": "PY02"
+    },
+    {
+      "line": 531,
+      "field": "payer",
+      "before": "Harbor Medicaid Plan",
+      "after": "PY02"
+    },
+    {
+      "line": 531,
+      "field": "service_code",
+      "before": "S5125 ",
+      "after": "S5125"
+    },
+    {
+      "line": 533,
+      "field": "payer",
+      "before": "Harbor Medicaid",
+      "after": "PY02"
+    },
+    {
+      "line": 535,
+      "field": "payer",
+      "before": "NORTHWIND HP",
+      "after": "PY01"
+    },
+    {
+      "line": 535,
+      "field": "modifier",
+      "before": "u1",
+      "after": "U1"
+    },
+    {
+      "line": 537,
+      "field": "payer",
+      "before": "NORTHWIND HP",
+      "after": "PY01"
+    },
+    {
+      "line": 538,
+      "field": "payer",
+      "before": "Harbor Medicaid",
+      "after": "PY02"
+    },
+    {
+      "line": 538,
+      "field": "date_of_service",
+      "before": "10/19/2026",
+      "after": "2026-10-19"
+    },
+    {
+      "line": 539,
+      "field": "modifier",
+      "before": " U1",
+      "after": "U1"
+    },
+    {
+      "line": 540,
+      "field": "date_of_service",
+      "before": "10/10/2026",
+      "after": "2026-10-10"
+    },
+    {
+      "line": 542,
+      "field": "payer",
+      "before": "Harbor Medicaid Plan",
+      "after": "PY02"
+    },
+    {
+      "line": 543,
+      "field": "payer",
+      "before": "Harbor Medicaid",
+      "after": "PY02"
+    },
+    {
+      "line": 544,
+      "field": "date_of_service",
+      "before": "10/01/2026",
+      "after": "2026-10-01"
+    },
+    {
+      "line": 546,
+      "field": "submitted_date",
+      "before": "10/22/2026",
+      "after": "2026-10-22"
+    },
+    {
+      "line": 547,
+      "field": "payer",
+      "before": "NORTHWIND HP",
+      "after": "PY01"
+    },
+    {
+      "line": 547,
+      "field": "date_of_service",
+      "before": "10/02/2026",
+      "after": "2026-10-02"
+    },
+    {
+      "line": 547,
+      "field": "submitted_date",
+      "before": "10/22/2026",
+      "after": "2026-10-22"
+    },
+    {
+      "line": 549,
+      "field": "date_of_service",
+      "before": "10/13/2026",
+      "after": "2026-10-13"
+    },
+    {
+      "line": 550,
+      "field": "payer",
+      "before": "Harbor Medicaid",
+      "after": "PY02"
+    },
+    {
+      "line": 550,
+      "field": "submitted_date",
+      "before": "10/22/2026",
+      "after": "2026-10-22"
+    },
+    {
+      "line": 552,
+      "field": "submitted_date",
+      "before": "10/22/2026",
+      "after": "2026-10-22"
+    },
+    {
+      "line": 554,
+      "field": "payer",
+      "before": "Summit Care Partners",
+      "after": "PY03"
+    },
+    {
+      "line": 555,
+      "field": "payer",
+      "before": "Harbor Medicaid Plan",
+      "after": "PY02"
+    },
+    {
+      "line": 555,
+      "field": "submitted_date",
+      "before": "10/22/2026",
+      "after": "2026-10-22"
+    },
+    {
+      "line": 563,
+      "field": "modifier",
+      "before": "u3",
+      "after": "U3"
+    },
+    {
+      "line": 565,
+      "field": "payer",
+      "before": "Harbor Medicaid",
+      "after": "PY02"
+    },
+    {
+      "line": 566,
+      "field": "payer",
+      "before": "SUMMIT CARE",
+      "after": "PY03"
+    },
+    {
+      "line": 568,
+      "field": "service_code",
+      "before": "T1005 ",
+      "after": "T1005"
+    },
+    {
+      "line": 568,
+      "field": "submitted_date",
+      "before": "10/22/2026",
+      "after": "2026-10-22"
+    },
+    {
+      "line": 569,
+      "field": "modifier",
+      "before": "u3",
+      "after": "U3"
+    },
+    {
+      "line": 570,
+      "field": "submitted_date",
+      "before": "10/23/2026",
+      "after": "2026-10-23"
+    },
+    {
+      "line": 571,
+      "field": "payer",
+      "before": "Harbor Medicaid",
+      "after": "PY02"
+    },
+    {
+      "line": 573,
+      "field": "submitted_date",
+      "before": "10/23/2026",
+      "after": "2026-10-23"
+    },
+    {
+      "line": 574,
+      "field": "payer",
+      "before": "Harbor Medicaid Plan",
+      "after": "PY02"
+    },
+    {
+      "line": 577,
+      "field": "submitted_date",
+      "before": "10/23/2026",
+      "after": "2026-10-23"
+    },
+    {
+      "line": 581,
+      "field": "date_of_service",
+      "before": "10/07/2026",
+      "after": "2026-10-07"
+    },
+    {
+      "line": 582,
+      "field": "payer",
+      "before": "Summit Care Partners",
+      "after": "PY03"
+    },
+    {
+      "line": 587,
+      "field": "payer",
+      "before": "SUMMIT CARE",
+      "after": "PY03"
+    },
+    {
+      "line": 587,
+      "field": "date_of_service",
+      "before": "09/13/2026",
+      "after": "2026-09-13"
+    },
+    {
+      "line": 595,
+      "field": "payer",
+      "before": "Harbor Medicaid",
+      "after": "PY02"
+    },
+    {
+      "line": 596,
+      "field": "payer",
+      "before": "Harbor Medicaid Plan",
+      "after": "PY02"
+    },
+    {
+      "line": 597,
+      "field": "service_code",
+      "before": "T1019 ",
+      "after": "T1019"
+    },
+    {
+      "line": 599,
+      "field": "payer",
+      "before": "NORTHWIND HP",
+      "after": "PY01"
+    },
+    {
+      "line": 599,
+      "field": "service_code",
+      "before": "T1005 ",
+      "after": "T1005"
+    },
+    {
+      "line": 600,
+      "field": "payer",
+      "before": "NORTHWIND HP",
+      "after": "PY01"
+    },
+    {
+      "line": 601,
+      "field": "payer",
+      "before": "Harbor Medicaid Plan",
+      "after": "PY02"
+    },
+    {
+      "line": 603,
+      "field": "submitted_date",
+      "before": "10/24/2026",
+      "after": "2026-10-24"
+    },
+    {
+      "line": 607,
+      "field": "payer",
+      "before": "Harbor Medicaid Plan",
+      "after": "PY02"
+    },
+    {
+      "line": 612,
+      "field": "payer",
+      "before": "Harbor Medicaid",
+      "after": "PY02"
+    },
+    {
+      "line": 613,
+      "field": "date_of_service",
+      "before": "10/19/2026",
+      "after": "2026-10-19"
+    },
+    {
+      "line": 618,
+      "field": "payer",
+      "before": "Harbor Medicaid",
+      "after": "PY02"
+    },
+    {
+      "line": 618,
+      "field": "modifier",
+      "before": "u2",
+      "after": "U2"
+    },
+    {
+      "line": 620,
+      "field": "payer",
+      "before": "Harbor Medicaid Plan",
+      "after": "PY02"
+    },
+    {
+      "line": 621,
+      "field": "service_code",
+      "before": "T1005 ",
+      "after": "T1005"
+    },
+    {
+      "line": 622,
+      "field": "payer",
+      "before": "Northwind Health Plan",
+      "after": "PY01"
+    },
+    {
+      "line": 623,
+      "field": "payer",
+      "before": "NORTHWIND HP",
+      "after": "PY01"
+    },
+    {
+      "line": 625,
+      "field": "payer",
+      "before": "Northwind Health Plan",
+      "after": "PY01"
+    },
+    {
+      "line": 630,
+      "field": "payer",
+      "before": "NORTHWIND HP",
+      "after": "PY01"
+    },
+    {
+      "line": 634,
+      "field": "payer",
+      "before": "SUMMIT CARE",
+      "after": "PY03"
+    },
+    {
+      "line": 637,
+      "field": "payer",
+      "before": "Harbor Medicaid Plan",
+      "after": "PY02"
+    },
+    {
+      "line": 637,
+      "field": "modifier",
+      "before": "U2 ",
+      "after": "U2"
+    },
+    {
+      "line": 643,
+      "field": "payer",
+      "before": "Harbor Medicaid",
+      "after": "PY02"
+    },
+    {
+      "line": 643,
+      "field": "date_of_service",
+      "before": "09/08/2026",
+      "after": "2026-09-08"
+    },
+    {
+      "line": 644,
+      "field": "submitted_date",
+      "before": "10/26/2026",
+      "after": "2026-10-26"
+    },
+    {
+      "line": 646,
+      "field": "payer",
+      "before": "Summit Care Partners",
+      "after": "PY03"
+    },
+    {
+      "line": 648,
+      "field": "payer",
+      "before": "Northwind Health Plan",
+      "after": "PY01"
+    },
+    {
+      "line": 651,
+      "field": "payer",
+      "before": "SUMMIT CARE",
+      "after": "PY03"
+    },
+    {
+      "line": 652,
+      "field": "payer",
+      "before": "Harbor Medicaid",
+      "after": "PY02"
+    },
+    {
+      "line": 655,
+      "field": "submitted_date",
+      "before": "10/27/2026",
+      "after": "2026-10-27"
+    },
+    {
+      "line": 656,
+      "field": "submitted_date",
+      "before": "10/27/2026",
+      "after": "2026-10-27"
+    },
+    {
+      "line": 659,
+      "field": "submitted_date",
+      "before": "10/27/2026",
+      "after": "2026-10-27"
+    },
+    {
+      "line": 660,
+      "field": "date_of_service",
+      "before": "10/11/2026",
+      "after": "2026-10-11"
+    },
+    {
+      "line": 661,
+      "field": "payer",
+      "before": "SUMMIT CARE",
+      "after": "PY03"
+    },
+    {
+      "line": 662,
+      "field": "payer",
+      "before": "Northwind Health Plan",
+      "after": "PY01"
+    },
+    {
+      "line": 662,
+      "field": "submitted_date",
+      "before": "10/27/2026",
+      "after": "2026-10-27"
+    },
+    {
+      "line": 666,
+      "field": "submitted_date",
+      "before": "10/27/2026",
+      "after": "2026-10-27"
+    },
+    {
+      "line": 668,
+      "field": "submitted_date",
+      "before": "10/27/2026",
+      "after": "2026-10-27"
+    },
+    {
+      "line": 670,
+      "field": "date_of_service",
+      "before": "10/16/2026",
+      "after": "2026-10-16"
+    },
+    {
+      "line": 670,
+      "field": "submitted_date",
+      "before": "10/27/2026",
+      "after": "2026-10-27"
+    },
+    {
+      "line": 671,
+      "field": "submitted_date",
+      "before": "10/27/2026",
+      "after": "2026-10-27"
+    },
+    {
+      "line": 672,
+      "field": "payer",
+      "before": "Harbor Medicaid",
+      "after": "PY02"
+    },
+    {
+      "line": 673,
+      "field": "payer",
+      "before": "Northwind Health Plan",
+      "after": "PY01"
+    },
+    {
+      "line": 675,
+      "field": "payer",
+      "before": "NORTHWIND HP",
+      "after": "PY01"
+    },
+    {
+      "line": 679,
+      "field": "payer",
+      "before": "SUMMIT CARE",
+      "after": "PY03"
+    },
+    {
+      "line": 679,
+      "field": "date_of_service",
+      "before": "10/18/2026",
+      "after": "2026-10-18"
+    },
+    {
+      "line": 680,
+      "field": "payer",
+      "before": "Northwind Health Plan",
+      "after": "PY01"
+    },
+    {
+      "line": 681,
+      "field": "service_code",
+      "before": "T1005 ",
+      "after": "T1005"
+    },
+    {
+      "line": 683,
+      "field": "service_code",
+      "before": "T1005 ",
+      "after": "T1005"
+    },
+    {
+      "line": 686,
+      "field": "submitted_date",
+      "before": "10/28/2026",
+      "after": "2026-10-28"
+    },
+    {
+      "line": 687,
+      "field": "payer",
+      "before": "SUMMIT CARE",
+      "after": "PY03"
+    },
+    {
+      "line": 690,
+      "field": "submitted_date",
+      "before": "10/28/2026",
+      "after": "2026-10-28"
+    },
+    {
+      "line": 691,
+      "field": "submitted_date",
+      "before": "10/28/2026",
+      "after": "2026-10-28"
+    },
+    {
+      "line": 696,
+      "field": "service_code",
+      "before": "S5125 ",
+      "after": "S5125"
+    },
+    {
+      "line": 696,
+      "field": "date_of_service",
+      "before": "09/27/2026",
+      "after": "2026-09-27"
+    },
+    {
+      "line": 697,
+      "field": "payer",
+      "before": "Harbor Medicaid Plan",
+      "after": "PY02"
+    },
+    {
+      "line": 697,
+      "field": "submitted_date",
+      "before": "10/28/2026",
+      "after": "2026-10-28"
+    },
+    {
+      "line": 699,
+      "field": "date_of_service",
+      "before": "08/07/2026",
+      "after": "2026-08-07"
+    },
+    {
+      "line": 701,
+      "field": "modifier",
+      "before": "U2 ",
+      "after": "U2"
+    },
+    {
+      "line": 703,
+      "field": "date_of_service",
+      "before": "10/13/2026",
+      "after": "2026-10-13"
+    },
+    {
+      "line": 704,
+      "field": "submitted_date",
+      "before": "10/28/2026",
+      "after": "2026-10-28"
+    },
+    {
+      "line": 707,
+      "field": "submitted_date",
+      "before": "10/29/2026",
+      "after": "2026-10-29"
+    },
+    {
+      "line": 708,
+      "field": "payer",
+      "before": "Northwind Health Plan",
+      "after": "PY01"
+    },
+    {
+      "line": 709,
+      "field": "payer",
+      "before": "Harbor Medicaid Plan",
+      "after": "PY02"
+    },
+    {
+      "line": 710,
+      "field": "payer",
+      "before": "Northwind Health Plan",
+      "after": "PY01"
+    },
+    {
+      "line": 711,
+      "field": "date_of_service",
+      "before": "09/14/2026",
+      "after": "2026-09-14"
+    },
+    {
+      "line": 711,
+      "field": "modifier",
+      "before": "u1",
+      "after": "U1"
+    },
+    {
+      "line": 713,
+      "field": "payer",
+      "before": "Harbor Medicaid",
+      "after": "PY02"
+    },
+    {
+      "line": 715,
+      "field": "modifier",
+      "before": " U2",
+      "after": "U2"
+    },
+    {
+      "line": 718,
+      "field": "payer",
+      "before": "Harbor Medicaid",
+      "after": "PY02"
+    },
+    {
+      "line": 720,
+      "field": "submitted_date",
+      "before": "10/29/2026",
+      "after": "2026-10-29"
+    },
+    {
+      "line": 723,
+      "field": "date_of_service",
+      "before": "10/14/2026",
+      "after": "2026-10-14"
+    },
+    {
+      "line": 727,
+      "field": "date_of_service",
+      "before": "10/17/2026",
+      "after": "2026-10-17"
+    },
+    {
+      "line": 728,
+      "field": "payer",
+      "before": "NORTHWIND HP",
+      "after": "PY01"
+    },
+    {
+      "line": 729,
+      "field": "payer",
+      "before": "Northwind Health Plan",
+      "after": "PY01"
+    },
+    {
+      "line": 730,
+      "field": "service_code",
+      "before": "S5125 ",
+      "after": "S5125"
+    },
+    {
+      "line": 733,
+      "field": "payer",
+      "before": "Summit Care Partners",
+      "after": "PY03"
+    },
+    {
+      "line": 738,
+      "field": "payer",
+      "before": "NORTHWIND HP",
+      "after": "PY01"
+    },
+    {
+      "line": 738,
+      "field": "submitted_date",
+      "before": "10/30/2026",
+      "after": "2026-10-30"
+    },
+    {
+      "line": 740,
+      "field": "date_of_service",
+      "before": "10/13/2026",
+      "after": "2026-10-13"
+    },
+    {
+      "line": 744,
+      "field": "date_of_service",
+      "before": "10/10/2026",
+      "after": "2026-10-10"
+    },
+    {
+      "line": 748,
+      "field": "payer",
+      "before": "Harbor Medicaid Plan",
+      "after": "PY02"
+    },
+    {
+      "line": 749,
+      "field": "payer",
+      "before": "Harbor Medicaid Plan",
+      "after": "PY02"
+    },
+    {
+      "line": 750,
+      "field": "service_code",
+      "before": "T1019 ",
+      "after": "T1019"
+    },
+    {
+      "line": 752,
+      "field": "payer",
+      "before": "Harbor Medicaid",
+      "after": "PY02"
+    },
+    {
+      "line": 752,
+      "field": "date_of_service",
+      "before": "10/07/2026",
+      "after": "2026-10-07"
+    },
+    {
+      "line": 753,
+      "field": "modifier",
+      "before": "u1",
+      "after": "U1"
+    },
+    {
+      "line": 757,
+      "field": "date_of_service",
+      "before": "09/18/2026",
+      "after": "2026-09-18"
+    },
+    {
+      "line": 760,
+      "field": "payer",
+      "before": "SUMMIT CARE",
+      "after": "PY03"
+    },
+    {
+      "line": 765,
+      "field": "payer",
+      "before": "Harbor Medicaid Plan",
+      "after": "PY02"
+    },
+    {
+      "line": 765,
+      "field": "date_of_service",
+      "before": "07/29/2026",
+      "after": "2026-07-29"
+    },
+    {
+      "line": 766,
+      "field": "payer",
+      "before": "SUMMIT CARE",
+      "after": "PY03"
+    },
+    {
+      "line": 767,
+      "field": "payer",
+      "before": "NORTHWIND HP",
+      "after": "PY01"
+    },
+    {
+      "line": 769,
+      "field": "payer",
+      "before": "Northwind Health Plan",
+      "after": "PY01"
+    },
+    {
+      "line": 770,
+      "field": "date_of_service",
+      "before": "10/12/2026",
+      "after": "2026-10-12"
+    },
+    {
+      "line": 772,
+      "field": "service_code",
+      "before": "S5125 ",
+      "after": "S5125"
+    },
+    {
+      "line": 773,
+      "field": "payer",
+      "before": "Harbor Medicaid",
+      "after": "PY02"
+    },
+    {
+      "line": 775,
+      "field": "service_code",
+      "before": "T1019 ",
+      "after": "T1019"
+    },
+    {
+      "line": 777,
+      "field": "payer",
+      "before": "SUMMIT CARE",
+      "after": "PY03"
+    },
+    {
+      "line": 779,
+      "field": "payer",
+      "before": "Northwind Health Plan",
+      "after": "PY01"
+    },
+    {
+      "line": 781,
+      "field": "payer",
+      "before": "Harbor Medicaid Plan",
+      "after": "PY02"
+    },
+    {
+      "line": 782,
+      "field": "service_code",
+      "before": "S5125 ",
+      "after": "S5125"
+    },
+    {
+      "line": 783,
+      "field": "payer",
+      "before": "Harbor Medicaid Plan",
+      "after": "PY02"
+    },
+    {
+      "line": 785,
+      "field": "submitted_date",
+      "before": "11/01/2026",
+      "after": "2026-11-01"
+    },
+    {
+      "line": 786,
+      "field": "submitted_date",
+      "before": "11/02/2026",
+      "after": "2026-11-02"
+    },
+    {
+      "line": 788,
+      "field": "date_of_service",
+      "before": "09/07/2026",
+      "after": "2026-09-07"
+    },
+    {
+      "line": 790,
+      "field": "payer",
+      "before": "Harbor Medicaid",
+      "after": "PY02"
+    },
+    {
+      "line": 790,
+      "field": "modifier",
+      "before": "U1 ",
+      "after": "U1"
+    },
+    {
+      "line": 791,
+      "field": "date_of_service",
+      "before": "10/14/2026",
+      "after": "2026-10-14"
+    },
+    {
+      "line": 792,
+      "field": "payer",
+      "before": "Harbor Medicaid",
+      "after": "PY02"
+    },
+    {
+      "line": 793,
+      "field": "submitted_date",
+      "before": "11/02/2026",
+      "after": "2026-11-02"
+    },
+    {
+      "line": 794,
+      "field": "payer",
+      "before": "Summit Care Partners",
+      "after": "PY03"
+    },
+    {
+      "line": 798,
+      "field": "payer",
+      "before": "NORTHWIND HP",
+      "after": "PY01"
+    },
+    {
+      "line": 798,
+      "field": "date_of_service",
+      "before": "10/15/2026",
+      "after": "2026-10-15"
+    },
+    {
+      "line": 799,
+      "field": "payer",
+      "before": "Harbor Medicaid",
+      "after": "PY02"
+    },
+    {
+      "line": 800,
+      "field": "date_of_service",
+      "before": "10/20/2026",
+      "after": "2026-10-20"
+    },
+    {
+      "line": 805,
+      "field": "date_of_service",
+      "before": "10/20/2026",
+      "after": "2026-10-20"
+    },
+    {
+      "line": 807,
+      "field": "submitted_date",
+      "before": "11/03/2026",
+      "after": "2026-11-03"
+    },
+    {
+      "line": 812,
+      "field": "payer",
+      "before": "SUMMIT CARE",
+      "after": "PY03"
+    },
+    {
+      "line": 817,
+      "field": "payer",
+      "before": "Harbor Medicaid Plan",
+      "after": "PY02"
+    },
+    {
+      "line": 824,
+      "field": "modifier",
+      "before": "U1 ",
+      "after": "U1"
+    },
+    {
+      "line": 826,
+      "field": "payer",
+      "before": "Summit Care Partners",
+      "after": "PY03"
+    },
+    {
+      "line": 827,
+      "field": "payer",
+      "before": "Harbor Medicaid Plan",
+      "after": "PY02"
+    },
+    {
+      "line": 829,
+      "field": "date_of_service",
+      "before": "10/05/2026",
+      "after": "2026-10-05"
+    },
+    {
+      "line": 830,
+      "field": "payer",
+      "before": "SUMMIT CARE",
+      "after": "PY03"
+    },
+    {
+      "line": 834,
+      "field": "date_of_service",
+      "before": "10/19/2026",
+      "after": "2026-10-19"
+    },
+    {
+      "line": 834,
+      "field": "submitted_date",
+      "before": "11/05/2026",
+      "after": "2026-11-05"
+    },
+    {
+      "line": 836,
+      "field": "payer",
+      "before": "Summit Care Partners",
+      "after": "PY03"
+    },
+    {
+      "line": 836,
+      "field": "submitted_date",
+      "before": "11/05/2026",
+      "after": "2026-11-05"
+    },
+    {
+      "line": 837,
+      "field": "payer",
+      "before": "SUMMIT CARE",
+      "after": "PY03"
+    },
+    {
+      "line": 839,
+      "field": "submitted_date",
+      "before": "11/05/2026",
+      "after": "2026-11-05"
+    },
+    {
+      "line": 840,
+      "field": "payer",
+      "before": "Northwind Health Plan",
+      "after": "PY01"
+    },
+    {
+      "line": 840,
+      "field": "date_of_service",
+      "before": "09/13/2026",
+      "after": "2026-09-13"
+    },
+    {
+      "line": 840,
+      "field": "submitted_date",
+      "before": "11/05/2026",
+      "after": "2026-11-05"
+    },
+    {
+      "line": 841,
+      "field": "payer",
+      "before": "NORTHWIND HP",
+      "after": "PY01"
+    },
+    {
+      "line": 843,
+      "field": "payer",
+      "before": "NORTHWIND HP",
+      "after": "PY01"
+    },
+    {
+      "line": 844,
+      "field": "payer",
+      "before": "NORTHWIND HP",
+      "after": "PY01"
+    },
+    {
+      "line": 846,
+      "field": "submitted_date",
+      "before": "11/05/2026",
+      "after": "2026-11-05"
+    },
+    {
+      "line": 847,
+      "field": "date_of_service",
+      "before": "10/20/2026",
+      "after": "2026-10-20"
+    },
+    {
+      "line": 848,
+      "field": "date_of_service",
+      "before": "10/19/2026",
+      "after": "2026-10-19"
+    },
+    {
+      "line": 849,
+      "field": "service_code",
+      "before": "S5125 ",
+      "after": "S5125"
+    },
+    {
+      "line": 851,
+      "field": "payer",
+      "before": "Harbor Medicaid Plan",
+      "after": "PY02"
+    },
+    {
+      "line": 851,
+      "field": "service_code",
+      "before": "S5125 ",
+      "after": "S5125"
+    },
+    {
+      "line": 857,
+      "field": "submitted_date",
+      "before": "11/06/2026",
+      "after": "2026-11-06"
+    },
+    {
+      "line": 858,
+      "field": "submitted_date",
+      "before": "11/06/2026",
+      "after": "2026-11-06"
+    },
+    {
+      "line": 859,
+      "field": "date_of_service",
+      "before": "07/23/2026",
+      "after": "2026-07-23"
+    },
+    {
+      "line": 867,
+      "field": "payer",
+      "before": "Northwind Health Plan",
+      "after": "PY01"
+    },
+    {
+      "line": 868,
+      "field": "payer",
+      "before": "Harbor Medicaid Plan",
+      "after": "PY02"
+    },
+    {
+      "line": 868,
+      "field": "submitted_date",
+      "before": "11/07/2026",
+      "after": "2026-11-07"
+    },
+    {
+      "line": 873,
+      "field": "payer",
+      "before": "Northwind Health Plan",
+      "after": "PY01"
+    },
+    {
+      "line": 874,
+      "field": "submitted_date",
+      "before": "11/08/2026",
+      "after": "2026-11-08"
+    },
+    {
+      "line": 876,
+      "field": "payer",
+      "before": "SUMMIT CARE",
+      "after": "PY03"
+    },
+    {
+      "line": 876,
+      "field": "submitted_date",
+      "before": "11/08/2026",
+      "after": "2026-11-08"
+    },
+    {
+      "line": 887,
+      "field": "payer",
+      "before": "Harbor Medicaid",
+      "after": "PY02"
+    },
+    {
+      "line": 893,
+      "field": "payer",
+      "before": "Harbor Medicaid Plan",
+      "after": "PY02"
+    },
+    {
+      "line": 893,
+      "field": "submitted_date",
+      "before": "11/10/2026",
+      "after": "2026-11-10"
+    },
+    {
+      "line": 894,
+      "field": "service_code",
+      "before": "T1005 ",
+      "after": "T1005"
+    },
+    {
+      "line": 895,
+      "field": "payer",
+      "before": "Harbor Medicaid Plan",
+      "after": "PY02"
+    },
+    {
+      "line": 899,
+      "field": "modifier",
+      "before": "U2 ",
+      "after": "U2"
+    },
+    {
+      "line": 901,
+      "field": "payer",
+      "before": "NORTHWIND HP",
+      "after": "PY01"
+    },
+    {
+      "line": 901,
+      "field": "date_of_service",
+      "before": "08/05/2026",
+      "after": "2026-08-05"
+    },
+    {
+      "line": 903,
+      "field": "date_of_service",
+      "before": "10/05/2026",
+      "after": "2026-10-05"
+    },
+    {
+      "line": 904,
+      "field": "payer",
+      "before": "Harbor Medicaid",
+      "after": "PY02"
+    },
+    {
+      "line": 905,
+      "field": "service_code",
+      "before": "T1019 ",
+      "after": "T1019"
+    },
+    {
+      "line": 905,
+      "field": "date_of_service",
+      "before": "10/14/2026",
+      "after": "2026-10-14"
+    },
+    {
+      "line": 908,
+      "field": "date_of_service",
+      "before": "10/16/2026",
+      "after": "2026-10-16"
+    },
+    {
+      "line": 912,
+      "field": "date_of_service",
+      "before": "08/19/2026",
+      "after": "2026-08-19"
+    },
+    {
+      "line": 912,
+      "field": "submitted_date",
+      "before": "11/13/2026",
+      "after": "2026-11-13"
+    },
+    {
+      "line": 919,
+      "field": "payer",
+      "before": "Northwind Health Plan",
+      "after": "PY01"
+    },
+    {
+      "line": 919,
+      "field": "service_code",
+      "before": "T1005 ",
+      "after": "T1005"
+    },
+    {
+      "line": 922,
+      "field": "date_of_service",
+      "before": "07/28/2026",
+      "after": "2026-07-28"
+    },
+    {
+      "line": 922,
+      "field": "submitted_date",
+      "before": "11/14/2026",
+      "after": "2026-11-14"
+    },
+    {
+      "line": 923,
+      "field": "payer",
+      "before": "Harbor Medicaid Plan",
+      "after": "PY02"
+    },
+    {
+      "line": 924,
+      "field": "payer",
+      "before": "Harbor Medicaid",
+      "after": "PY02"
+    },
+    {
+      "line": 925,
+      "field": "service_code",
+      "before": "T1005 ",
+      "after": "T1005"
+    },
+    {
+      "line": 927,
+      "field": "modifier",
+      "before": " U2",
+      "after": "U2"
+    },
+    {
+      "line": 929,
+      "field": "payer",
+      "before": "NORTHWIND HP",
+      "after": "PY01"
+    },
+    {
+      "line": 929,
+      "field": "service_code",
+      "before": "S5125 ",
+      "after": "S5125"
+    },
+    {
+      "line": 932,
+      "field": "payer",
+      "before": "SUMMIT CARE",
+      "after": "PY03"
+    },
+    {
+      "line": 933,
+      "field": "date_of_service",
+      "before": "10/10/2026",
+      "after": "2026-10-10"
+    },
+    {
+      "line": 937,
+      "field": "payer",
+      "before": "Summit Care Partners",
+      "after": "PY03"
+    },
+    {
+      "line": 937,
+      "field": "date_of_service",
+      "before": "10/19/2026",
+      "after": "2026-10-19"
+    },
+    {
+      "line": 939,
+      "field": "service_code",
+      "before": "T1019 ",
+      "after": "T1019"
+    },
+    {
+      "line": 940,
+      "field": "modifier",
+      "before": "U1 ",
+      "after": "U1"
+    },
+    {
+      "line": 941,
+      "field": "date_of_service",
+      "before": "08/19/2026",
+      "after": "2026-08-19"
+    },
+    {
+      "line": 944,
+      "field": "payer",
+      "before": "Harbor Medicaid",
+      "after": "PY02"
+    },
+    {
+      "line": 947,
+      "field": "submitted_date",
+      "before": "11/17/2026",
+      "after": "2026-11-17"
+    },
+    {
+      "line": 948,
+      "field": "payer",
+      "before": "Harbor Medicaid",
+      "after": "PY02"
+    },
+    {
+      "line": 948,
+      "field": "date_of_service",
+      "before": "09/19/2026",
+      "after": "2026-09-19"
+    },
+    {
+      "line": 949,
+      "field": "payer",
+      "before": "Harbor Medicaid",
+      "after": "PY02"
+    },
+    {
+      "line": 949,
+      "field": "date_of_service",
+      "before": "08/01/2026",
+      "after": "2026-08-01"
+    },
+    {
+      "line": 958,
+      "field": "payer",
+      "before": "Northwind Health Plan",
+      "after": "PY01"
+    },
+    {
+      "line": 958,
+      "field": "modifier",
+      "before": "U1 ",
+      "after": "U1"
+    },
+    {
+      "line": 959,
+      "field": "payer",
+      "before": "Harbor Medicaid",
+      "after": "PY02"
+    },
+    {
+      "line": 960,
+      "field": "service_code",
+      "before": "S5125 ",
+      "after": "S5125"
+    },
+    {
+      "line": 961,
+      "field": "payer",
+      "before": "NORTHWIND HP",
+      "after": "PY01"
+    },
+    {
+      "line": 961,
+      "field": "date_of_service",
+      "before": "09/15/2026",
+      "after": "2026-09-15"
+    },
+    {
+      "line": 963,
+      "field": "modifier",
+      "before": " U1",
+      "after": "U1"
+    },
+    {
+      "line": 964,
+      "field": "date_of_service",
+      "before": "10/07/2026",
+      "after": "2026-10-07"
+    },
+    {
+      "line": 968,
+      "field": "service_code",
+      "before": "S5125 ",
+      "after": "S5125"
+    },
+    {
+      "line": 969,
+      "field": "date_of_service",
+      "before": "10/07/2026",
+      "after": "2026-10-07"
+    },
+    {
+      "line": 970,
+      "field": "payer",
+      "before": "Harbor Medicaid Plan",
+      "after": "PY02"
+    },
+    {
+      "line": 971,
+      "field": "submitted_date",
+      "before": "11/21/2026",
+      "after": "2026-11-21"
+    },
+    {
+      "line": 978,
+      "field": "payer",
+      "before": "Summit Care Partners",
+      "after": "PY03"
+    },
+    {
+      "line": 980,
+      "field": "payer",
+      "before": "SUMMIT CARE",
+      "after": "PY03"
+    },
+    {
+      "line": 981,
+      "field": "modifier",
+      "before": "u2",
+      "after": "U2"
+    },
+    {
+      "line": 986,
+      "field": "payer",
+      "before": "Harbor Medicaid",
+      "after": "PY02"
+    },
+    {
+      "line": 987,
+      "field": "payer",
+      "before": "NORTHWIND HP",
+      "after": "PY01"
+    },
+    {
+      "line": 987,
+      "field": "date_of_service",
+      "before": "10/08/2026",
+      "after": "2026-10-08"
+    },
+    {
+      "line": 988,
+      "field": "date_of_service",
+      "before": "10/10/2026",
+      "after": "2026-10-10"
+    },
+    {
+      "line": 991,
+      "field": "submitted_date",
+      "before": "11/25/2026",
+      "after": "2026-11-25"
+    },
+    {
+      "line": 992,
+      "field": "date_of_service",
+      "before": "08/12/2026",
+      "after": "2026-08-12"
+    },
+    {
+      "line": 995,
+      "field": "payer",
+      "before": "Harbor Medicaid",
+      "after": "PY02"
+    },
+    {
+      "line": 996,
+      "field": "submitted_date",
+      "before": "11/27/2026",
+      "after": "2026-11-27"
+    },
+    {
+      "line": 1002,
+      "field": "date_of_service",
+      "before": "09/19/2026",
+      "after": "2026-09-19"
+    },
+    {
+      "line": 1003,
+      "field": "modifier",
+      "before": " U1",
+      "after": "U1"
+    },
+    {
+      "line": 1004,
+      "field": "submitted_date",
+      "before": "11/28/2026",
+      "after": "2026-11-28"
+    },
+    {
+      "line": 1008,
+      "field": "payer",
+      "before": "Harbor Medicaid Plan",
+      "after": "PY02"
+    },
+    {
+      "line": 1009,
+      "field": "payer",
+      "before": "Harbor Medicaid Plan",
+      "after": "PY02"
+    },
+    {
+      "line": 1013,
+      "field": "payer",
+      "before": "Harbor Medicaid Plan",
+      "after": "PY02"
+    },
+    {
+      "line": 1013,
+      "field": "service_code",
+      "before": "T1005 ",
+      "after": "T1005"
+    },
+    {
+      "line": 1017,
+      "field": "service_code",
+      "before": "T1005 ",
+      "after": "T1005"
+    },
+    {
+      "line": 1018,
+      "field": "payer",
+      "before": "Harbor Medicaid Plan",
+      "after": "PY02"
+    },
+    {
+      "line": 1019,
+      "field": "date_of_service",
+      "before": "09/22/2026",
+      "after": "2026-09-22"
+    },
+    {
+      "line": 1021,
+      "field": "date_of_service",
+      "before": "09/03/2026",
+      "after": "2026-09-03"
+    },
+    {
+      "line": 1024,
+      "field": "payer",
+      "before": "NORTHWIND HP",
+      "after": "PY01"
+    },
+    {
+      "line": 1024,
+      "field": "date_of_service",
+      "before": "08/25/2026",
+      "after": "2026-08-25"
+    },
+    {
+      "line": 1025,
+      "field": "payer",
+      "before": "Northwind Health Plan",
+      "after": "PY01"
+    },
+    {
+      "line": 1031,
+      "field": "payer",
+      "before": "Harbor Medicaid Plan",
+      "after": "PY02"
+    },
+    {
+      "line": 1033,
+      "field": "service_code",
+      "before": "T1005 ",
+      "after": "T1005"
+    },
+    {
+      "line": 1035,
+      "field": "payer",
+      "before": "Northwind Health Plan",
+      "after": "PY01"
+    },
+    {
+      "line": 1035,
+      "field": "submitted_date",
+      "before": "12/12/2026",
+      "after": "2026-12-12"
+    },
+    {
+      "line": 1037,
+      "field": "payer",
+      "before": "Harbor Medicaid Plan",
+      "after": "PY02"
+    },
+    {
+      "line": 1037,
+      "field": "date_of_service",
+      "before": "10/01/2026",
+      "after": "2026-10-01"
+    },
+    {
+      "line": 1037,
+      "field": "submitted_date",
+      "before": "12/12/2026",
+      "after": "2026-12-12"
+    },
+    {
+      "line": 1040,
+      "field": "payer",
+      "before": "Summit Care Partners",
+      "after": "PY03"
+    },
+    {
+      "line": 1043,
+      "field": "date_of_service",
+      "before": "09/10/2026",
+      "after": "2026-09-10"
+    },
+    {
+      "line": 1045,
+      "field": "payer",
+      "before": "NORTHWIND HP",
+      "after": "PY01"
+    },
+    {
+      "line": 1045,
+      "field": "submitted_date",
+      "before": "12/16/2026",
+      "after": "2026-12-16"
+    },
+    {
+      "line": 1049,
+      "field": "payer",
+      "before": "Summit Care Partners",
+      "after": "PY03"
+    },
+    {
+      "line": 1050,
+      "field": "payer",
+      "before": "Northwind Health Plan",
+      "after": "PY01"
+    },
+    {
+      "line": 1051,
+      "field": "service_code",
+      "before": "S5125 ",
+      "after": "S5125"
+    },
+    {
+      "line": 1052,
+      "field": "date_of_service",
+      "before": "09/30/2026",
+      "after": "2026-09-30"
+    },
+    {
+      "line": 1052,
+      "field": "submitted_date",
+      "before": "12/20/2026",
+      "after": "2026-12-20"
+    },
+    {
+      "line": 1054,
+      "field": "payer",
+      "before": "Harbor Medicaid",
+      "after": "PY02"
+    },
+    {
+      "line": 1056,
+      "field": "date_of_service",
+      "before": "10/06/2026",
+      "after": "2026-10-06"
+    },
+    {
+      "line": 1058,
+      "field": "payer",
+      "before": "Northwind Health Plan",
+      "after": "PY01"
+    },
+    {
+      "line": 1059,
+      "field": "date_of_service",
+      "before": "10/07/2026",
+      "after": "2026-10-07"
+    },
+    {
+      "line": 1059,
+      "field": "submitted_date",
+      "before": "12/22/2026",
+      "after": "2026-12-22"
+    },
+    {
+      "line": 1061,
+      "field": "date_of_service",
+      "before": "10/20/2026",
+      "after": "2026-10-20"
+    },
+    {
+      "line": 1063,
+      "field": "date_of_service",
+      "before": "10/01/2026",
+      "after": "2026-10-01"
+    },
+    {
+      "line": 1064,
+      "field": "payer",
+      "before": "Northwind Health Plan",
+      "after": "PY01"
+    },
+    {
+      "line": 1065,
+      "field": "payer",
+      "before": "Northwind Health Plan",
+      "after": "PY01"
+    },
+    {
+      "line": 1067,
+      "field": "payer",
+      "before": "NORTHWIND HP",
+      "after": "PY01"
+    },
+    {
+      "line": 1067,
+      "field": "date_of_service",
+      "before": "09/24/2026",
+      "after": "2026-09-24"
+    },
+    {
+      "line": 1069,
+      "field": "service_code",
+      "before": "T1019 ",
+      "after": "T1019"
+    },
+    {
+      "line": 1070,
+      "field": "submitted_date",
+      "before": "12/30/2026",
+      "after": "2026-12-30"
+    },
+    {
+      "line": 1070,
+      "field": "modifier",
+      "before": " U1",
+      "after": "U1"
+    },
+    {
+      "line": 1071,
+      "field": "submitted_date",
+      "before": "01/01/2027",
+      "after": "2027-01-01"
+    },
+    {
+      "line": 1072,
+      "field": "modifier",
+      "before": "U1 ",
+      "after": "U1"
+    },
+    {
+      "line": 1073,
+      "field": "submitted_date",
+      "before": "01/03/2027",
+      "after": "2027-01-03"
+    },
+    {
+      "line": 1077,
+      "field": "date_of_service",
+      "before": "10/08/2026",
+      "after": "2026-10-08"
+    },
+    {
+      "line": 1077,
+      "field": "submitted_date",
+      "before": "01/05/2027",
+      "after": "2027-01-05"
+    },
+    {
+      "line": 1078,
+      "field": "service_code",
+      "before": "T1005 ",
+      "after": "T1005"
+    },
+    {
+      "line": 1079,
+      "field": "payer",
+      "before": "Harbor Medicaid",
+      "after": "PY02"
+    },
+    {
+      "line": 1082,
+      "field": "payer",
+      "before": "Harbor Medicaid",
+      "after": "PY02"
+    },
+    {
+      "line": 1082,
+      "field": "submitted_date",
+      "before": "01/07/2027",
+      "after": "2027-01-07"
+    },
+    {
+      "line": 1084,
+      "field": "payer",
+      "before": "Harbor Medicaid Plan",
+      "after": "PY02"
+    },
+    {
+      "line": 1084,
+      "field": "date_of_service",
+      "before": "09/29/2026",
+      "after": "2026-09-29"
+    },
+    {
+      "line": 1084,
+      "field": "submitted_date",
+      "before": "01/10/2027",
+      "after": "2027-01-10"
+    },
+    {
+      "line": 1087,
+      "field": "payer",
+      "before": "SUMMIT CARE",
+      "after": "PY03"
+    },
+    {
+      "line": 1088,
+      "field": "submitted_date",
+      "before": "01/16/2027",
+      "after": "2027-01-16"
+    },
+    {
+      "line": 1089,
+      "field": "date_of_service",
+      "before": "10/19/2026",
+      "after": "2026-10-19"
+    },
+    {
+      "line": 1090,
+      "field": "date_of_service",
+      "before": "10/09/2026",
+      "after": "2026-10-09"
+    },
+    {
+      "line": 1090,
+      "field": "modifier",
+      "before": "u1",
+      "after": "U1"
+    },
+    {
+      "line": 1096,
+      "field": "payer",
+      "before": "NORTHWIND HP",
+      "after": "PY01"
+    },
+    {
+      "line": 1097,
+      "field": "submitted_date",
+      "before": "01/28/2027",
+      "after": "2027-01-28"
+    },
+    {
+      "line": 1098,
+      "field": "modifier",
+      "before": "U3 ",
+      "after": "U3"
+    }
+  ],
+  "removed_duplicates": [
+    {
+      "line": 134,
+      "first_line": 133,
+      "record_id": "C010958"
+    },
+    {
+      "line": 361,
+      "first_line": 360,
+      "record_id": "C007795"
+    },
+    {
+      "line": 501,
+      "first_line": 500,
+      "record_id": "C009383"
+    },
+    {
+      "line": 821,
+      "first_line": 820,
+      "record_id": "C006689"
+    },
+    {
+      "line": 844,
+      "first_line": 843,
+      "record_id": "C011737"
+    },
+    {
+      "line": 943,
+      "first_line": 942,
+      "record_id": "C005037"
+    },
+    {
+      "line": 974,
+      "first_line": 973,
+      "record_id": "C002896"
+    }
+  ],
+  "unresolved": []
+}
