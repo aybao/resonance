@@ -14,8 +14,8 @@ python3 server.py            # http://127.0.0.1:8000  (--port N to change)
 python3 -m unittest discover -s tests -t .   # 51 tests, ~8s
 ```
 
-Optional AI rule assistant: `export ANTHROPIC_API_KEY=...` before starting (or paste a key in the Rules tab;
-it is held in memory only and never echoed, logged or saved). Model defaults to `claude-sonnet-5-5`
+Optional AI rule assistant: `export ANTHROPIC_API_KEY=...` before starting (read from the environment
+only; never echoed, logged or saved). Model defaults to `claude-sonnet-5-5`
 (`ANTHROPIC_MODEL` overrides). Without a key everything else works, including manual rule drafts.
 
 ## Use

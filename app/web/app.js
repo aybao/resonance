@@ -47,7 +47,7 @@ document.querySelectorAll("nav button").forEach((b) => b.addEventListener("click
 
 async function loadStatus() {
   const s = await api("GET", "/api/status");
-  $("ai-status").textContent = s.ai_available ? `AI rule assistant ready (${s.model})` : "AI rule assistant off: no API key (manual rule editing still works)";
+  $("ai-status").textContent = s.ai_available ? `AI rule assistant ready (${s.model})` : "AI rule assistant off: ANTHROPIC_API_KEY not set (manual rule editing still works)";
   const d = s.data;
   const card = $("data-card");
   card.replaceChildren(
@@ -164,7 +164,6 @@ async function loadRules() {
 }
 $("reset-rules").addEventListener("click", () => guard(async () => { if (confirm("Replace all rules and confirmed tests with the baseline rules?")) { await api("POST", "/api/rules/reset"); await loadRules(); await refreshResults(); } }));
 $("rules-file").addEventListener("change", (e) => guard(async () => { const f = e.target.files[0]; if (f) $("new-request").value = await f.text(); e.target.value = ""; }));
-$("save-key").addEventListener("click", () => guard(async () => { await api("POST", "/api/ai/key", { key: $("api-key").value }); $("api-key").value = ""; await loadStatus(); }));
 $("start-draft").addEventListener("click", () => guard(async () => {
   const message = $("new-request").value.trim(); if (!message) throw new Error("Enter the rule text or request first");
   showDraft(await api("POST", "/api/drafts", { message })); $("new-request").value = "";

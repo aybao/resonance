@@ -1,8 +1,7 @@
 #!/usr/bin/env python3
 """Local web server (standard library only). Run: python3 server.py [--port 8000]
 
-Binds to 127.0.0.1. The Claude API key is read from ANTHROPIC_API_KEY or entered in the UI
-(kept in memory only). Claim checks never call the AI.
+Binds to 127.0.0.1. The Claude API key is read from ANTHROPIC_API_KEY only. Claim checks never call the AI.
 """
 
 import argparse
@@ -99,9 +98,6 @@ class Handler(BaseHTTPRequestHandler):
         m = lambda pattern: re.fullmatch(pattern, path)  # noqa: E731
         if (method, path) == ("GET", "/api/status"):
             return self.send(200, s.status())
-        if (method, path) == ("POST", "/api/ai/key"):
-            s.ai.set_key(str(self.json_body().get("key", "")))
-            return self.send(200, {"ai_available": s.ai.available()})  # never echo the key
         if (method, path) == ("POST", "/api/data/sample"):
             s.load_sample_data()
             return self.send(200, s.status())

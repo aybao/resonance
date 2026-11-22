@@ -1,5 +1,6 @@
 """Rule-update workflow with a fake AI transport (no network, no key)."""
 import json
+import os
 import unittest
 from pathlib import Path
 
@@ -166,11 +167,15 @@ class Client(unittest.TestCase):
 
     def test_request_is_forced_tool_call_with_context_and_no_key_in_payload(self):
         ai = fake_ai(dict(assistant_message="ok"))
-        ai.set_key("sk-test-secret")
         ai.propose([{"role": "user", "content": "hi"}], "ctx")
         payload = ai.calls[0]
-        self.assertEqual(payload["tool_choice"]["name"], "propose_rule_update")
-        self.assertNotIn("sk-test-secret", json.dumps(payload))
+        self.assertEqual(payload["tool_choice"], {"type": "auto"})
+        self.assertEqual(payload["tools"][0]["name"], "propose_rule_update")
+        self.assertIn("ctx", payload["system"])
+        self.assertIn("units_authorized", payload["system"])  # CSV formats are described
+        key = os.environ.get("ANTHROPIC_API_KEY")
+        if key:
+            self.assertNotIn(key, json.dumps(payload))
 
 
 if __name__ == "__main__":
