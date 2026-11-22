@@ -36,22 +36,23 @@
     </div>
   </section>
   <section id="tab-rules" hidden>
-    <div class="card"><h2>Active rules</h2><div id="rule-versions"></div>
-      <button id="reset-rules" class="secondary">Reset to baseline rules</button></div>
-    <div class="card">
+    <div class="rules-heading">
       <h2>Create or update rules</h2>
-      <p class="muted">Paste payer rule text or describe a change. The AI proposes a rule version and examples; nothing takes effect until you review and activate it. You can also write rules by hand without AI.</p>
-      <textarea id="new-request" rows="5" placeholder="Paste payer rule text (markdown), or describe a change"></textarea>
-      <label>Or load a markdown file <input type="file" id="rules-file" accept=".md,.markdown,.txt,text/markdown,text/plain"></label>
-      <p class="muted small">File text is placed in the box above and held in this session's state only; the app never reads rule documents from disk.</p>
-      <button id="start-draft">Ask AI to draft rules</button>
-      <button id="start-manual" class="secondary">Start a manual draft</button>
+      <p class="muted">Upload a payer’s Markdown document, review what changes, then refine it in chat.</p>
+      <label class="upload-rule" for="rules-file"><span>＋ Upload Markdown</span><span class="small muted">.md or .markdown</span>
+        <input type="file" id="rules-file" accept=".md,.markdown,text/markdown" aria-label="Upload payer rules Markdown">
+      </label>
+      <p id="rules-status" class="small muted" role="status"></p>
     </div>
-    <div id="draft"></div>
-    <div class="card"><h2>Validate active rules on recorded outcomes</h2>
-      <p class="muted">Replays the supplied claim history. Recorded denials with unexplained reasons (e.g. contract terms) are expected to be missed.</p>
-      <button id="run-accuracy" class="secondary">Run on history</button><div id="accuracy"></div></div>
-    <div class="card"><h2>Confirmed acceptance tests</h2><div id="acceptance"></div></div>
+    <div id="rules-conversation" class="rules-conversation" aria-label="Rule update conversation" aria-live="polite">
+      <div id="rules-empty" class="rules-empty"><span class="empty-icon" aria-hidden="true">↗</span><h3>Start with your payer document</h3><p>I’ll explain the rule update and show examples of the outcomes it changes.</p></div>
+    </div>
+    <form id="rule-composer" class="rule-composer" hidden>
+      <div id="example-context" class="example-context" hidden></div>
+      <label for="rule-message">Message the rule assistant</label>
+      <textarea id="rule-message" rows="2" placeholder="Ask for a change, or click an example to comment on it…"></textarea>
+      <div class="composer-footer"><span class="small muted">Review examples before activating a rule update.</span><button type="submit" id="send-rule-message">Send ↑</button></div>
+    </form>
   </section>
 </main>
 <script src="app.js"></script>

@@ -103,6 +103,22 @@ class Workflow(unittest.TestCase):
         self.assertGreater(len(self.store.acceptance), 3)
         self.assertTrue(all(t["basis"] == "user_confirmed" and t["effective_from"] == "2026-08-01" for t in self.store.acceptance))
 
+    def test_only_changed_examples_require_review_and_are_saved(self):
+        d, _ = self.drafted()
+        ev = evaluate(d, self.store, self.ds)
+        changed = [r for r in ev["examples"] if r["changed"]]
+        unchanged = [r for r in ev["examples"] if not r["changed"]]
+        self.assertTrue(changed)
+        self.assertTrue(unchanged)
+        self.assertEqual(ev["undecided"], len(changed))
+        for r in changed:
+            self.assertIn("before_status", r)
+            decide(d, r["id"], "set", r["actual"]["codes"])
+        self.assertTrue(evaluate(d, self.store, self.ds)["can_activate"])
+        activate(d, self.store, self.ds)
+        self.assertEqual(len(self.store.acceptance), len(changed))
+        self.assertEqual({t["title"] for t in self.store.acceptance}, {r["title"] for r in changed})
+
     def test_impact_on_history_shows_changed_outcomes_for_affected_dates_only(self):
         d, _ = self.drafted()
         imp = evaluate(d, self.store, self.ds)["impact"]

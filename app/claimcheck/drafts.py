@@ -134,7 +134,8 @@ def evaluate(draft, store, dataset):
     for r in after:
         dec = draft["decisions"].get(r["id"])
         r["before"] = before[r["id"]]["actual"]["codes"]
-        r["changed"] = r["before"] != r["actual"]["codes"]
+        r["before_status"] = before[r["id"]]["actual"]["status"]
+        r["changed"] = (r["before_status"], r["before"]) != (r["actual"]["status"], r["actual"]["codes"])
         r["decision"] = dec
         final = None
         if dec and dec["decision"] in ("confirm", "set"):
@@ -142,7 +143,7 @@ def evaluate(draft, store, dataset):
         r["final_expected"] = final
         r["matches_decision"] = None if final is None else sorted(final) == sorted(r["actual"]["codes"])
     ev["examples"] = after
-    ev["undecided"] = sum(1 for r in after if not r["decision"])
+    ev["undecided"] = sum(1 for r in after if r["changed"] and not r["decision"])
     mismatched = [r for r in after if r["matches_decision"] is False]
     ev["regressions"] = [t for t in run_examples([t for t in store.acceptance if not t.get("superseded_by")], cand) if t["passed"] is False]
     ev["impact"] = impact(dataset, store, cand) if dataset.history else None
@@ -189,6 +190,8 @@ def activate(draft, store, dataset, regression_reason=""):
                     old["superseded_reason"] = regression_reason.strip()
     for r in ev["examples"]:
         d = r["decision"]
+        if not d:
+            continue  # Unchanged examples run in the background and need no user decision.
         if d["decision"] == "unclear":
             version.setdefault("open_questions", []).append(f"{r['title']}: {d.get('note') or 'payer clarification needed'}")
             continue

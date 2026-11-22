@@ -11,12 +11,12 @@ Standard library only (Python 3.10+; developed on 3.14). No install step.
 ```bash
 cd app
 python3 server.py            # http://127.0.0.1:8000  (--port N to change)
-python3 -m unittest discover -s tests -t .   # 51 tests, ~8s
+python3 -m unittest discover -s tests -t .   # 52 tests, ~8s
 ```
 
 Optional AI rule assistant: `export ANTHROPIC_API_KEY=...` before starting (read from the environment
 only; never echoed, logged or saved). Model defaults to `claude-sonnet-5-5`
-(`ANTHROPIC_MODEL` overrides). Without a key everything else works, including manual rule drafts.
+(`ANTHROPIC_MODEL` overrides). The rules chat requires a key. Claims checks and manual rule drafts through the HTTP API work without one.
 
 ## Use
 
@@ -26,9 +26,11 @@ only; never echoed, logged or saved). Model defaults to `claude-sonnet-5-5`
    evidence, suggested actions, proposed fixes (applied only on click), field edits, and your own classification
    override (with a reason). Download the results CSV (original columns untouched + result columns).
 2. **Payer rules**: rules are versioned per payer and apply by *date of service* (the baseline is the three base
-   manuals only; no later updates are preloaded). Paste or load a markdown file of rule text, or ask for a change; review the AI's draft, example scenarios (confirm /
-   correct / "needs payer clarification"), impact on recorded history and regressions against earlier confirmed
-   tests, then activate. Confirmed examples are saved as versioned acceptance tests (`state/rules.json`).
+   manuals only; no later updates are preloaded). Upload a Markdown payer document to start a single chat. Each assistant reply shows the proposed
+   rule changes and only examples whose outcomes change, with before/after results. Click an example
+   (including a changed historical claim) to attach its context to a message, or ask for a rule edit directly.
+   Review affected examples (confirm / correct / "needs payer clarification"), then activate. Unchanged
+   scenarios run in the background and require no decision; regressions against confirmed tests remain visible. Confirmed examples are saved as versioned acceptance tests (`state/rules.json`).
 
 ## Layout
 
@@ -39,7 +41,8 @@ ledger, pending-claim review · `pipeline.py` batch run/export · `examples.py` 
 ## Known limits
 
 - AI path is tested only with a fake transport; it has not been run against the live API.
-- No browser test: the UI was checked by headless-Firefox screenshots only. Tests cover the HTTP API end to end.
+- The rules chat was checked in headless Firefox with a fake AI: upload, changed examples, comments,
+  revisions, review, activation, and desktop/mobile layouts. Automated tests cover the HTTP API end to end.
 - Rule vocabulary is closed (EVV rounding, authorization, filing limit, modifier-by-weekday, daily maximum,
   duplicates, notes). Contract terms (Summit D10) and unspecified D99 denials can't be modelled; these remain misses.
 - One draft = one payer version; multi-document uploads are done one document at a time.

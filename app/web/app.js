@@ -47,7 +47,7 @@ document.querySelectorAll("nav button").forEach((b) => b.addEventListener("click
 
 async function loadStatus() {
   const s = await api("GET", "/api/status");
-  $("ai-status").textContent = s.ai_available ? `AI rule assistant ready (${s.model})` : "AI rule assistant off: ANTHROPIC_API_KEY not set (manual rule editing still works)";
+  $("ai-status").textContent = s.ai_available ? `AI rule assistant ready (${s.model})` : "AI rule assistant off: set ANTHROPIC_API_KEY to create or update rules";
   const d = s.data;
   const card = $("data-card");
   card.replaceChildren(
@@ -150,93 +150,208 @@ function overrideForm(r) {
     }) }, "Save classification")));
 }
 
-// ---------- rules ----------
-async function loadRules() {
-  const rv = await api("GET", "/api/rules");
-  $("rule-versions").replaceChildren(...Object.entries(rv.payers).map(([pid, p]) =>
-    h("div", {}, h("h3", {}, `${pid} — ${p.name}`), ...p.versions.map((v) => h("details", {},
-      h("summary", {}, `v${v.version} · applies to service dates from ${v.effective_from} · ${v.summary || ""}`),
-      h("div", { class: "muted small" }, "Source: " + v.source), v.open_questions ? h("div", { class: "warning" }, "Open: " + v.open_questions.join("; ")) : null,
-      h("pre", {}, JSON.stringify(v.params, null, 2)))))));
-  $("acceptance").replaceChildren(rv.acceptance.length ? h("table", {}, h("tr", {}, ...["Payer", "From", "Example", "Expected codes", "Basis"].map((t) => h("th", {}, t))),
-    ...rv.acceptance.map((t) => h("tr", {}, h("td", {}, t.payer_id), h("td", {}, t.effective_from), h("td", {}, t.title + (t.superseded_by ? ` (superseded by v${t.superseded_by}: ${t.superseded_reason})` : "")),
-      h("td", {}, t.expected_codes.length ? codeChips(t.expected_codes) : "payable"), h("td", {}, t.basis + (t.ai_proposed ? " (AI proposed)" : ""))))) : h("p", { class: "muted" }, "None yet. Confirm examples when activating a rule update."));
-}
-$("reset-rules").addEventListener("click", () => guard(async () => { if (confirm("Replace all rules and confirmed tests with the baseline rules?")) { await api("POST", "/api/rules/reset"); await loadRules(); await refreshResults(); } }));
-$("rules-file").addEventListener("change", (e) => guard(async () => { const f = e.target.files[0]; if (f) $("new-request").value = await f.text(); e.target.value = ""; }));
-$("start-draft").addEventListener("click", () => guard(async () => {
-  const message = $("new-request").value.trim(); if (!message) throw new Error("Enter the rule text or request first");
-  showDraft(await api("POST", "/api/drafts", { message })); $("new-request").value = "";
-}));
-$("start-manual").addEventListener("click", () => guard(async () => showDraft(await api("POST", "/api/drafts", { payer_id: "PY01", effective_from: "", params: {}, source: "" }))));
-$("run-accuracy").addEventListener("click", () => guard(async () => {
-  const a = await api("GET", "/api/accuracy");
-  $("accuracy").replaceChildren(h("p", {}, `${(a.accuracy * 100).toFixed(2)}% of ${a.claims} recorded claims matched (status and code set). Denials with their recorded code detected: ${a.actual_denied_code_detected}/${a.actual_denied}. Missed denials: ${a.missed_denials}. False alarms on paid claims: ${a.false_alarms}.`));
-}));
+// ---------- rules: one conversation ----------
+let activeRules = null, currentView = null, selectedExample = null, ruleBusy = false;
+const threads = new Map();
+const DENIAL_MEANING = { D01: "No verified EVV visit", D02: "Authorization units exceeded", D03: "Filing deadline exceeded", D04: "Missing or invalid modifier", D05: "Duplicate claim", D06: "Daily maximum exceeded", D07: "Authorization missing", D08: "Invalid authorization", D09: "Verified time exceeded", D10: "Contract requirement", D99: "Manual review" };
+async function loadRules() { return guard(async () => { activeRules = await api("GET", "/api/rules"); }); }
 
+// A small, safe Markdown renderer: document/model text is always added as text nodes.
+function inline(text) {
+  return String(text).split(/(\*\*[^*]+\*\*|`[^`]+`)/g).map((part) =>
+    part.startsWith("**") ? h("strong", {}, part.slice(2, -2)) : part.startsWith("`") ? h("code", {}, part.slice(1, -1)) : part);
+}
+function markdown(text) {
+  const box = h("div", { class: "chat-prose" });
+  let list = null;
+  for (const line of String(text || "").split("\n")) {
+    const item = line.match(/^\s*(?:[-*]|\d+\.)\s+(.+)/);
+    if (item) {
+      if (!list) { list = h("ul"); box.append(list); }
+      list.append(h("li", {}, inline(item[1])));
+    } else {
+      list = null;
+      if (line.trim()) box.append(h(/^#{1,6}\s/.test(line) ? "h3" : "p", {}, inline(line.replace(/^#{1,6}\s+/, ""))));
+    }
+  }
+  return box;
+}
+function message(role, ...content) {
+  return h("article", { class: "rule-message " + role }, h("div", { class: "message-author" }, role === "user" ? "You" : "Rule assistant"), h("div", { class: "message-body" }, ...content));
+}
+async function ruleTask(task, label) {
+  if (ruleBusy) return;
+  ruleBusy = true;
+  $("rules-status").textContent = label;
+  $("rules-conversation").setAttribute("aria-busy", "true");
+  setRuleControls();
+  try { return await task(); }
+  catch (e) { $("rules-status").textContent = e.message; }
+  finally {
+    ruleBusy = false;
+    $("rules-conversation").removeAttribute("aria-busy");
+    setRuleControls();
+  }
+}
+function setRuleControls() {
+  $("rules-file").disabled = ruleBusy;
+  $("send-rule-message").disabled = ruleBusy;
+  $("rule-message").disabled = ruleBusy;
+  document.querySelectorAll(".rule-actions button").forEach((b) => { b.disabled = ruleBusy || b.dataset.blocked === "true"; });
+}
+$("rules-file").addEventListener("change", (event) => {
+  const file = event.target.files[0];
+  if (!file) return;
+  ruleTask(async () => {
+    if (!/\.(md|markdown)$/i.test(file.name)) throw new Error("Choose a .md or .markdown file.");
+    const text = await file.text();
+    if (!text.trim()) throw new Error("This Markdown file is empty.");
+    const view = await api("POST", "/api/drafts", { message: text });
+    threads.set(view.draft.id, { root: h("div", { class: "conversation-thread" }), turns: new Map(), filename: file.name });
+    $("rules-empty").hidden = true;
+    $("rules-conversation").append(threads.get(view.draft.id).root);
+    selectExample(null);
+    $("rule-message").value = "";
+    showDraft(view);
+    $("rules-status").textContent = "Document reviewed. The proposed rules are ready below.";
+    event.target.value = "";
+  }, "Reading document and checking affected examples…");
+});
+$("rule-composer").addEventListener("submit", (event) => {
+  event.preventDefault();
+  const text = $("rule-message").value.trim();
+  if (!text || !currentView || ruleBusy) return;
+  const context = selectedExample ? "Regarding this example:\n" + JSON.stringify(selectedExample, null, 2) + "\n\n" : "";
+  ruleTask(async () => {
+    const view = await api("POST", `/api/drafts/${currentView.draft.id}/chat`, { message: context + text });
+    // Store the short display text separately; the AI receives the full scenario.
+    const thread = threads.get(view.draft.id);
+    thread.nextUser = { text, title: selectedExample && selectedExample.title };
+    selectExample(null);
+    $("rule-message").value = "";
+    showDraft(view);
+    $("rules-status").textContent = "Rule update revised. Review the latest examples below.";
+  }, "Updating the rule and re-checking examples…");
+});
+$("rule-message").addEventListener("keydown", (event) => {
+  if (event.key === "Enter" && !event.shiftKey && !event.isComposing) { event.preventDefault(); $("rule-composer").requestSubmit(); }
+});
+function selectExample(example) {
+  selectedExample = example;
+  const box = $("example-context"); box.hidden = !example;
+  box.replaceChildren(example ? [h("span", {}, "Commenting on: ", h("strong", {}, example.title)), h("button", { type: "button", class: "secondary", "aria-label": "Remove example from message", onclick: () => selectExample(null) }, "×")] : []);
+  document.querySelectorAll(".example-select").forEach((b) => b.setAttribute("aria-pressed", String(!!example && b.dataset.exampleKey === example.key)));
+  if (example) $("rule-message").focus();
+}
+function outcome(status, codes) {
+  return h("div", { class: "outcome" }, badge(status === "paid" ? "payable" : status, STATUS_LABEL[status] || status),
+    codes.length ? h("span", { class: "outcome-codes" }, codes.map((c) => h("span", { title: DENIAL_MEANING[c] || c }, codeChips([c]), " ", DENIAL_MEANING[c] || c))) : null);
+}
+const FIELD_LABELS = { timely_filing_days: "Filing limit (days)", daily_max_units: "Daily maximum (units)", modifier_rules: "Required modifiers", evv: "Visit verification", authorization: "Authorization", duplicates: "Duplicate checks", notes: "Notes" };
+function ruleValue(value) {
+  if (value == null) return "Not set";
+  if (typeof value === "boolean") return value ? "Required" : "Not required";
+  if (Array.isArray(value)) return value.length ? value.map((v) => typeof v === "object" ? `${v.service_code}: ${v.modifier}${v.days && v.days.length ? " (" + v.days.join(", ") + ")" : ""}` : v).join("; ") : "None";
+  if (typeof value === "object") return Object.entries(value).map(([k, v]) => `${k.replaceAll("_", " ")}: ${ruleValue(v)}`).join("; ");
+  return String(value).replaceAll("_", " ");
+}
+function ruleSummary(d) {
+  const versions = activeRules?.payers[d.payer_id]?.versions || [];
+  const prior = versions.filter((v) => v.effective_from <= d.effective_from).at(-1);
+  const changes = Object.entries(d.params).filter(([key, value]) => JSON.stringify(prior?.params[key]) !== JSON.stringify(value));
+  return h("section", { class: "rule-summary" }, h("div", { class: "rule-summary-heading" }, h("strong", {}, d.summary || "Proposed rule update"), badge("review", "Draft")),
+    h("p", { class: "muted" }, `${d.payer_name || activeRules?.payers[d.payer_id]?.name || d.payer_id || "Payer to confirm"} · ${d.payer_id || ""} · Service dates from ${d.effective_from || "to be confirmed"}`),
+    changes.length ? h("dl", { class: "rule-diff" }, ...changes.map(([key, value]) => h("div", {}, h("dt", {}, FIELD_LABELS[key] || key.replaceAll("_", " ")), h("dd", {}, h("span", { class: "muted" }, ruleValue(prior?.params[key])), h("span", { class: "change-arrow", "aria-label": "changes to" }, " → "), h("strong", {}, ruleValue(value)))))) : null,
+    d.source ? h("details", { class: "source-detail" }, h("summary", {}, "Source passage"), h("blockquote", {}, d.source)) : null);
+}
 function showDraft(view) {
+  currentView = view;
+  const d = view.draft, thread = threads.get(d.id), last = d.messages.length - 1;
+  // Retain each assistant response and its evaluated examples as a separate chat turn.
+  for (let i = 0; i < d.messages.length; i++) {
+    if (thread.turns.has(i)) continue;
+    const m = d.messages[i];
+    let node;
+    if (m.role === "user") {
+      if (i === 0 && thread.filename) node = message("user", h("strong", { class: "file-attachment" }, "↥ " + thread.filename), h("p", {}, "Create or update the payer rules from this document."), h("details", {}, h("summary", {}, "View uploaded document"), markdown(m.content)));
+      else node = message("user", thread.nextUser?.title ? h("div", { class: "quoted-example" }, "On: " + thread.nextUser.title) : null, markdown(thread.nextUser?.text || m.content));
+      thread.nextUser = null;
+    } else node = message("assistant", markdown(m.content));
+    thread.turns.set(i, node); thread.root.append(node);
+  }
+  const isNewReply = thread.lastReply !== last;
+  thread.lastReply = last;
+  const latest = thread.turns.get(last);
+  if (latest && d.messages[last].role === "assistant") {
+    latest.querySelector(".update-output")?.remove();
+    latest.querySelector(".message-body").append(updateOutput(view));
+  }
+  // Previous turns remain readable, while decisions always apply to the latest revision.
+  for (const t of threads.values()) for (const [index, node] of t.turns) {
+    const old = t !== thread || index !== last;
+    node.querySelectorAll(".rule-actions").forEach((el) => { el.hidden = old; });
+  }
+  $("rule-composer").hidden = d.status === "activated";
+  setRuleControls();
+  if (isNewReply && latest) latest.scrollIntoView({ behavior: "smooth", block: "start" });
+}
+function updateOutput(view) {
   const d = view.draft, ev = view.evaluation;
-  const root = $("draft");
-  const f = (key, label, size) => { const i = h("input", { value: d[key], size }); i.dataset.key = key; return h("label", {}, label, i); };
-  const params = h("textarea", { rows: 10, class: "mono" }); params.value = JSON.stringify(d.params, null, 2);
-  const fields = h("div", { class: "row" }, f("payer_id", "Payer ID", 7), f("payer_name", "Payer name", 22), f("effective_from", "Applies to service dates from (YYYY-MM-DD)", 12), f("source", "Source / evidence", 40));
-  const save = () => guard(async () => {
-    const body = { params: JSON.parse(params.value) };
-    fields.querySelectorAll("input").forEach((i) => (body[i.dataset.key] = i.value));
-    showDraft(await api("PUT", `/api/drafts/${d.id}`, body));
-  });
-  const chatBox = h("div", { class: "chat" }, d.messages.length ? d.messages.map((m) => h("div", { class: "msg " + m.role }, (m.role === "user" ? "You: " : "AI: ") + m.content)) : h("span", { class: "muted" }, "No AI conversation yet."));
-  const msg = h("input", { size: 70, placeholder: "Ask for a change, e.g. “apply this only to T1019” or “make it 50 days”" });
-  const chatRow = h("div", { class: "row" }, msg, h("button", { onclick: () => guard(async () => { if (!msg.value.trim()) return; showDraft(await api("POST", `/api/drafts/${d.id}/chat`, { message: msg.value })); }) }, "Send to AI"));
-  const reason = h("input", { size: 50, placeholder: "Reason / source for changing earlier confirmed expectations" });
-  const kids = [h("div", { class: "card" }, h("h2", {}, `Draft rule version${d.summary ? " — " + d.summary : ""}`),
-    view.notes.length ? h("div", { class: "warning" }, view.notes.join("\n")) : null, chatBox, chatRow,
-    h("h3", {}, "Rule version (edit by hand if needed)"), fields,
-    h("p", { class: "muted small" }, "params are merged over the version in force at that date. Only listed keys change."), params,
-    h("button", { class: "secondary", onclick: save }, "Apply edits and re-run examples")),
-  ];
-  if (ev.problems.length) kids.push(h("div", { class: "warning" }, ev.problems.join("\n")));
-  if (ev.examples.length) kids.push(h("div", { class: "card" }, h("h2", {}, "Examples — confirm the correct outcome for each"),
-    h("p", { class: "muted small" }, "AI-proposed expectations are suggestions, not proof. Confirm, correct or mark as needing payer clarification; confirmed examples become saved tests."),
-    ...ev.examples.map((e) => exampleCard(d, e))));
+  const examples = ev.examples.filter((e) => e.changed);
+  const output = h("div", { class: "update-output" }, ruleSummary(d));
+  for (const note of [...(view.notes || []), ...ev.problems]) output.append(h("p", { class: "warning" }, note));
+  if ((Object.keys(d.params).length && !ev.problems.length) || examples.length) {
+    output.append(h("h3", { class: "examples-heading" }, `${examples.length} affected example${examples.length === 1 ? "" : "s"}`),
+      h("p", { class: "small muted" }, "Only changed outcomes are shown. Click an example to discuss it, or review its result below."));
+    output.append(...examples.map((e) => exampleCard(d, e)));
+    if (!examples.length) output.append(h("p", { class: "muted" }, "No generated example outcomes change with this update."));
+  }
   if (ev.impact) {
     const i = ev.impact;
-    kids.push(h("div", { class: "card" }, h("h2", {}, "Impact on recorded history"),
-      h("p", {}, `${i.changed_count} historical claim outcomes would change; ${i.now_correct} would match their recorded outcome and ${i.now_wrong} would no longer match. Accuracy ${(i.accuracy_before.accuracy * 100).toFixed(2)}% → ${(i.accuracy_after.accuracy * 100).toFixed(2)}%.`),
-      i.examples.length ? h("table", {}, h("tr", {}, ...["Claim", "Payer", "Service date", "Before", "After", "Recorded"].map((t) => h("th", {}, t))),
-        ...i.examples.map((c) => h("tr", {}, h("td", {}, c.claim_id), h("td", {}, c.payer), h("td", {}, c.date_of_service), h("td", {}, c.before.status, " ", codeChips(c.before.codes)),
-          h("td", {}, c.after.status, " ", codeChips(c.after.codes)), h("td", {}, c.actual.status, " ", c.actual.code)))) : null));
+    output.append(h("p", { class: "history-impact" }, h("strong", {}, `${i.changed_count} recorded claim outcome${i.changed_count === 1 ? "" : "s"} would change.`), ` ${i.now_correct} would match their recorded outcome; ${i.now_wrong} would stop matching.`));
+    if (i.examples.length) output.append(h("details", {}, h("summary", {}, `Changed historical claims (${i.examples.length} shown)`), ...i.examples.map((c) => {
+      const data = { key: `${d.id}-history-${c.claim_id}`, title: `Historical claim ${c.claim_id}`, ...c };
+      return h("div", { class: "example" }, h("button", { type: "button", class: "example-select", "data-example-key": data.key, "aria-pressed": "false", onclick: () => selectExample(data) }, h("strong", {}, c.claim_id), h("span", { class: "small muted" }, `${c.payer} · Service ${c.date_of_service}`), comparison(c.before.status, c.before.codes, c.after.status, c.after.codes), h("span", { class: "small muted" }, `Recorded outcome: ${c.actual.status}${c.actual.code ? " · " + c.actual.code : ""} · Click to comment →`)));
+    })));
   }
-  if (ev.regressions.length) kids.push(h("div", { class: "failure" }, h("b", {}, `${ev.regressions.length} previously confirmed test(s) would change:`),
-    ...ev.regressions.map((t) => h("div", {}, `${t.title}: expected ${t.expected_codes.join(", ") || "payable"}, now ${t.actual.codes.join(", ") || "payable"}`)), reason));
-  kids.push(h("div", { class: "card" }, h("button", { disabled: !ev.can_activate, onclick: () => guard(async () => {
+  const reason = h("input", { placeholder: "Reason / source for changing earlier confirmed expectations", "aria-label": "Reason for changing earlier confirmed expectations" });
+  if (ev.regressions.length) output.append(h("div", { class: "warning" }, h("strong", {}, `${ev.regressions.length} previously confirmed tests would change`), ...ev.regressions.map((r) => h("p", {}, `${r.title}: ${r.expected_codes.join(", ") || "payable"} → ${r.actual.codes.join(", ") || "payable"}`)), reason));
+  const activate = h("button", { type: "button", disabled: !ev.can_activate, "data-blocked": String(!ev.can_activate), onclick: () => ruleTask(async () => {
     await api("POST", `/api/drafts/${d.id}/activate`, { regression_reason: reason.value });
-    root.replaceChildren(h("div", { class: "card ok" }, "Rule version activated and saved. Current claim results were re-checked."));
-    await loadRules(); await refreshResults(); }) }, "Activate this rule version"),
-    h("span", { class: "muted" }, ev.undecided ? `  ${ev.undecided} example(s) still need a decision` : "")));
-  root.replaceChildren(...kids);
+    d.status = "activated";
+    output.querySelectorAll(".rule-actions").forEach((el) => { el.hidden = true; });
+    output.append(h("p", { class: "activation-success", role: "status" }, "✓ Rule update activated. Current claims have been re-checked."));
+    $("rule-composer").hidden = true;
+    selectExample(null);
+    await loadRules(); await refreshResults();
+    $("rules-status").textContent = "Rules saved. Upload another document to start a new update.";
+  }, "Activating reviewed rules…") }, "Activate rule update");
+  output.append(h("div", { class: "rule-actions activation-row" }, activate, h("span", { class: "small muted" }, ev.undecided ? `${ev.undecided} affected example${ev.undecided === 1 ? "" : "s"} to review` : ev.can_activate ? "Ready to activate after your review." : "Reply below to complete this draft.")));
+  return output;
 }
-
+function comparison(beforeStatus, beforeCodes, afterStatus, afterCodes) {
+  return h("div", { class: "outcome-comparison" }, h("div", {}, h("span", { class: "outcome-label" }, "Before"), outcome(beforeStatus, beforeCodes)), h("span", { class: "change-arrow", "aria-hidden": "true" }, "→"), h("div", {}, h("span", { class: "outcome-label" }, "After update"), outcome(afterStatus, afterCodes)));
+}
 function exampleCard(d, e) {
-  const c = e.claim, x = e.context, act = e.actual.codes;
-  const decide = (decision, codes) => guard(async () => showDraft(await api("POST", `/api/drafts/${d.id}/decide`, { example_id: e.id, decision, codes, note: "" })));
-  const dec = e.decision;
-  const sel = CODES.map((k) => h("label", { style: "display:inline-block;margin-right:6px" }, h("input", { type: "checkbox", value: k, style: "display:inline", checked: dec && dec.codes && dec.codes.includes(k) }), " " + k));
-  const cls = e.matches_decision === false ? " fail" : dec ? " done" : "";
-  return h("div", { class: "example" + cls }, h("b", {}, e.title), h("span", { class: "muted small" }, ` [${e.origin || "example"}]`),
-    h("div", { class: "small muted" }, `Claim: ${c.service_code} on ${c.date_of_service}, submitted ${c.submitted_date}, ${c.units} units, modifier ${c.modifier || "none"}${c.frequency_code === "7" ? ", corrected claim" : ""}. `
-      + `Context: EVV ${(x.evv_minutes || []).join("+") || "none"} min${x.unverified_evv_minutes ? ` (+${x.unverified_evv_minutes.join("+")} unverified)` : ""}, auth ${x.auth || "valid"}${x.auth_units_remaining != null ? ` (${x.auth_units_remaining} units left)` : ""}`
-      + `${x.daily_paid_units ? `, ${x.daily_paid_units} units already paid that day` : ""}${x.prior_submission ? ", earlier submission exists" : ""}.`),
-    h("div", {}, "AI proposed: ", e.expected_codes == null ? h("span", { class: "muted" }, "nothing (your call)") : e.expected_codes.length ? codeChips(e.expected_codes) : "payable",
-      "   Before update: ", (e.before.length ? codeChips(e.before) : "payable"), "   Rule now gives: ", act.length ? codeChips(act) : "payable", e.changed ? h("b", {}, "  (changed)") : null),
-    e.actual.reasons.length ? h("div", { class: "muted small" }, e.actual.reasons.join(" | ")) : null,
-    h("div", { class: "row" },
-      e.expected_codes != null ? h("button", { class: "secondary", onclick: () => decide("confirm") }, "Confirm AI's expectation") : null,
-      h("button", { class: "secondary", onclick: () => decide("set", act) }, "Rule result is correct"),
-      h("span", {}, "or set: ", sel, h("button", { class: "secondary", onclick: () => decide("set", sel.map((l) => l.firstChild).filter((i) => i.checked).map((i) => i.value)) }, "Set (none ticked = payable)")),
-      h("button", { class: "secondary", onclick: () => decide("unclear") }, "Needs payer clarification")),
-    dec ? h("div", { class: dec.decision === "unclear" ? "warning" : e.matches_decision ? "ok" : "bad" },
-      dec.decision === "unclear" ? "Marked as needing payer clarification (not saved as a test)" : `Your expectation: ${(e.final_expected || []).join(", ") || "payable"} — ${e.matches_decision ? "rule agrees" : "rule DISAGREES: edit the rule or the expectation"}`) : null);
+  const c = e.claim, x = e.context, dec = e.decision;
+  const data = { key: `${d.id}-${e.id}`, title: e.title, claim: c, context: x, before: { status: e.before_status, codes: e.before }, after: e.actual };
+  const decide = (decision, codes) => ruleTask(async () => { showDraft(await api("POST", `/api/drafts/${d.id}/decide`, { example_id: e.id, decision, codes, note: "" })); $("rules-status").textContent = "Example review saved."; }, "Saving example review…");
+  const codeSelect = CODES.map((code) => h("label", {}, h("input", { type: "checkbox", value: code, checked: !!dec?.codes?.includes(code) }), code + " · " + DENIAL_MEANING[code]));
+  const status = dec ? dec.decision === "unclear" ? "Needs payer clarification" : e.matches_decision ? "✓ Reviewed" : "Expectation differs — revise the rule" : "Needs your review";
+  return h("div", { class: "example" + (e.matches_decision === false ? " fail" : dec ? " done" : "") },
+    h("button", { type: "button", class: "example-select", "data-example-key": data.key, "aria-pressed": String(selectedExample?.key === data.key), onclick: () => selectExample(data) },
+      h("div", { class: "example-title" }, h("strong", {}, e.title), h("span", { class: "small " + (dec ? "ok" : "muted") }, status)),
+      h("p", { class: "claim-facts" }, `${c.service_code} · ${c.units} units · Service ${c.date_of_service} · Submitted ${c.submitted_date}`),
+      comparison(e.before_status, e.before, e.actual.status, e.actual.codes),
+      h("span", { class: "comment-hint" }, "Click to comment on this example →")),
+    h("details", { class: "example-evidence" }, h("summary", {}, "Why this changes / claim context"),
+      ...e.actual.reasons.map((r) => h("p", {}, r)),
+      !e.actual.codes.length && e.before.length ? h("p", {}, "This update removes: " + e.before.map((code) => `${code} (${DENIAL_MEANING[code]})`).join(", ")) : null,
+      h("dl", {}, ...Object.entries({ ...c, ...x }).map(([key, value]) => h("div", {}, h("dt", {}, key.replaceAll("_", " ")), h("dd", {}, Array.isArray(value) ? value.join(" + ") || "None" : String(value)))))),
+    h("div", { class: "rule-actions example-review" },
+      h("button", { type: "button", class: "secondary", onclick: () => decide("set", e.actual.codes) }, "Result is correct"),
+      h("button", { type: "button", class: "text-button", onclick: () => decide("unclear") }, "Needs payer clarification"),
+      h("details", { class: "correct-expectation" }, h("summary", {}, "Set a different expectation"), h("p", { class: "small muted" }, "Choose all expected denial codes, or leave empty for payable."), h("div", { class: "code-options" }, codeSelect), h("button", { type: "button", class: "secondary", onclick: () => decide("set", codeSelect.map((label) => label.firstChild).filter((i) => i.checked).map((i) => i.value)) }, "Save expectation"))));
 }
 
 guard(async () => { await loadStatus(); await refreshResults(); });
