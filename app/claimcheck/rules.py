@@ -173,28 +173,20 @@ class RuleStore:
         return version
 
 
-def seed_store(path=None):
-    """Rules transcribed from the supplied payer manuals and bulletins."""
+def baseline_store(path=None):
+    """Baseline rules transcribed from the three payers' base manuals only. Later changes go through the update workflow."""
     store = RuleStore(path)
     base = "1900-01-01"
     store.add_version("PY01", base, dict(
         evv={"required": True, "rounding": "eight_minute"}, authorization={"required": True},
         timely_filing_days=30, modifier_rules=[], daily_max_units=None, duplicate_check=True, notes=[]),
         source="Northwind Provider Manual 4.2, 4.3, 4.5, 6.1, 6.4", summary="Northwind manual", payer_name="Northwind Health Plan")
-    store.add_version("PY01", "2026-08-01", dict(timely_filing_days=45),
-                      source="Northwind Provider Bulletin 2026-07: 45 days for dates of service on/after 1 Aug 2026",
-                      summary="Extended timely filing to 45 days")
     store.add_version("PY02", base, dict(
         evv={"required": True, "rounding": "full_units"}, authorization={"required": True},
         timely_filing_days=None, modifier_rules=[{"service_code": "T1019", "days": None, "modifier": "U2"}],
         daily_max_units=32, duplicate_check=True, notes=[]),
         source="Harbor Billing Guide: Visit verification, Authorizations, Modifiers, Daily maximum, Filing limits, Duplicates",
         summary="Harbor billing guide", payer_name="Harbor Medicaid Plan")
-    store.add_version("PY02", "2026-09-01", dict(modifier_rules=[
-        {"service_code": "T1019", "days": None, "modifier": "U2"},
-        {"service_code": "T1019", "days": ["sat", "sun"], "modifier": "U3"}]),
-        source="Harbor Provider Notice 2026-08: weekend T1019 uses U3 from 1 Sep 2026",
-        summary="Weekend personal care modifier U3")
     store.add_version("PY03", base, dict(
         evv={"required": True, "rounding": "full_units"}, authorization={"required": True},
         timely_filing_days=60, modifier_rules=[], daily_max_units=None, duplicate_check=True,

@@ -5,9 +5,9 @@ Expected code sets come from the payer documents, not from engine output.
 import unittest
 
 from claimcheck.examples import run_scenario, run_examples, validate_scenario
-from claimcheck.rules import seed_store, validate_params, RuleStore
+from claimcheck.rules import baseline_store, validate_params, RuleStore
 
-RULES = seed_store()
+RULES = baseline_store()
 
 
 def run(payer, dos="2026-07-15", sub=None, units=4, svc="T1019", mod="U2", ctx=None, freq="1"):
@@ -54,27 +54,20 @@ class Authorization(unittest.TestCase):
 
 
 class FilingAndModifiers(unittest.TestCase):
-    def test_northwind_limit_changes_for_service_on_1_august(self):
+    def test_northwind_baseline_30_days(self):
         self.assertEqual(run("PY01", dos="2026-07-31", sub="2026-08-30"), [])            # day 30
         self.assertEqual(run("PY01", dos="2026-07-31", sub="2026-08-31"), ["D03"])       # day 31
-        self.assertEqual(run("PY01", dos="2026-07-31", sub="2026-09-09"), ["D03"])       # 40 days
-        self.assertEqual(run("PY01", dos="2026-08-01", sub="2026-09-10"), [])            # 40 days, new limit
-        self.assertEqual(run("PY01", dos="2026-08-01", sub="2026-09-15"), [])            # exactly 45
-        self.assertEqual(run("PY01", dos="2026-08-01", sub="2026-09-16"), ["D03"])       # 46
+        self.assertEqual(run("PY01", dos="2026-08-01", sub="2026-09-10"), ["D03"])       # 40 days, no later version loaded
 
     def test_summit_60_days_and_harbor_none(self):
         self.assertEqual(run("PY03", dos="2026-07-01", sub="2026-08-30"), [])
         self.assertEqual(run("PY03", dos="2026-07-01", sub="2026-08-31"), ["D03"])
         self.assertEqual(run("PY02", dos="2026-07-01", sub="2026-12-01"), [])
 
-    def test_harbor_modifier_before_and_after_1_september(self):
-        # 2026-08-29 Sat, 2026-08-31 Mon, 2026-09-05 Sat, 2026-09-07 Mon
+    def test_harbor_baseline_modifier_u2(self):
         self.assertEqual(run("PY02", dos="2026-08-29", mod="U2"), [])
-        self.assertEqual(run("PY02", dos="2026-08-29", mod="U3"), ["D04"])
-        self.assertEqual(run("PY02", dos="2026-09-05", mod="U2"), ["D04"])
-        self.assertEqual(run("PY02", dos="2026-09-05", mod="U3"), [])
-        self.assertEqual(run("PY02", dos="2026-09-07", mod="U3"), ["D04"])
-        self.assertEqual(run("PY02", dos="2026-09-07", mod="U2"), [])
+        self.assertEqual(run("PY02", dos="2026-09-05", mod="U2"), [])
+        self.assertEqual(run("PY02", dos="2026-09-05", mod="U3"), ["D04"])
         self.assertEqual(run("PY02", dos="2026-09-07", mod=""), ["D04"])
 
     def test_modifier_only_applies_to_harbor_t1019(self):
@@ -93,7 +86,7 @@ class DailyAndDuplicates(unittest.TestCase):
         self.assertEqual(run("PY03", freq="7", ctx=dict(prior_submission=True)), [])
 
     def test_all_failures_are_reported(self):
-        codes = run("PY02", dos="2026-09-05", sub="2026-09-05", units=40, mod="U2",
+        codes = run("PY02", dos="2026-09-05", sub="2026-09-05", units=40, mod="",
                     ctx=dict(evv_minutes=[], daily_paid_units=0, prior_submission=True, auth="missing"))
         self.assertEqual(codes, ["D01", "D04", "D05", "D06", "D07"])
 
@@ -101,7 +94,11 @@ class DailyAndDuplicates(unittest.TestCase):
 class VersionsAndValidation(unittest.TestCase):
     def test_resolution_by_service_date(self):
         self.assertEqual(RULES.resolve("PY01", "2026-07-31")["params"]["timely_filing_days"], 30)
-        self.assertEqual(RULES.resolve("PY01", "2026-08-01")["params"]["timely_filing_days"], 45)
+        self.assertEqual(RULES.resolve("PY01", "2026-08-01")["params"]["timely_filing_days"], 30)  # baseline only
+        s = baseline_store()
+        s.add_version("PY01", "2026-08-01", {"timely_filing_days": 50})
+        self.assertEqual(s.resolve("PY01", "2026-07-31")["params"]["timely_filing_days"], 30)
+        self.assertEqual(s.resolve("PY01", "2026-08-01")["params"]["timely_filing_days"], 50)
         self.assertIsNone(RuleStore().resolve("PY01", "2026-08-01"))
 
     def test_unknown_payer_needs_review_not_paid(self):
@@ -117,7 +114,7 @@ class VersionsAndValidation(unittest.TestCase):
         self.assertEqual(validate_params({"timely_filing_days": None, "daily_max_units": 10}), [])
 
     def test_add_version_merges_and_replaces_same_date(self):
-        s = seed_store()
+        s = baseline_store()
         v = s.add_version("PY03", "2026-10-01", {"timely_filing_days": 90})
         self.assertEqual(v["params"]["evv"]["rounding"], "full_units")  # inherited
         self.assertEqual(s.resolve("PY03", "2026-09-30")["params"]["timely_filing_days"], 60)

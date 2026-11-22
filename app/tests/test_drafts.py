@@ -6,24 +6,24 @@ from pathlib import Path
 from claimcheck.ai import AIClient, AIUnavailable
 from claimcheck.drafts import DraftError, activate, apply_ai_proposal, chat, decide, evaluate, new_draft, refresh_boundary_examples
 from claimcheck.pipeline import Dataset, load_sample
-from claimcheck.rules import RuleStore, seed_store
+from claimcheck.rules import RuleStore, baseline_store
 
 SAMPLE = Path(__file__).resolve().parent.parent / "sample_data"
 
 
 def base_store():
     s = RuleStore()
-    full = seed_store()
+    full = baseline_store()
     s.payers = {"PY01": {"name": "Northwind", "versions": [full.versions("PY01")[0]]}}
     return s
 
 
-BULLETIN = dict(
-    assistant_message="Filing limit becomes 45 days for service on/after 1 Aug 2026.",
-    payer_id="PY01", effective_from="2026-08-01", params={"timely_filing_days": 45},
-    summary="45-day filing", source_quote="For dates of service on or after 1 August 2026 ... 45 calendar days",
+UPDATE = dict(
+    assistant_message="Filing limit becomes 50 days for service on/after the effective date.",
+    payer_id="PY01", effective_from="2026-08-01", params={"timely_filing_days": 50},
+    summary="50-day filing", source_quote="Test fixture rule text: 50 calendar days",
     examples=[
-        dict(title="40 days after 1 Aug service", claim=dict(service_code="T1019", date_of_service="2026-08-01",
+        dict(title="40 days after service", claim=dict(service_code="T1019", date_of_service="2026-08-01",
              submitted_date="2026-09-10", units=4, modifier=""), context=dict(evv_minutes=[60]), expected_codes=[]),
         dict(title="Garbage example", claim=dict(service_code="NOPE"), context={}, expected_codes=[]),
     ])
@@ -47,12 +47,12 @@ class Workflow(unittest.TestCase):
 
     def drafted(self):
         d = new_draft()
-        notes = chat(d, self.store, self.ds, fake_ai(BULLETIN), "Northwind bulletin text ...")
+        notes = chat(d, self.store, self.ds, fake_ai(UPDATE), "Rule text ...")
         return d, notes
 
     def test_chat_builds_validated_draft_and_drops_bad_examples(self):
         d, notes = self.drafted()
-        self.assertEqual((d["payer_id"], d["effective_from"], d["params"]), ("PY01", "2026-08-01", {"timely_filing_days": 45}))
+        self.assertEqual((d["payer_id"], d["effective_from"], d["params"]), ("PY01", "2026-08-01", {"timely_filing_days": 50}))
         self.assertTrue(any("Garbage example" in n for n in notes))
         self.assertEqual(len([e for e in d["examples"] if e["origin"] == "ai"]), 1)
         self.assertTrue(any(e["origin"] == "boundary" for e in d["examples"]))
@@ -97,7 +97,7 @@ class Workflow(unittest.TestCase):
             decide(d, r["id"], "set", r["actual"]["codes"])
         before = self.store.resolve("PY01", "2026-08-01")["params"]["timely_filing_days"]
         v = activate(d, self.store, self.ds)
-        self.assertEqual((before, v["params"]["timely_filing_days"]), (30, 45))
+        self.assertEqual((before, v["params"]["timely_filing_days"]), (30, 50))
         self.assertEqual(self.store.resolve("PY01", "2026-07-31")["params"]["timely_filing_days"], 30)
         self.assertGreater(len(self.store.acceptance), 3)
         self.assertTrue(all(t["basis"] == "user_confirmed" and t["effective_from"] == "2026-08-01" for t in self.store.acceptance))
@@ -117,7 +117,7 @@ class Workflow(unittest.TestCase):
         for r in evaluate(d, self.store, self.ds)["examples"]:
             decide(d, r["id"], "set", r["actual"]["codes"])
         activate(d, self.store, self.ds)
-        # a later change that flips the confirmed 45-day behaviour on the same effective date
+        # a later change that flips the confirmed 50-day behaviour on the same effective date
         d2 = new_draft("PY01", "2026-08-01", {"timely_filing_days": 30}, source="Mistaken edit")
         refresh_boundary_examples(d2, self.store)
         ev = evaluate(d2, self.store, self.ds)
@@ -126,13 +126,13 @@ class Workflow(unittest.TestCase):
             decide(d2, r["id"], "set", r["actual"]["codes"])
         with self.assertRaises(DraftError):
             activate(d2, self.store, self.ds)
-        activate(d2, self.store, self.ds, regression_reason="Payer corrected the bulletin (ref 123)")
+        activate(d2, self.store, self.ds, regression_reason="Payer corrected the document (ref 123)")
         self.assertTrue(any(t.get("superseded_reason") for t in self.store.acceptance))
 
     def test_unclear_examples_are_recorded_not_saved_as_tests(self):
         d = new_draft("PY03", "2026-10-01", {"daily_max_units": 24}, source="Phone call")
         refresh_boundary_examples(d, self.store)
-        self.store.payers["PY03"] = {"name": "Summit", "versions": [seed_store().versions("PY03")[0]]}
+        self.store.payers["PY03"] = {"name": "Summit", "versions": [baseline_store().versions("PY03")[0]]}
         ev = evaluate(d, self.store, self.ds)
         for i, r in enumerate(ev["examples"]):
             if i == 0:
@@ -146,7 +146,7 @@ class Workflow(unittest.TestCase):
     def test_persistence_round_trip(self):
         import tempfile
         with tempfile.TemporaryDirectory() as tmp:
-            s = seed_store(Path(tmp) / "rules.json")
+            s = baseline_store(Path(tmp) / "rules.json")
             s.save()
             self.assertEqual(RuleStore(Path(tmp) / "rules.json").snapshot(), s.snapshot())
 

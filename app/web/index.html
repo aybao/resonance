@@ -37,14 +37,16 @@
   </section>
   <section id="tab-rules" hidden>
     <div class="card"><h2>Active rules</h2><div id="rule-versions"></div>
-      <button id="reset-rules" class="secondary">Reset to rules from the supplied manuals</button></div>
+      <button id="reset-rules" class="secondary">Reset to baseline rules</button></div>
     <div class="card">
       <h2>Create or update rules</h2>
       <p class="muted">Paste payer rule text or describe a change. The AI proposes a rule version and examples; nothing takes effect until you review and activate it. You can also write rules by hand without AI.</p>
       <div class="row"><label>Claude API key (kept in memory only, optional if <code>ANTHROPIC_API_KEY</code> is set)
         <input type="password" id="api-key" autocomplete="off" placeholder="sk-ant-…"></label>
         <button id="save-key" class="secondary">Use key</button></div>
-      <textarea id="new-request" rows="5" placeholder="e.g. Paste a provider bulletin, or: 'Summit now allows 75 days for timely filing from 1 Nov 2026'"></textarea>
+      <textarea id="new-request" rows="5" placeholder="Paste payer rule text (markdown), or describe a change"></textarea>
+      <label>Or load a markdown file <input type="file" id="rules-file" accept=".md,.markdown,.txt,text/markdown,text/plain"></label>
+      <p class="muted small">File text is placed in the box above and held in this session's state only; the app never reads rule documents from disk.</p>
       <button id="start-draft">Ask AI to draft rules</button>
       <button id="start-manual" class="secondary">Start a manual draft</button>
     </div>

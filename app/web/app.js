@@ -162,7 +162,8 @@ async function loadRules() {
     ...rv.acceptance.map((t) => h("tr", {}, h("td", {}, t.payer_id), h("td", {}, t.effective_from), h("td", {}, t.title + (t.superseded_by ? ` (superseded by v${t.superseded_by}: ${t.superseded_reason})` : "")),
       h("td", {}, t.expected_codes.length ? codeChips(t.expected_codes) : "payable"), h("td", {}, t.basis + (t.ai_proposed ? " (AI proposed)" : ""))))) : h("p", { class: "muted" }, "None yet. Confirm examples when activating a rule update."));
 }
-$("reset-rules").addEventListener("click", () => guard(async () => { if (confirm("Replace all rules and confirmed tests with the supplied-manual rules?")) { await api("POST", "/api/rules/reset"); await loadRules(); await refreshResults(); } }));
+$("reset-rules").addEventListener("click", () => guard(async () => { if (confirm("Replace all rules and confirmed tests with the baseline rules?")) { await api("POST", "/api/rules/reset"); await loadRules(); await refreshResults(); } }));
+$("rules-file").addEventListener("change", (e) => guard(async () => { const f = e.target.files[0]; if (f) $("new-request").value = await f.text(); e.target.value = ""; }));
 $("save-key").addEventListener("click", () => guard(async () => { await api("POST", "/api/ai/key", { key: $("api-key").value }); $("api-key").value = ""; await loadStatus(); }));
 $("start-draft").addEventListener("click", () => guard(async () => {
   const message = $("new-request").value.trim(); if (!message) throw new Error("Enter the rule text or request first");

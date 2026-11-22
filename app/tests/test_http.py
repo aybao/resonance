@@ -13,7 +13,7 @@ from pathlib import Path
 from claimcheck.ai import AIClient
 from claimcheck.session import Session
 from server import make_server
-from tests.test_drafts import BULLETIN, base_store, fake_ai
+from tests.test_drafts import UPDATE, base_store, fake_ai
 from tests.test_pipeline import AUTHS, EVV, claim_row, csv_text
 
 HEAD = ["claim_id", "agency_id", "payer", "patient_id", "service_code", "date_of_service", "submitted_date",
@@ -113,7 +113,7 @@ class UploadToResults(HttpCase):
 
 
 class RuleUpdateByDate(HttpCase):
-    ai = fake_ai(BULLETIN)
+    ai = fake_ai(UPDATE)
 
     def test_update_changes_only_affected_service_dates(self):
         self.session.rules = base_store()
@@ -132,7 +132,7 @@ class RuleUpdateByDate(HttpCase):
         before = {r["claim_id"]: r["denial_codes"] for r in res["rows"]}
         self.assertEqual(before, {"C000011": ["D03"], "C000012": ["D03"], "C000013": []})
 
-        code, draft = self.api.call("POST", "/api/drafts", {"message": "Northwind bulletin: 45 days from 1 Aug"})
+        code, draft = self.api.call("POST", "/api/drafts", {"message": "Northwind: 50 days from 1 Aug"})
         self.assertEqual(code, 200)
         did = draft["draft"]["id"]
         ev = draft["evaluation"]
@@ -145,7 +145,7 @@ class RuleUpdateByDate(HttpCase):
         self.assertTrue(draft["evaluation"]["can_activate"])
         code, out = self.api.call("POST", f"/api/drafts/{did}/activate", {})
         self.assertEqual(code, 200)
-        self.assertEqual(out["version"]["params"]["timely_filing_days"], 45)
+        self.assertEqual(out["version"]["params"]["timely_filing_days"], 50)
         # saved to disk as a versioned rule set
         saved = json.loads((Path(self.tmp.name) / "rules.json").read_text())
         self.assertEqual(len(saved["payers"]["PY01"]["versions"]), 3)

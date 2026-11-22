@@ -9,7 +9,7 @@ from .examples import validate_scenario
 from .history import accuracy, replay
 from .normalize import CLAIM_FIELDS, normalize_claims, read_csv_text
 from .pipeline import Dataset, export_csv, load_sample, run_batch, summarize
-from .rules import RuleStore, seed_store, validate_params
+from .rules import RuleStore, baseline_store, validate_params
 
 APP_DIR = Path(__file__).resolve().parent.parent
 SAMPLE_DIR = APP_DIR / "sample_data"
@@ -23,7 +23,7 @@ class Session:
         self.rules_path = Path(state_dir) / "rules.json"
         self.rules = RuleStore(self.rules_path)
         if not self.rules.payers:
-            self.rules = seed_store(self.rules_path)  # supplied manuals + bulletins; no AI needed
+            self.rules = baseline_store(self.rules_path)  # base manuals only; updates arrive via the workflow
             self.rules.save()
         self.dataset = Dataset()
         self.ai = ai or AIClient()
@@ -143,9 +143,9 @@ class Session:
         return dict(payers={pid: dict(name=p["name"], versions=self.rules.versions(pid)) for pid, p in self.rules.payers.items()},
                     acceptance=self.rules.acceptance)
 
-    def reset_rules_to_supplied(self):
+    def reset_rules_to_baseline(self):
         with self.lock:
-            self.rules = seed_store(self.rules_path)
+            self.rules = baseline_store(self.rules_path)
             self.rules.save()
             self._accuracy = None
             self._recheck()

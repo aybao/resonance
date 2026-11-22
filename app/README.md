@@ -25,8 +25,8 @@ it is held in memory only and never echoed, logged or saved). Model defaults to 
    filter to *Must correct* (blocked rows), *Likely denied*, *Needs review*. Click a row for every code with
    evidence, suggested actions, proposed fixes (applied only on click), field edits, and your own classification
    override (with a reason). Download the results CSV (original columns untouched + result columns).
-2. **Payer rules**: rules are versioned per payer and apply by *date of service* (seeded from the supplied
-   manuals/bulletins). Paste rule text or ask for a change; review the AI's draft, example scenarios (confirm /
+2. **Payer rules**: rules are versioned per payer and apply by *date of service* (the baseline is the three base
+   manuals only; no later updates are preloaded). Paste or load a markdown file of rule text, or ask for a change; review the AI's draft, example scenarios (confirm /
    correct / "needs payer clarification"), impact on recorded history and regressions against earlier confirmed
    tests, then activate. Confirmed examples are saved as versioned acceptance tests (`state/rules.json`).
 

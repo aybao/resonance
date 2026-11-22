@@ -5,7 +5,7 @@ import unittest
 
 from claimcheck.normalize import CLAIM_FIELDS, canonical, normalize_claims, read_csv_text
 from claimcheck.pipeline import Dataset, export_csv, parse_claims_csv, run_batch
-from claimcheck.rules import seed_store
+from claimcheck.rules import baseline_store
 
 AUTHS = ("auth_id,patient_id,payer_id,service_code,start_date,end_date,units_authorized\n"
          "AUTH00001,PT0001,PY03,T1005,2026-06-01,2026-12-31,10\n"
@@ -40,7 +40,7 @@ def dataset(history_rows=()):
 
 def run(rows, ds=None, overrides=None):
     _, recs = parse_claims_csv(csv_text(rows))
-    return run_batch(recs, ds or dataset(), seed_store(), overrides)
+    return run_batch(recs, ds or dataset(), baseline_store(), overrides)
 
 
 class Normalisation(unittest.TestCase):
@@ -155,7 +155,7 @@ class Export(unittest.TestCase):
         text = csv_text([claim_row(payer="Summit Care", dos="07/01/2026", sub="2026-07-05")]).replace("billed_amount", "billed_amount,extra")
         text = text.replace("10.0", "10.0,keepme")
         head, recs = parse_claims_csv(text)
-        rows = run_batch(recs, dataset(), seed_store())
+        rows = run_batch(recs, dataset(), baseline_store())
         out = list(csv.DictReader(io.StringIO(export_csv(rows, head))))[0]
         self.assertEqual(out["payer"], "Summit Care")
         self.assertEqual(out["date_of_service"], "07/01/2026")

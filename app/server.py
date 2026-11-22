@@ -128,7 +128,7 @@ class Handler(BaseHTTPRequestHandler):
         if (method, path) == ("GET", "/api/rules"):
             return self.send(200, s.rules_view())
         if (method, path) == ("POST", "/api/rules/reset"):
-            s.reset_rules_to_supplied()
+            s.reset_rules_to_baseline()
             return self.send(200, s.rules_view())
         if (method, path) == ("POST", "/api/drafts"):
             return self.send(200, s.create_draft(self.json_body()))
