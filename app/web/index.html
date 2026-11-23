@@ -40,20 +40,24 @@
   <section id="tab-rules" hidden>
     <div class="rules-heading">
       <h2>Create or update rules</h2>
-      <p class="muted">Upload a payer’s Markdown document, review what changes, then refine it in chat.</p>
-      <label class="upload-rule" for="rules-file"><span>＋ Upload Markdown</span><span class="small muted">.md or .markdown</span>
-        <input type="file" id="rules-file" accept=".md,.markdown,text/markdown" aria-label="Upload payer rules Markdown">
-      </label>
+      <p class="muted">Describe a rule change, attach a Markdown document, or send both together.</p>
       <p id="rules-status" class="small muted" role="status"></p>
     </div>
     <div id="rules-conversation" class="rules-conversation" aria-label="Rule update conversation" aria-live="polite">
-      <div id="rules-empty" class="rules-empty"><span class="empty-icon" aria-hidden="true">↗</span><h3>Start with your payer document</h3><p>I’ll explain the rule update and show examples of the outcomes it changes.</p></div>
+      <div id="rules-empty" class="rules-empty"><span class="empty-icon" aria-hidden="true">↗</span><h3>What would you like to change?</h3><p>I’ll explain the rule update and show examples of the outcomes it changes.</p></div>
     </div>
-    <form id="rule-composer" class="rule-composer" hidden>
+    <form id="rule-composer" class="rule-composer">
       <div id="example-context" class="example-context" hidden></div>
+      <div id="rule-attachment" class="rule-attachment" hidden></div>
       <label for="rule-message">Message the rule assistant</label>
-      <textarea id="rule-message" rows="2" placeholder="Ask for a change, or raise an issue with an example…"></textarea>
-      <div class="composer-footer"><span class="small muted">Review examples before activating a rule update.</span><button type="submit" id="send-rule-message">Send ↑</button></div>
+      <textarea id="rule-message" rows="2" placeholder="Describe a rule change, paste Markdown, or add a document…"></textarea>
+      <div class="composer-footer">
+        <label class="upload-rule" for="rules-file"><span>＋ Add Markdown</span>
+          <input type="file" id="rules-file" accept=".md,.markdown,text/markdown" aria-label="Attach payer rules Markdown">
+        </label>
+        <button type="submit" id="send-rule-message" disabled>Send ↑</button>
+      </div>
+      <p class="small muted composer-help">Send a prompt, a Markdown document, or both. Changes take effect after you accept them.</p>
     </form>
   </section>
 </main>

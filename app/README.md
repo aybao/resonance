@@ -40,8 +40,10 @@ not been verified; automated/browser tests use an injected test transport.
   columns with results and an audit trail. Clicking a claim also shows its matching
   EVV visits (including verification state) and referenced/related authorization
   records, coverage dates, and the balance before that claim.
-- **Payer rules:** upload Markdown. Read the proposed update and changed examples
-  with actual before/after results. Click a rule or use **Raise issue** on an
+- **Payer rules:** type a prompt, paste Markdown, attach a Markdown document, or
+  combine a prompt and attachment, then click **Send**. The composer is available
+  immediately; attachments can be removed before sending. Read the proposed
+  update and changed examples with actual before/after results. Click a rule or use **Raise issue** on an
   example to attach its context to a message, or request an edit directly. Every revision is compared with the
   accepted rules. Each example has a **Raise issue** button; individual example
   approval is not required. Unchanged controls run in the background. Conflicting

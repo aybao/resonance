@@ -95,7 +95,8 @@ async function refreshResults() {
 function clearRuleConversation() {
   threads.clear(); currentView = null; selectExample(null);
   $("rules-conversation").querySelectorAll(".conversation-thread").forEach((node) => node.remove());
-  $("rules-empty").hidden = false; $("rule-composer").hidden = true; $("rules-status").textContent = "";
+  $("rules-empty").hidden = false; $("rule-composer").hidden = false; $("rules-status").textContent = "";
+  $("rule-message").value = ""; setRuleAttachment(null);
 }
 function renderDemoReport(report) {
   const root = $("demo-report"); root.hidden = false;
@@ -210,7 +211,7 @@ function overrideForm(r) {
 }
 
 // ---------- rules: one conversation ----------
-let activeRules = null, currentView = null, selectedExample = null, ruleBusy = false;
+let activeRules = null, currentView = null, selectedExample = null, ruleBusy = false, ruleAttachment = null;
 const threads = new Map();
 const DENIAL_MEANING = { D01: "No verified EVV visit", D02: "Authorization units exceeded", D03: "Filing deadline exceeded", D04: "Missing or invalid modifier", D05: "Duplicate claim", D06: "Daily maximum exceeded", D07: "Authorization missing", D08: "Invalid authorization", D09: "Verified time exceeded", D10: "Contract requirement", D99: "Manual review" };
 async function loadRules() { return guard(async () => { activeRules = await api("GET", "/api/rules"); }); }
@@ -254,44 +255,62 @@ async function ruleTask(task, label) {
 }
 function setRuleControls() {
   $("rules-file").disabled = ruleBusy;
-  $("send-rule-message").disabled = ruleBusy;
+  $("send-rule-message").disabled = ruleBusy || (!$("rule-message").value.trim() && !ruleAttachment);
+  document.querySelectorAll("#rule-attachment button, #example-context button").forEach((node) => { node.disabled = ruleBusy; });
   $("rule-message").disabled = ruleBusy;
   document.querySelectorAll("#mode-tools button, #mode-tools input").forEach((node) => { node.disabled = ruleBusy; });
   document.querySelectorAll(".rule-actions button").forEach((b) => { b.disabled = ruleBusy || b.dataset.blocked === "true"; });
 }
+function setRuleAttachment(file) {
+  ruleAttachment = file;
+  $("rules-file").value = "";
+  const root = $("rule-attachment"); root.hidden = !file;
+  root.replaceChildren(file ? [h("span", {}, "↥ ", h("strong", {}, file.name)), h("button", {
+    type: "button", class: "secondary", "aria-label": "Remove Markdown attachment", onclick: () => { setRuleAttachment(null); $("rules-status").textContent = "Attachment removed."; }
+  }, "×")] : []);
+  setRuleControls();
+}
 $("rules-file").addEventListener("change", (event) => {
   const file = event.target.files[0];
-  if (!file) return;
-  ruleTask(async () => {
-    if (!/\.(md|markdown)$/i.test(file.name)) throw new Error("Choose a .md or .markdown file.");
-    const text = await file.text();
-    if (!text.trim()) throw new Error("This Markdown file is empty.");
-    const view = await api("POST", "/api/drafts", { message: text });
-    threads.set(view.draft.id, { root: h("div", { class: "conversation-thread" }), turns: new Map(), filename: file.name });
-    $("rules-empty").hidden = true;
-    $("rules-conversation").append(threads.get(view.draft.id).root);
-    selectExample(null);
-    $("rule-message").value = "";
-    showDraft(view);
-    $("rules-status").textContent = "Document reviewed. The proposed rules are ready below.";
+  if (!file || ruleBusy) return;
+  if (!/\.(md|markdown)$/i.test(file.name)) {
+    $("rules-status").textContent = "Choose a .md or .markdown file.";
     event.target.value = "";
-  }, "Reading document and checking affected examples…");
+    return;
+  }
+  setRuleAttachment(file);
+  $("rules-status").textContent = "Markdown attached. Add a prompt or send the document on its own.";
+  $("rule-message").focus();
 });
+$("rule-message").addEventListener("input", setRuleControls);
 $("rule-composer").addEventListener("submit", (event) => {
   event.preventDefault();
-  const text = $("rule-message").value.trim();
-  if (!text || !currentView || ruleBusy) return;
-  const context = selectedExample ? "Regarding this example:\n" + JSON.stringify(selectedExample, null, 2) + "\n\n" : "";
+  const text = $("rule-message").value.trim(), file = ruleAttachment, example = selectedExample;
+  if ((!text && !file) || ruleBusy) return;
+  const draftId = currentView?.draft.status === "draft" ? currentView.draft.id : null;
   ruleTask(async () => {
-    const view = await api("POST", `/api/drafts/${currentView.draft.id}/chat`, { message: context + text });
-    // Store the short display text separately; the AI receives the full scenario.
-    const thread = threads.get(view.draft.id);
-    thread.nextUser = { text, title: selectedExample && selectedExample.title };
+    const attachment = file ? { name: file.name, text: await file.text() } : null;
+    if (attachment && !attachment.text.trim()) throw new Error("This Markdown file is empty. Remove it or choose another document.");
+    const parts = [];
+    if (example) parts.push("Regarding this example:\n" + JSON.stringify(example, null, 2));
+    if (text) parts.push(text);
+    else if (attachment) parts.push("Create or update the payer rules from the attached document.");
+    if (attachment) parts.push(`Attached Markdown document: ${attachment.name}\n\n${attachment.text}`);
+    const view = await api("POST", draftId ? `/api/drafts/${draftId}/chat` : "/api/drafts", { message: parts.join("\n\n") });
+    if (!draftId) {
+      const root = h("div", { class: "conversation-thread" });
+      threads.set(view.draft.id, { root, turns: new Map() });
+      $("rules-empty").hidden = true;
+      $("rules-conversation").append(root);
+    }
+    // Keep the visible prompt/attachment separate from the context sent to the AI.
+    threads.get(view.draft.id).nextUser = { text, attachment, title: example?.title };
     selectExample(null);
     $("rule-message").value = "";
+    setRuleAttachment(null);
     showDraft(view);
-    $("rules-status").textContent = "Rule update revised. Review the latest examples below.";
-  }, "Updating the rule and re-checking examples…");
+    $("rules-status").textContent = draftId ? "Rule update revised. Review the latest examples below." : "Proposed rules are ready below.";
+  }, "Reviewing your request and checking affected examples…");
 });
 $("rule-message").addEventListener("keydown", (event) => {
   if (event.key === "Enter" && !event.shiftKey && !event.isComposing) { event.preventDefault(); $("rule-composer").requestSubmit(); }
@@ -339,8 +358,11 @@ function showDraft(view) {
     const m = d.messages[i];
     let node;
     if (m.role === "user") {
-      if (i === 0 && thread.filename) node = message("user", h("strong", { class: "file-attachment" }, "↥ " + thread.filename), h("p", {}, "Create or update the payer rules from this document."), h("details", {}, h("summary", {}, "View uploaded document"), markdown(m.content)));
-      else node = message("user", thread.nextUser?.title ? h("div", { class: "quoted-example" }, "On: " + thread.nextUser.title) : null, markdown(thread.nextUser?.text || m.content));
+      const input = thread.nextUser;
+      node = message("user", input?.title ? h("div", { class: "quoted-example" }, "On: " + input.title) : null,
+        input?.attachment ? h("strong", { class: "file-attachment" }, "↥ " + input.attachment.name) : null,
+        input ? (input.text ? markdown(input.text) : h("p", {}, "Create or update rules from this document.")) : markdown(m.content),
+        input?.attachment ? h("details", {}, h("summary", {}, "View attached document"), markdown(input.attachment.text)) : null);
       thread.nextUser = null;
     } else node = message("assistant", markdown(m.content));
     thread.turns.set(i, node); thread.root.append(node);
@@ -358,7 +380,7 @@ function showDraft(view) {
     node.querySelectorAll(".activation-row").forEach((el) => { el.hidden = old; });
     node.querySelectorAll(".example-review").forEach((el) => { el.hidden = d.status === "activated"; });
   }
-  $("rule-composer").hidden = d.status === "activated";
+  $("rule-composer").hidden = false;
   setRuleControls();
   if (isNewReply && latest) latest.scrollIntoView({ behavior: "smooth", block: "start" });
 }
@@ -391,10 +413,10 @@ function updateOutput(view) {
     output.querySelectorAll(".rule-actions").forEach((el) => { el.hidden = true; });
     document.querySelectorAll(".example-review").forEach((el) => { el.hidden = true; });
     output.append(h("p", { class: "activation-success", role: "status" }, "✓ New rule accepted. Current claims have been re-checked."));
-    $("rule-composer").hidden = true;
+    $("rule-composer").hidden = false;
     selectExample(null);
     await loadRules(); await refreshResults();
-    $("rules-status").textContent = "Rules saved. Upload another document to start a new update.";
+    $("rules-status").textContent = "Rules saved. Send a prompt or Markdown document to start another update.";
   }, "Activating reviewed rules…") }, "Accept new rule");
   output.append(h("div", { class: "rule-actions activation-row" }, activate, h("span", { class: "small muted" }, ev.can_activate ? "Accept this update in one step, or raise an issue above." : "Reply below to complete this draft.")));
   return output;
@@ -421,4 +443,5 @@ function exampleCard(d, e) {
     h("div", { class: "rule-actions example-review" }, raiseIssueButton(data)));
 }
 
+setRuleControls();
 guard(async () => { await loadStatus(); await refreshResults(); });

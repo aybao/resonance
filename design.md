@@ -53,9 +53,12 @@ predictions.
 
 ### Rules updater and standard AI skill
 
-The updater is a single chat interface headed **Create or update rules**, with a
-Markdown upload to begin. The AI may generate rule code beyond the current fixed
-parameter vocabulary, including new rules that fit the available input data.
+The updater is a single chat interface headed **Create or update rules**. Its
+composer is visible from the start and accepts a typed prompt, pasted Markdown,
+an attached Markdown document, or a prompt and attachment together. Attachments
+are staged until the user clicks **Send**, and can be removed before sending.
+The AI may generate rule code beyond the current fixed parameter vocabulary,
+including new rules that fit the available input data.
 Missing evidence or ambiguous payer requirements should prompt clarification,
 rather than an invented rule.
 
