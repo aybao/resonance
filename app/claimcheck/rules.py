@@ -1,7 +1,7 @@
 """Versioned payer rules.
 
-Rules are plain data (a closed vocabulary the deterministic engine understands).
-AI proposes versions in this format; code validates them; users approve them.
+Versions combine baseline parameters with optional Python rule functions.
+AI can propose novel behaviour as code; users review executed examples before approval.
 A version applies to claims whose *date of service* is on or after its
 `effective_from`, until a later version of the same payer takes over.
 """
@@ -120,6 +120,9 @@ class RuleStore:
         if self.path and self.path.exists():
             data = json.loads(self.path.read_text())
             self.payers, self.acceptance = data["payers"], data.get("acceptance", [])
+            for payer in self.payers.values():
+                for version in payer["versions"]:
+                    version.setdefault("code", "")
 
     # persistence -------------------------------------------------------
     def save(self):
@@ -153,9 +156,14 @@ class RuleStore:
         return merged
 
     # mutation ----------------------------------------------------------
-    def add_version(self, payer_id, effective_from, params, source="", summary="", payer_name=None, approved_at=None):
+    def add_version(self, payer_id, effective_from, params, source="", summary="", payer_name=None, approved_at=None, code=None):
         if not valid_date(effective_from):
             raise ValueError("effective_from must be YYYY-MM-DD")
+        previous = self.resolve(payer_id, effective_from)
+        code = (previous or {}).get("code", "") if code is None else code
+        if code:
+            from .code_rules import validate_code
+            validate_code(code)
         params = self.full_params(payer_id, effective_from, params) if payer_id in self.payers else \
             {**copy.deepcopy(DEFAULT_PARAMS), **copy.deepcopy(params)}
         errors = validate_params(params)
@@ -164,10 +172,10 @@ class RuleStore:
         payer = self.payers.setdefault(payer_id, {"name": payer_name or payer_id, "versions": []})
         if payer_name:
             payer["name"] = payer_name
-        payer["versions"] = [v for v in payer["versions"] if v["effective_from"] != effective_from]
         number = max([v["version"] for v in payer["versions"]], default=0) + 1
+        payer["versions"] = [v for v in payer["versions"] if v["effective_from"] != effective_from]
         version = dict(version=number, effective_from=effective_from, params=params,
-                       source=source, summary=summary, approved_at=approved_at)
+                       source=source, summary=summary, approved_at=approved_at, code=code)
         payer["versions"].append(version)
         payer["versions"].sort(key=lambda v: v["effective_from"])
         return version
@@ -192,4 +200,16 @@ def baseline_store(path=None):
         timely_filing_days=60, modifier_rules=[], daily_max_units=None, duplicate_check=True,
         notes=["Summit agency contract requirements (section 9.5) are not supplied; D10 cannot be determined."]),
         source="Summit Network Provider Handbook sections 9.1-9.5", summary="Summit handbook", payer_name="Summit Care Partners")
+    return store
+
+
+def full_store(path=None):
+    """All supplied manuals and dated bulletins; never replaces an existing user's state."""
+    store = baseline_store(path)
+    store.add_version("PY01", "2026-08-01", {"timely_filing_days": 45},
+                      source="Northwind Provider Bulletin 2026-07", summary="45-day filing from 1 August")
+    store.add_version("PY02", "2026-09-01", {"modifier_rules": [
+        {"service_code": "T1019", "days": None, "modifier": "U2"},
+        {"service_code": "T1019", "days": ["sat", "sun"], "modifier": "U3"}]},
+                      source="Harbor Provider Notice 2026-08", summary="Weekend T1019 uses U3 from 1 September")
     return store

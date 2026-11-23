@@ -9,7 +9,7 @@ from .examples import validate_scenario
 from .history import accuracy, replay
 from .normalize import CLAIM_FIELDS, normalize_claims, read_csv_text
 from .pipeline import Dataset, export_csv, load_sample, run_batch, summarize
-from .rules import RuleStore, baseline_store, validate_params
+from .rules import RuleStore, baseline_store, full_store, validate_params
 
 APP_DIR = Path(__file__).resolve().parent.parent
 SAMPLE_DIR = APP_DIR / "sample_data"
@@ -22,16 +22,49 @@ class Session:
         self.sample_dir = sample_dir
         self.rules_path = Path(state_dir) / "rules.json"
         self.rules = RuleStore(self.rules_path)
-        if not self.rules.payers:
-            self.rules = baseline_store(self.rules_path)  # base manuals only; updates arrive via the workflow
+        if not self.rules.payers or self.rules.snapshot() == baseline_store().snapshot():
+            self.rules = full_store(self.rules_path)  # Fresh full-app sessions include all supplied bulletins.
             self.rules.save()
         self.dataset = Dataset()
         self.ai = ai or AIClient()
         self.drafts = {}
         self.claims_header, self.raw_rows, self.edits, self.overrides, self.rows = [], [], {}, {}, []
         self._accuracy = None
+        self.demo = None
+        self._full_state = None
         if autoload:
             load_sample(self.dataset, self.sample_dir)
+
+    def start_demo(self, as_of="2026-06-30"):
+        from .replay_demo import HistoricalReplay
+        from .rules import valid_date
+        with self.lock:
+            if not valid_date(as_of):
+                raise ValueError("Demo date must be YYYY-MM-DD")
+            if self.demo:
+                self.demo.close()
+            else:
+                self._full_state = {k: getattr(self, k) for k in (
+                    "rules", "dataset", "claims_header", "raw_rows", "edits", "overrides", "rows", "drafts", "_accuracy", "ai")}
+            self.demo = HistoricalReplay(self, as_of)
+            return self.status()
+
+    def end_demo(self):
+        with self.lock:
+            if self.demo:
+                self.demo.close()
+                for key, value in self._full_state.items():
+                    setattr(self, key, value)
+                self.demo = None
+                self._full_state = None
+            return self.status()
+
+    def advance_demo(self, until):
+        with self.lock:
+            if not self.demo:
+                raise ValueError("Start a historical demo first")
+            report = self.demo.advance(until)
+            return dict(report=report, status=self.status(), results=self.results())
 
     # data -------------------------------------------------------------
     def status(self):
@@ -39,10 +72,13 @@ class Session:
                     data=dict(authorizations=len(self.dataset.authorizations), evv_visits=len(self.dataset.visits),
                               history=len(self.dataset.history), problems=self.dataset.errors[:10]),
                     claims_loaded=len(self.raw_rows), payers=sorted(self.rules.payers),
-                    acceptance_tests=len(self.rules.acceptance))
+                    acceptance_tests=len(self.rules.acceptance),
+                    mode="demo" if self.demo else "full", demo=self.demo.status() if self.demo else None)
 
     def load_reference(self, kind, text):
         with self.lock:
+            if self.demo:
+                raise ValueError("Use the demo date control to advance reference data")
             info = self.dataset.load_text(kind, text)
             self._accuracy = None
             self._recheck()
@@ -50,6 +86,8 @@ class Session:
 
     def load_sample_data(self):
         with self.lock:
+            if self.demo:
+                raise ValueError("Use the demo date control to advance reference data")
             load_sample(self.dataset, self.sample_dir)
             self._accuracy = None
             self._recheck()
@@ -145,7 +183,7 @@ class Session:
 
     def reset_rules_to_baseline(self):
         with self.lock:
-            self.rules = baseline_store(self.rules_path)
+            self.rules = baseline_store(self.rules.path)
             self.rules.save()
             self._accuracy = None
             self._recheck()
@@ -157,6 +195,7 @@ class Session:
         with self.lock:
             d = D.new_draft(payload.get("payer_id", ""), payload.get("effective_from", ""), payload.get("params") or {},
                             payload.get("source", ""), payload.get("summary", ""), payload.get("payer_name", ""))
+            d["code"] = payload.get("code")
             notes = []
             errs = validate_params(d["params"])
             if errs:
@@ -170,7 +209,10 @@ class Session:
 
     def draft(self, draft_id):
         try:
-            return self.drafts[draft_id]
+            draft = self.drafts[draft_id]
+            if draft["status"] != "draft":
+                raise ValueError("This rule version is already accepted; start a new update")
+            return draft
         except KeyError:
             raise KeyError("Unknown draft") from None
 
@@ -187,6 +229,12 @@ class Session:
                 if errs:
                     raise ValueError("; ".join(errs))
                 d["params"] = payload["params"]
+                d["decisions"] = {}
+            if "code" in payload:
+                from .code_rules import validate_code
+                validate_code(payload["code"])
+                d["code"] = payload["code"]
+                d["proposal_errors"] = []
                 d["decisions"] = {}
             for k in ("payer_id", "payer_name", "effective_from", "source", "summary"):
                 if k in payload:

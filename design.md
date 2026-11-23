@@ -1,10 +1,11 @@
-# Claim pre-check: proposed design
+# Claim pre-check: design
 
-This document describes the target design. The proposed code-generating rules
-updater, its standard AI skill, and the historical replay/demo script are changes
-to the current app; they are not all implemented yet. In particular, the current
-AI integration proposes changes within a fixed rule vocabulary. The target design
-lets it implement novel rules as code while claims checking remains deterministic.
+This document defines the architecture and testing schedule. The app implements
+code-generating rule updates using a standard AI skill, runtime example checks,
+and an isolated historical replay/demo. Rule code can express novel checks over
+the available data; claim execution remains deterministic. See
+[app/README.md](app/README.md) for commands and implementation limits. Live-AI
+integration is an explicit on-demand check; automated tests use test transports.
 
 ## Architecture and starting state
 
@@ -102,7 +103,7 @@ checks from tests and demonstrations run on demand.
 
 ### Historical replay and demo
 
-Provide a script that advances a simulated system date and controls which rules,
+The replay script advances a simulated system date and controls which rules,
 history, and unlabelled claim batches are available at each stage. Start from an
 isolated fresh state with base manuals only and history up to approximately June
 2026. Keep demo/test state separate from the full app's saved rules and history.

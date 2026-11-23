@@ -48,6 +48,19 @@ document.querySelectorAll("nav button").forEach((b) => b.addEventListener("click
 async function loadStatus() {
   const s = await api("GET", "/api/status");
   $("ai-status").textContent = s.ai_available ? `AI rule assistant ready (${s.model})` : "AI rule assistant off: set ANTHROPIC_API_KEY to create or update rules";
+  const mode = $("mode-tools");
+  if (s.mode === "demo") {
+    const date = h("input", { type: "date", value: s.demo.as_of < "2026-07-31" ? "2026-07-31" : s.demo.as_of < "2026-08-31" ? "2026-08-31" : s.demo.end, min: s.demo.as_of, "aria-label": "Advance demo through date" });
+    mode.replaceChildren(badge("review", `Historical demo · ${s.demo.as_of}`), date,
+      h("button", { class: "secondary", onclick: () => guard(async () => {
+        const res = await api("POST", "/api/demo/advance", { date: date.value });
+        results = res.results; selectedLine = null; filter = "all"; render(); await loadStatus(); await loadRules(); renderDemoReport(res.report);
+      }) }, "Advance and check claims"),
+      h("button", { class: "secondary", onclick: () => guard(async () => { await api("POST", "/api/demo/end"); clearRuleConversation(); await loadStatus(); await loadRules(); await refreshResults(); $("demo-report").hidden = true; }) }, "Return to full app"));
+    if (s.demo.last_report) renderDemoReport(s.demo.last_report);
+  } else mode.replaceChildren(h("button", { class: "secondary", onclick: () => guard(async () => {
+    await api("POST", "/api/demo/start", { date: "2026-06-30" }); clearRuleConversation(); await loadStatus(); await loadRules(); await refreshResults();
+  }) }, "Start historical demo"));
   const d = s.data;
   const card = $("data-card");
   card.replaceChildren(
@@ -56,9 +69,9 @@ async function loadStatus() {
       `${d.authorizations} authorizations · ${d.evv_visits} EVV visits · ${d.history} past claims (history used for balances and duplicates)`),
     d.problems.length ? h("pre", {}, d.problems.join("\n")) : null,
     h("div", { class: "row" },
-      h("button", { class: "secondary", onclick: () => guard(async () => { await api("POST", "/api/data/sample"); await loadStatus(); await refreshResults(); }) }, "Reload sample data"),
+      h("button", { class: "secondary", disabled: !!s.demo, onclick: () => guard(async () => { await api("POST", "/api/data/sample"); await loadStatus(); await refreshResults(); }) }, "Reload sample data"),
       ...[["authorizations", "authorizations"], ["evv", "EVV visits"], ["history", "claim history"]].map(([kind, label]) =>
-        h("label", {}, "Replace " + label, h("input", { type: "file", accept: ".csv", onchange: (e) => uploadRef(kind, e.target) })))));
+        h("label", {}, "Replace " + label, h("input", { type: "file", accept: ".csv", disabled: !!s.demo, onchange: (e) => uploadRef(kind, e.target) })))));
 }
 function readFile(input) { return new Promise((res) => { const f = input.files[0]; if (!f) return res(null); const r = new FileReader(); r.onload = () => res(r.result); r.readAsText(f); }); }
 async function uploadRef(kind, input) {
@@ -74,7 +87,26 @@ $("claims-file").addEventListener("change", async (e) => {
   await guard(async () => { results = await api("POST", "/api/claims", text); selectedLine = null; filter = "all"; render(); });
 });
 $("use-sample-claims").addEventListener("click", () => guard(async () => { results = await api("POST", "/api/claims/sample"); selectedLine = null; filter = "all"; render(); }));
-async function refreshResults() { const r = await api("GET", "/api/results"); if (r.rows.length) { results = r; render(); } }
+async function refreshResults() {
+  const r = await api("GET", "/api/results");
+  if (r.rows.length) { results = r; render(); }
+  else { results = null; selectedLine = null; $("results").hidden = true; $("export").hidden = true; }
+}
+function clearRuleConversation() {
+  threads.clear(); currentView = null; selectExample(null);
+  $("rules-conversation").querySelectorAll(".conversation-thread").forEach((node) => node.remove());
+  $("rules-empty").hidden = false; $("rule-composer").hidden = true; $("rules-status").textContent = "";
+}
+function renderDemoReport(report) {
+  const root = $("demo-report"); root.hidden = false;
+  root.replaceChildren(h("h2", {}, `Historical replay · ${report.from_date} to ${report.through_date}`),
+    h("p", {}, `${(report.accuracy * 100).toFixed(2)}% agreement across ${report.claims} claims · ${report.known_exceptions} known exceptions · ${report.unexpected_mismatches} unexpected mismatches · ${report.manual_review} need review · ${report.false_alarms} false alarms`),
+    h("p", { class: report.passed ? "ok" : "bad" }, report.passed ? "Replay passed: all other rows match." : "Replay found unexpected mismatches. All mismatches are listed below."),
+    h("p", { class: "small muted" }, "Batch labels were revealed after prediction. History advances by submission date because adjudication dates are unavailable. Use Payer rules to upload the next bulletin."),
+    h("details", {}, h("summary", {}, `All mismatches (${report.mismatches.length})`), h("div", { class: "table-wrap" }, h("table", {},
+      h("tr", {}, ...["Claim", "Predicted", "Recorded", "Basis"].map((text) => h("th", {}, text))),
+      ...report.mismatches.map((r) => h("tr", {}, h("td", {}, r.claim_id), h("td", {}, `${r.status} ${r.codes.join(", ")}`), h("td", {}, `${r.actual_status} ${r.actual_code}`), h("td", { class: "reason" }, r.exception_reason || "Unexpected: " + r.remark)))))));
+}
 
 function render() {
   $("results").hidden = false; $("export").hidden = false;
@@ -197,6 +229,7 @@ function setRuleControls() {
   $("rules-file").disabled = ruleBusy;
   $("send-rule-message").disabled = ruleBusy;
   $("rule-message").disabled = ruleBusy;
+  document.querySelectorAll("#mode-tools button, #mode-tools input").forEach((node) => { node.disabled = ruleBusy; });
   document.querySelectorAll(".rule-actions button").forEach((b) => { b.disabled = ruleBusy || b.dataset.blocked === "true"; });
 }
 $("rules-file").addEventListener("change", (event) => {
@@ -259,9 +292,10 @@ function ruleSummary(d) {
   const versions = activeRules?.payers[d.payer_id]?.versions || [];
   const prior = versions.filter((v) => v.effective_from <= d.effective_from).at(-1);
   const changes = Object.entries(d.params).filter(([key, value]) => JSON.stringify(prior?.params[key]) !== JSON.stringify(value));
-  return h("section", { class: "rule-summary" }, h("div", { class: "rule-summary-heading" }, h("strong", {}, d.summary || "Proposed rule update"), badge("review", "Draft")),
+  return h("section", { class: "rule-summary" }, h("div", { class: "rule-summary-heading" }, h("button", { type: "button", class: "rule-title-button", onclick: () => selectExample({ key: `${d.id}-rule`, title: d.summary || "Proposed rule update", payer_id: d.payer_id, effective_from: d.effective_from, params: d.params, code: d.code, source: d.source }) }, d.summary || "Proposed rule update", h("span", { class: "small muted" }, " · Click to comment")), badge("review", "Draft")),
     h("p", { class: "muted" }, `${d.payer_name || activeRules?.payers[d.payer_id]?.name || d.payer_id || "Payer to confirm"} · ${d.payer_id || ""} · Service dates from ${d.effective_from || "to be confirmed"}`),
     changes.length ? h("dl", { class: "rule-diff" }, ...changes.map(([key, value]) => h("div", {}, h("dt", {}, FIELD_LABELS[key] || key.replaceAll("_", " ")), h("dd", {}, h("span", { class: "muted" }, ruleValue(prior?.params[key])), h("span", { class: "change-arrow", "aria-label": "changes to" }, " → "), h("strong", {}, ruleValue(value)))))) : null,
+    d.code ? h("details", {}, h("summary", {}, "Proposed rule code"), h("pre", {}, d.code)) : null,
     d.source ? h("details", { class: "source-detail" }, h("summary", {}, "Source passage"), h("blockquote", {}, d.source)) : null);
 }
 function showDraft(view) {
@@ -299,8 +333,9 @@ function updateOutput(view) {
   const d = view.draft, ev = view.evaluation;
   const examples = ev.examples.filter((e) => e.changed);
   const output = h("div", { class: "update-output" }, ruleSummary(d));
+  if (ev.checks) output.append(h("p", { class: "small muted" }, `${ev.checks.examples_run} scenarios executed · ${ev.checks.unchanged_controls} unchanged controls · ${ev.checks.saved_tests} saved tests checked`));
   for (const note of [...(view.notes || []), ...ev.problems]) output.append(h("p", { class: "warning" }, note));
-  if ((Object.keys(d.params).length && !ev.problems.length) || examples.length) {
+  if (((Object.keys(d.params).length || d.code) && !ev.problems.length) || examples.length) {
     output.append(h("h3", { class: "examples-heading" }, `${examples.length} affected example${examples.length === 1 ? "" : "s"}`),
       h("p", { class: "small muted" }, "Only changed outcomes are shown. Click an example to discuss it, or review its result below."));
     output.append(...examples.map((e) => exampleCard(d, e)));
@@ -320,12 +355,12 @@ function updateOutput(view) {
     await api("POST", `/api/drafts/${d.id}/activate`, { regression_reason: reason.value });
     d.status = "activated";
     output.querySelectorAll(".rule-actions").forEach((el) => { el.hidden = true; });
-    output.append(h("p", { class: "activation-success", role: "status" }, "✓ Rule update activated. Current claims have been re-checked."));
+    output.append(h("p", { class: "activation-success", role: "status" }, "✓ New rule accepted. Current claims have been re-checked."));
     $("rule-composer").hidden = true;
     selectExample(null);
     await loadRules(); await refreshResults();
     $("rules-status").textContent = "Rules saved. Upload another document to start a new update.";
-  }, "Activating reviewed rules…") }, "Activate rule update");
+  }, "Activating reviewed rules…") }, "Accept new rule");
   output.append(h("div", { class: "rule-actions activation-row" }, activate, h("span", { class: "small muted" }, ev.undecided ? `${ev.undecided} affected example${ev.undecided === 1 ? "" : "s"} to review` : ev.can_activate ? "Ready to activate after your review." : "Reply below to complete this draft.")));
   return output;
 }
@@ -336,7 +371,7 @@ function exampleCard(d, e) {
   const c = e.claim, x = e.context, dec = e.decision;
   const data = { key: `${d.id}-${e.id}`, title: e.title, claim: c, context: x, before: { status: e.before_status, codes: e.before }, after: e.actual };
   const decide = (decision, codes) => ruleTask(async () => { showDraft(await api("POST", `/api/drafts/${d.id}/decide`, { example_id: e.id, decision, codes, note: "" })); $("rules-status").textContent = "Example review saved."; }, "Saving example review…");
-  const codeSelect = CODES.map((code) => h("label", {}, h("input", { type: "checkbox", value: code, checked: !!dec?.codes?.includes(code) }), code + " · " + DENIAL_MEANING[code]));
+  const codeSelect = [...new Set([...CODES, ...e.actual.codes, ...(e.expected_codes || []), ...(dec?.codes || [])])].sort().map((code) => h("label", {}, h("input", { type: "checkbox", value: code, checked: !!dec?.codes?.includes(code) }), code + " · " + (DENIAL_MEANING[code] || "Additional payer rule")));
   const status = dec ? dec.decision === "unclear" ? "Needs payer clarification" : e.matches_decision ? "✓ Reviewed" : "Expectation differs — revise the rule" : "Needs your review";
   return h("div", { class: "example" + (e.matches_decision === false ? " fail" : dec ? " done" : "") },
     h("button", { type: "button", class: "example-select", "data-example-key": data.key, "aria-pressed": String(selectedExample?.key === data.key), onclick: () => selectExample(data) },

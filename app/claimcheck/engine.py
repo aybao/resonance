@@ -153,6 +153,32 @@ def check_claim(claim, state, ctx, rules):
         fail("D06", f"Paid daily total {daily_before} plus {units} billed units exceeds {cap}",
              "Review all services paid for this member and date; confirm any exception with the payer.")
 
+    if version.get("code"):
+        from .code_rules import apply_code, RuleCodeError
+        # Sanitized claims and computed context only: labels and live state never enter rule code.
+        context = dict(verified_minutes=minutes, evv_supported_units=supported,
+                       authorization_remaining=remaining, daily_paid_before=daily_before,
+                       filing_days=days, prior_submission_ids=list(dup_ids),
+                       authorizations=[dict(a) for a in ctx.auth_index[(claim["payer"], claim["patient_id"], claim["service_code"])]],
+                       prior_claims=[{f: c.get(f, "") for f in CLAIM_FIELDS}
+                                     for c in state.by_id.values()
+                                     if c["payer"] == claim["payer"] and c["patient_id"] == claim["patient_id"]])
+        original_failures = {f["code"]: dict(f) for f in failures}
+        try:
+            failures = apply_code(version["code"], claim, context, failures)
+        except RuleCodeError as exc:
+            result = _blank_result("manual_review", "Approved rule could not execute; review required", [str(exc)])
+            result["rule_error"] = str(exc)
+            return result
+        for failure in failures:
+            failure["rule"] = f"{claim['payer']} v{version['version']} (from {version['effective_from']})"
+        # Remove baseline field suggestions whose corresponding failure was removed by code.
+        codes = {f["code"] for f in failures}
+        unchanged_modifier = any(f["code"] == "D04" and f["reason"] == original_failures.get("D04", {}).get("reason")
+                                 and f["suggestion"] == original_failures.get("D04", {}).get("suggestion") for f in failures)
+        patches = [p for p in patches if (p[0] == "auth_id" and codes & {"D07", "D08"})
+                   or (p[0] == "modifier" and unchanged_modifier)]
+
     failures.sort(key=lambda f: f["code"])  # alphabetical for stable output, not priority
     corr_warning = any(w.startswith("Correction reference") for w in warnings)
     status = "denied" if failures else ("manual_review" if corr_warning else "paid")

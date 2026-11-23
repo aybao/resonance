@@ -1,53 +1,136 @@
-# Claim pre-check (demo app)
+# Claim pre-check
 
-Web app for home-care billing teams: upload claims, see predicted denial codes, reasons and suggested fixes
-before submission. **Claims are checked deterministically; AI only helps create and update payer rules**,
-and nothing it proposes takes effect until a user reviews examples and activates it.
+Home-care billing demo: check claims deterministically and use Claude to propose
+payer rule code. The rules chat returns code and synthetic example rows in one
+call per turn. A helper executes accepted and candidate rules on identical rows;
+users review changed outcomes before clicking **Accept new rule**.
 
-Standard library only (Python 3.10+; developed on 3.14). No install step.
+Python standard library only (3.10+; tested on 3.14/Linux). No install step.
 
 ## Run
 
+From `app/`:
+
 ```bash
-cd app
-python3 server.py            # http://127.0.0.1:8000  (--port N to change)
-python3 -m unittest discover -s tests -t .   # 52 tests, ~8s
+python3 server.py                        # http://127.0.0.1:8000
+python3 server.py --demo                 # isolated base-manual state as of 2026-06-30
+python3 server.py --demo --as-of 2026-07-31
+python3 -m unittest discover -s tests -t .
 ```
 
-Optional AI rule assistant: `export ANTHROPIC_API_KEY=...` before starting (read from the environment
-only; never echoed, logged or saved). Model defaults to `claude-sonnet-5-5`
-(`ANTHROPIC_MODEL` overrides). The rules chat requires a key. Claims checks and manual rule drafts through the HTTP API work without one.
+`--port` and `--state-dir` select a different port or saved full-app state.
+Fresh full-app state includes all three manuals, both dated bulletins and the
+full sample history. An untouched legacy baseline is upgraded to that starting
+state; custom saved rules and acceptance tests are retained. Versions apply by
+payer and **service date**, including the 45-day Northwind limit from 1 August
+2026 and Harbor's weekend U3 modifier from 1 September.
+
+Set `ANTHROPIC_API_KEY` to enable the rules chat. The key is read from the
+environment only; never echoed, logged or saved. `ANTHROPIC_MODEL` overrides the
+existing default, `claude-sonnet-5-5`. Claims checking, replay fixtures and manual
+rule drafts through the HTTP API work without a key. Live Claude behaviour has
+not been verified; automated/browser tests use an injected test transport.
 
 ## Use
 
-1. **Check claims**: reference data (authorizations, EVV, claim history) loads from `sample_data/`.
-   Upload a claims CSV or click *Use sample claims*. Yellow cells were auto-normalised (hover for the original);
-   filter to *Must correct* (blocked rows), *Likely denied*, *Needs review*. Click a row for every code with
-   evidence, suggested actions, proposed fixes (applied only on click), field edits, and your own classification
-   override (with a reason). Download the results CSV (original columns untouched + result columns).
-2. **Payer rules**: rules are versioned per payer and apply by *date of service* (the baseline is the three base
-   manuals only; no later updates are preloaded). Upload a Markdown payer document to start a single chat. Each assistant reply shows the proposed
-   rule changes and only examples whose outcomes change, with before/after results. Click an example
-   (including a changed historical claim) to attach its context to a message, or ask for a rule edit directly.
-   Review affected examples (confirm / correct / "needs payer clarification"), then activate. Unchanged
-   scenarios run in the background and require no decision; regressions against confirmed tests remain visible. Confirmed examples are saved as versioned acceptance tests (`state/rules.json`).
+- **Check claims:** upload a CSV or use sample claims. Review normalization,
+  every denial code and its evidence, uncertain balances and proposed business
+  corrections. Edit fields or classifications, re-check, and export the original
+  columns with results and an audit trail.
+- **Payer rules:** upload Markdown. Read the proposed update and changed examples
+  with actual before/after results. Click a rule or example to attach its context
+  to a message, or request an edit directly. Every revision is compared with the
+  accepted rules. Review affected examples; unchanged controls run in the
+  background. Conflicting confirmed tests need an explicit reason/source before
+  acceptance. New versions and confirmed examples persist in `state/rules.json`.
+- **Historical demo:** use the header button to start with base manuals and dated
+  history, then **Advance and check claims**. Advance through July, upload/review
+  Northwind's July bulletin, advance through August, then upload/review Harbor's
+  August notice and advance through the remaining period. The supplied bulletins
+  are in `../Resonance - graduate preparation data/payers/`. Accuracy and every
+  mismatch appear under Check claims. **Return to full app** restores its saved
+  rules, data and claim batch; demo rule writes use a separate temporary directory.
 
-## Layout
+## AI skill and runtime checks
 
-`claimcheck/normalize.py` cleaning/validation · `rules.py` versioned rule vocabulary + store · `engine.py` checker,
-ledger, pending-claim review · `pipeline.py` batch run/export · `examples.py` scenarios · `drafts.py` update workflow ·
-`history.py` replay/impact · `ai.py` Claude client · `session.py` app state · `server.py` HTTP · `web/` UI.
+The app loads [payer-rule-updater/SKILL.md](skills/payer-rule-updater/SKILL.md)
+as the AI's standard instructions, alongside accepted code/versions, base manuals,
+label-free sample data, the baseline checker and the current proposal. The skill
+includes the code contract, data formats and a worked Northwind update.
 
-## Known limits
+Novel rules do not require adding another parameter to the engine. Python
+`apply_rule(claim, context, failures)` transforms the baseline failure list. The
+host handles CSV input, ordering, historical state and output codes/reasons.
+Each version carries the complete code transform that should remain in force;
+legacy parameter-based drafts still work.
 
-- AI path is tested only with a fake transport; it has not been run against the live API.
-- The rules chat was checked in headless Firefox with a fake AI: upload, changed examples, comments,
-  revisions, review, activation, and desktop/mobile layouts. Automated tests cover the HTTP API end to end.
-- Rule vocabulary is closed (EVV rounding, authorization, filing limit, modifier-by-weekday, daily maximum,
-  duplicates, notes). Contract terms (Summit D10) and unspecified D99 denials can't be modelled; these remain misses.
-- One draft = one payer version; multi-document uploads are done one document at a time.
-- Single-user, in-memory session; only rules/acceptance tests persist. Payer aliases are a fixed list.
-- Replaying history with the active rules gives 96.9% status+code-set agreement (observed-outcome ledger); this
-  is not a holdout estimate. The 98.7%/97.3% figures in design.md came from the experiment's sequential setup.
-- In-batch review (`check_previous_claims`) fires only for earlier claims that are themselves undecided; decided
-  earlier claims use the ledger, so the experiment's review counts are not reproduced.
+After every response the app validates code and examples, executes before/after
+comparisons, runs saved tests, and reports historical impact. Acceptance rechecks
+the exact candidate. Invalid code/output, execution errors and conflicting
+confirmed expectations block acceptance. Unresolved payer questions remain
+explicit; AI-proposed expected results are not independent validation.
+
+Rule code runs in a separate worker without API keys, imports, I/O or
+introspection, over JSON copies of the inputs. The supported Python subset has
+memory, instruction and wall-time limits. Approved code that fails on a later
+claim sends it to review instead of treating it as payable. This is a local,
+single-user demo, not a production hostile-code execution service.
+
+## On-demand checks and demos
+
+From `app/`:
+
+```bash
+# All local tests, including real HTTP workflows; no API key.
+python3 -m unittest discover -s tests -t .
+
+# Complete historical bulletin replay using repeatable AI fixtures.
+python3 replay_history.py --report /tmp/replay-report.json
+
+# Same replay, paused between stages for presentation.
+python3 replay_history.py --interactive
+
+# Explicit live-AI integration/demo; prompts for human review before acceptance.
+python3 replay_history.py --interactive --live-ai
+
+# Execute/validate a JSON draft and its example rows; no AI call.
+python3 check_examples.py /path/to/draft.json --rules state/rules.json
+
+# Check CSV claims with approved rules, including code transforms.
+python3 check_claims.py sample_data/claims_to_check.csv --rules state/rules.json --output /tmp/checked.csv
+
+# Browser workflow check (Firefox + geckodriver required, no Python packages).
+# First run geckodriver --port 4445 in another terminal.
+python3 tests/browser_rules_chat.py --screenshots /tmp/rules-browser
+```
+
+The historical script starts with June 30 history, checks through July 31,
+accepts the first bulletin, checks through August 31, accepts the second, then
+checks through January 31. A whole batch is predicted before any of its labels
+are revealed; only earlier periods seed the observed ledger. Submission date
+proxies availability because adjudication dates are absent.
+
+Replay checks pass only when discrepancies exactly match the inspected,
+claim-specific [exception fixture](sample_data/replay_exceptions.md). Every
+exception remains in the reported accuracy and mismatch list. The replay cannot
+silently whitelist new failures. Different cutoffs can expose unexpected
+mismatches. This is an inspected regression dataset, not a new holdout.
+
+See [the testing schedule](../design.md#testing) for which checks run after a
+response, at acceptance, during development, before demos or on demand. The full
+developer suite and historical demo do not run on every message or CSV upload.
+
+## Layout and limits
+
+`claimcheck/normalize.py` input validation · `rules.py` dated versions · `engine.py`
+claim checks/state · `code_rules.py` bounded code worker · `pipeline.py` batches and
+CSV export · `examples.py` scenario builder · `drafts.py` review/acceptance ·
+`ai.py` skill and Claude client · `replay_demo.py` dated demo state · `session.py`
+app state · `server.py` HTTP · `web/` interface.
+
+The data format, known payer aliases and example services remain fixed. Novel
+rules can use the available fields/context, but missing contracts or unexplained
+D99 denials still require evidence. Only full-app rules and acceptance tests
+persist; conversations and claim batches are session-local. The original
+experiment used a different split/state setup; its metrics are documented
+separately in [experiment_results.md](../experiment_results.md).

@@ -98,6 +98,12 @@ class Handler(BaseHTTPRequestHandler):
         m = lambda pattern: re.fullmatch(pattern, path)  # noqa: E731
         if (method, path) == ("GET", "/api/status"):
             return self.send(200, s.status())
+        if (method, path) == ("POST", "/api/demo/start"):
+            return self.send(200, s.start_demo(self.json_body().get("date", "2026-06-30")))
+        if (method, path) == ("POST", "/api/demo/advance"):
+            return self.send(200, s.advance_demo(self.json_body().get("date", "")))
+        if (method, path) == ("POST", "/api/demo/end"):
+            return self.send(200, s.end_demo())
         if (method, path) == ("POST", "/api/data/sample"):
             s.load_sample_data()
             return self.send(200, s.status())
@@ -153,8 +159,14 @@ def make_server(session, port=8000, host="127.0.0.1"):
 def main():
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--port", type=int, default=8000)
+    ap.add_argument("--demo", action="store_true", help="Start with base manuals and dated, isolated history")
+    ap.add_argument("--as-of", default="2026-06-30", help="Demo starting date")
+    ap.add_argument("--state-dir", type=Path, default=Path(__file__).resolve().parent / "state")
     args = ap.parse_args()
-    server = make_server(Session(), args.port)
+    session = Session(state_dir=args.state_dir)
+    if args.demo:
+        session.start_demo(args.as_of)
+    server = make_server(session, args.port)
     print(f"Claim checker running at http://127.0.0.1:{args.port}  (Ctrl+C to stop)")
     try:
         server.serve_forever()

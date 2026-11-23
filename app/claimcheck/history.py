@@ -13,7 +13,7 @@ def replay(dataset, rules):
         r = check_claim(h, state, dataset.ctx, rules)
         rows.append(dict(claim_id=h["claim_id"], payer=h["payer"], date_of_service=h["date_of_service"],
                          actual_status=h["status"], actual_code=h["denial_code"], remark=h.get("remark", ""),
-                         status=r["status"], codes=r["denial_codes"]))
+                         status=r["status"], codes=r["denial_codes"], error=r.get("rule_error")))
         state.record(h, h["status"])
     return rows
 
@@ -48,4 +48,5 @@ def impact(dataset, old_rules, new_rules, limit=25):
                                 now_correct=matches(y) and not matches(x), now_wrong=matches(x) and not matches(y)))
     return dict(changed_count=len(changed), now_correct=sum(c["now_correct"] for c in changed),
                 now_wrong=sum(c["now_wrong"] for c in changed), examples=changed[:limit],
-                accuracy_before=accuracy(a), accuracy_after=accuracy(b))
+                accuracy_before=accuracy(a), accuracy_after=accuracy(b),
+                errors=sorted(set(r["error"] for r in b if r.get("error"))))

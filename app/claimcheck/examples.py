@@ -14,6 +14,7 @@ scenario = {
 """
 
 import copy
+import re
 from datetime import datetime, timedelta
 
 from .engine import Context, State, check_claim
@@ -41,10 +42,9 @@ def validate_scenario(s):
         errors.append("claim.modifier must be '', U1, U2 or U3")
     if claim.get("frequency_code", "1") not in ("1", "7"):
         errors.append("claim.frequency_code must be 1 or 7")
-    minutes = ctx.get("evv_minutes", [])
     for key in ("evv_minutes", "unverified_evv_minutes"):
         v = ctx.get(key, [])
-        if not isinstance(v, list) or not all(isinstance(m, int) and 0 < m <= 600 for m in v):
+        if not isinstance(v, list) or not all(isinstance(m, int) and not isinstance(m, bool) and 0 < m <= 600 for m in v):
             errors.append(f"context.{key} must be a list of minutes (1-600)")
     if ctx.get("auth", "valid") not in AUTH_STATES:
         errors.append(f"context.auth must be one of {sorted(AUTH_STATES)}")
@@ -52,8 +52,17 @@ def validate_scenario(s):
         v = ctx.get(key, 0)
         if not isinstance(v, int) or isinstance(v, bool) or v < 0:
             errors.append(f"context.{key} must be a non-negative integer")
+    if "prior_submission" in ctx and not isinstance(ctx["prior_submission"], bool):
+        errors.append("context.prior_submission must be boolean")
+    from .normalize import canonical
+    for field in ("billed_amount", "agency_id"):
+        if field in claim:
+            try:
+                canonical(field, str(claim[field]))
+            except ValueError as exc:
+                errors.append(f"claim.{field}: {exc}")
     ec = s.get("expected_codes")
-    if ec is not None and not (isinstance(ec, list) and all(c in DENIAL_CODES for c in ec)):
+    if ec is not None and not (isinstance(ec, list) and all(isinstance(c, str) and re.fullmatch(r"D\d{2}", c) for c in ec)):
         errors.append("expected_codes must be null or a list of denial codes")
     if not isinstance(s.get("payer_id"), str):
         errors.append("payer_id required")
@@ -68,6 +77,9 @@ def build_world(s):
                  submitted_date=claim_in["submitted_date"], units=str(claim_in["units"]),
                  auth_id="", modifier=claim_in.get("modifier", ""), frequency_code=claim_in.get("frequency_code", "1"),
                  original_claim_id="C999998" if claim_in.get("frequency_code") == "7" else "", billed_amount="1")
+    for field in ("billed_amount", "agency_id"):
+        if field in claim_in:
+            claim[field] = str(claim_in[field])
     auth_state = c.get("auth", "valid")
     auths = []
     if auth_state != "missing":
@@ -104,7 +116,7 @@ def run_scenario(s, rules):
     claim, ctx, state = build_world(s)
     r = check_claim(claim, state, ctx, rules)
     return dict(status=r["status"], codes=r["denial_codes"], reasons=[f["reason"] for f in r["failures"]],
-                warnings=r["warnings"])
+                warnings=r["warnings"], error=r.get("rule_error"))
 
 
 def run_examples(examples, rules):

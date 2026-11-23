@@ -162,6 +162,46 @@ class RuleUpdateByDate(HttpCase):
         self.assertEqual(self.api.call("PUT", f"/api/drafts/{d['draft']['id']}", {"params": {"timely_filing_days": "x"}})[0], 400)
 
 
+class CodeAndDemo(HttpCase):
+    def test_novel_rule_acceptance_rechecks_real_claims_and_exports_reasons(self):
+        from tests.test_code_rules import proposal
+        update = proposal()
+        update['effective_from'] = '2026-07-01'
+        self.session.ai = fake_ai(update)
+        code, before = self.api.call('POST', '/api/claims', csv_text([claim_row(units='5')]))
+        self.assertEqual(code, 200)
+        self.assertEqual(before['rows'][0]['denial_codes'], [])
+        code, view = self.api.call('POST', '/api/drafts', {'message': 'Test contract: whole hours only'})
+        self.assertEqual(code, 200)
+        did = view['draft']['id']
+        for ex in view['evaluation']['examples']:
+            if ex['changed']:
+                code, view = self.api.call('POST', f'/api/drafts/{did}/decide',
+                    {'example_id': ex['id'], 'decision': 'set', 'codes': ex['actual']['codes']})
+                self.assertEqual(code, 200)
+        self.assertEqual(self.api.call('POST', f'/api/drafts/{did}/activate', {})[0], 200)
+        _, after = self.api.call('GET', '/api/results')
+        self.assertEqual(after['rows'][0]['denial_codes'], ['D10'])
+        _, exported = self.api.call('GET', '/api/export.csv', raw=True)
+        self.assertIn('Units must be a multiple of four', exported)
+        self.assertEqual(self.api.call('POST', f'/api/drafts/{did}/activate', {})[0], 400)
+
+    def test_demo_api_keeps_full_state_and_prunes_history(self):
+        full = self.session.rules.snapshot()
+        code, status = self.api.call('POST', '/api/demo/start', {})
+        self.assertEqual(code, 200)
+        self.assertEqual(status['mode'], 'demo')
+        code, advanced = self.api.call('POST', '/api/demo/advance', {'date': '2026-07-31'})
+        self.assertEqual(code, 200)
+        self.assertTrue(advanced['report']['passed'])
+        self.assertEqual(len(advanced['results']['rows']), advanced['report']['claims'])
+        self.assertEqual(self.api.call('POST', '/api/data/sample')[0], 400)
+        code, status = self.api.call('POST', '/api/demo/end')
+        self.assertEqual(code, 200)
+        self.assertEqual(status['mode'], 'full')
+        self.assertEqual(self.session.rules.snapshot(), full)
+
+
 class NoKey(HttpCase):
     def test_chat_without_key_is_a_clear_error(self):
         import os

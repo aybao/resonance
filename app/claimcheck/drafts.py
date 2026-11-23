@@ -8,6 +8,10 @@ import json
 import re
 import uuid
 from datetime import datetime, timezone
+from pathlib import Path
+
+from .code_rules import validate_code, RuleCodeError
+from .normalize import CLAIM_FIELDS
 
 from .examples import deterministic_boundary_examples, run_examples, validate_scenario
 from .history import impact
@@ -26,30 +30,49 @@ def candidate_store(store, draft):
     cand = RuleStore()
     cand.restore(store.snapshot())
     cand.add_version(draft["payer_id"], draft["effective_from"], draft["params"], source=draft["source"],
-                     summary=draft["summary"], payer_name=draft.get("payer_name"))
+                     summary=draft["summary"], payer_name=draft.get("payer_name"), code=draft.get("code"))
     return cand
 
 
 def _context_for_ai(store, dataset, draft):
-    lines = ["Current rules (all payers, by version):", json.dumps(
-        {pid: [dict(effective_from=v["effective_from"], params=v["params"]) for v in p["versions"]]
-         for pid, p in store.payers.items()}, indent=1)]
+    from . import engine
+    import inspect
+    lines = ["Accepted rules (all payers; these are the comparison baseline):", json.dumps(store.payers),
+             "Baseline checker implementation (your code transforms its failure list):", inspect.getsource(engine.check_claim)]
     if dataset.history:
-        lines += ["Example clean claim rows (shape only):", json.dumps(dataset.history[:2])]
+        lines += ["Example clean claim rows (labels excluded):",
+                  json.dumps([{k: r.get(k, "") for k in CLAIM_FIELDS} for r in dataset.history[:2]])]
+    lines += ["Sample authorizations:", json.dumps(dataset.authorizations[:2]),
+              "Sample EVV visits:", json.dumps(dataset.visits[:2])]
+    source_dir = Path(__file__).resolve().parent.parent / "sample_data" / "payers"
+    lines += ["Base payer manuals:", "\n".join(p.read_text() for p in sorted(source_dir.glob('*.md')))]
     if draft:
-        lines += ["Current draft:", json.dumps({k: draft[k] for k in ("payer_id", "effective_from", "params", "summary")})]
+        lines += ["Current unaccepted draft:", json.dumps({k: draft.get(k) for k in
+                  ("payer_id", "effective_from", "params", "code", "summary", "proposal_errors")})]
     return "\n".join(lines)
 
 
 def new_draft(payer_id="", effective_from="", params=None, source="", summary="", payer_name=""):
     return dict(id=uuid.uuid4().hex[:8], payer_id=payer_id, payer_name=payer_name, effective_from=effective_from,
                 params=params or {}, source=source, summary=summary, examples=[], messages=[],
-                open_questions=[], decisions={}, status="draft", created_at=_now())
+                open_questions=[], decisions={}, code=None, proposal_errors=[], status="draft", created_at=_now())
 
 
 def apply_ai_proposal(draft, proposal):
     """Merge a (validated) AI proposal into the draft. Returns notes for the user."""
+    if not isinstance(proposal, dict):
+        raise DraftError("AI response must be a structured proposal")
     notes = []
+    draft["proposal_errors"] = []
+    if "code" in proposal:
+        if "params" not in proposal:
+            draft["params"] = {}
+        draft["code"] = proposal["code"]
+        draft["decisions"] = {}
+        try:
+            validate_code(draft["code"])
+        except (RuleCodeError, TypeError) as exc:
+            draft["proposal_errors"].append(str(exc))
     if proposal.get("clarifying_question"):
         draft["open_questions"] = [proposal["clarifying_question"]]
     else:
@@ -57,15 +80,18 @@ def apply_ai_proposal(draft, proposal):
     pid = (proposal.get("payer_id") or draft["payer_id"]).strip()
     if pid and not re.fullmatch(r"PY\d{2}", pid):
         notes.append(f"Ignored unusable payer id {pid!r}")
+        draft["proposal_errors"].append("AI returned an invalid payer ID")
         pid = draft["payer_id"]
     eff = proposal.get("effective_from") or draft["effective_from"]
     if eff and not valid_date(eff):
         notes.append(f"Ignored invalid effective date {eff!r}")
+        draft["proposal_errors"].append("AI returned an invalid effective date")
         eff = draft["effective_from"]
-    if proposal.get("params"):
+    if "params" in proposal:
         errs = validate_params(proposal["params"])
         if errs:
             notes.append("AI proposed invalid rules, not applied: " + "; ".join(errs))
+            draft["proposal_errors"].extend(errs)
         else:
             draft["params"] = proposal["params"]
     draft.update(payer_id=pid, effective_from=eff)
@@ -77,13 +103,22 @@ def apply_ai_proposal(draft, proposal):
         draft["source"] = proposal["source_quote"]
     ai_examples = []
     for i, ex in enumerate(proposal.get("examples") or []):
+        if not isinstance(ex, dict):
+            notes.append("Dropped malformed AI example: expected an object")
+            if "code" in proposal:
+                draft["proposal_errors"].append("AI example must be an object")
+            continue
         s = dict(id=f"ai-{len(draft['messages'])}-{i}", title=ex.get("title", "Example"), payer_id=pid,
                  origin="ai", claim=ex.get("claim", {}), context=ex.get("context", {}),
                  expected_codes=ex.get("expected_codes"))
         if validate_scenario(s):
             notes.append(f"Dropped AI example {s['title']!r}: " + "; ".join(validate_scenario(s)))
+            if "code" in proposal:
+                draft["proposal_errors"].extend(validate_scenario(s))
         else:
             ai_examples.append(s)
+    if "code" in proposal and not ai_examples:
+        draft["proposal_errors"].append("A code update needs valid example rows; ask the assistant to supply them")
     if ai_examples:
         draft["examples"] = [e for e in draft["examples"] if e.get("origin") == "user"] + ai_examples
         draft["decisions"] = {}
@@ -100,9 +135,9 @@ def refresh_boundary_examples(draft, store):
 
 def chat(draft, store, dataset, ai, user_message):
     """One chat turn: send the conversation to the AI and update the draft."""
-    draft["messages"].append({"role": "user", "content": user_message})
-    proposal = ai.propose([{"role": m["role"], "content": m["content"]} for m in draft["messages"]],
-                          _context_for_ai(store, dataset, draft if draft["params"] else None))
+    messages = draft["messages"] + [{"role": "user", "content": user_message}]
+    proposal = ai.propose(messages, _context_for_ai(store, dataset, draft))
+    draft["messages"] = messages
     notes = apply_ai_proposal(draft, proposal)
     reply = proposal.get("assistant_message", "")
     if draft["open_questions"]:
@@ -114,12 +149,17 @@ def chat(draft, store, dataset, ai, user_message):
 
 def evaluate(draft, store, dataset):
     """Everything the user needs to review: rules diff, example results, regressions, history impact."""
-    problems = []
+    problems = list(draft.get("proposal_errors", [])) + list(draft.get("open_questions", []))
+    if draft.get("code"):
+        try:
+            validate_code(draft["code"])
+        except RuleCodeError as exc:
+            problems.append(str(exc))
     if not draft["payer_id"]:
         problems.append("Payer not set")
     if not valid_date(draft["effective_from"]):
         problems.append("Effective date (by date of service) not set")
-    if not draft["params"] and not problems:
+    if not draft["params"] and not draft.get("code") and not problems:
         problems.append("No rule changes in this draft")
     ev = dict(problems=problems, examples=[], regressions=[], impact=None, can_activate=False, undecided=0)
     if problems:
@@ -145,9 +185,17 @@ def evaluate(draft, store, dataset):
     ev["examples"] = after
     ev["undecided"] = sum(1 for r in after if r["changed"] and not r["decision"])
     mismatched = [r for r in after if r["matches_decision"] is False]
-    ev["regressions"] = [t for t in run_examples([t for t in store.acceptance if not t.get("superseded_by")], cand) if t["passed"] is False]
+    saved = run_examples([t for t in store.acceptance if not t.get("superseded_by")], cand)
+    ev["regressions"] = [t for t in saved if t["passed"] is False]
+    ev["checks"] = dict(examples_run=len(after), unchanged_controls=sum(not r["changed"] for r in after), saved_tests=len(saved))
     ev["impact"] = impact(dataset, store, cand) if dataset.history else None
-    ev["can_activate"] = not (ev["undecided"] or mismatched)
+    errors = [r["actual"]["error"] for r in after if r["actual"].get("error")]
+    errors += [r["actual"]["error"] for r in saved if r["actual"].get("error")]
+    if ev["impact"]:
+        errors += ev["impact"].get("errors", [])
+    if errors:
+        ev["problems"].extend(sorted(set(errors)))
+    ev["can_activate"] = not (ev["undecided"] or mismatched or errors)
     if mismatched:
         ev["problems"].append(f"{len(mismatched)} confirmed expectation(s) differ from the rule result; fix the rule or the expectation")
     return ev
@@ -180,7 +228,7 @@ def activate(draft, store, dataset, regression_reason=""):
         raise DraftError(f"{len(ev['regressions'])} previously confirmed test(s) would change; "
                          "give the reason/source for changing earlier expectations")
     version = store.add_version(draft["payer_id"], draft["effective_from"], draft["params"], source=draft["source"],
-                                summary=draft["summary"], payer_name=draft.get("payer_name") or None, approved_at=_now())
+                                summary=draft["summary"], payer_name=draft.get("payer_name") or None, approved_at=_now(), code=draft.get("code"))
     if ev["regressions"]:
         # earlier expectations are superseded only with an explicit, recorded reason
         for t in ev["regressions"]:

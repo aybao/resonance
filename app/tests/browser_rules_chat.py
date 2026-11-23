@@ -1,0 +1,118 @@
+#!/usr/bin/env python3
+"""On-demand browser smoke test. Start geckodriver --port 4445 first. No API key needed.
+
+Run from app/: python3 tests/browser_rules_chat.py [--driver http://127.0.0.1:4445]
+Uses an isolated local server/session and a fake novel-rule proposal, then checks
+upload, comments, revisions, acceptance, desktop/mobile layout and demo controls.
+"""
+import argparse
+import base64
+import json
+from pathlib import Path
+import sys
+import tempfile
+import threading
+import time
+import urllib.error
+import urllib.request
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from server import make_server
+from claimcheck.session import Session
+from tests.test_code_rules import proposal
+from tests.test_drafts import fake_ai
+
+
+def main():
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('--driver', default='http://127.0.0.1:4445')
+    parser.add_argument('--screenshots', type=Path, help='Optional destination for desktop/mobile PNGs')
+    args = parser.parse_args()
+
+    def wd(method, path, body=None):
+        request = urllib.request.Request(args.driver + path, method=method,
+            data=json.dumps(body).encode() if body is not None else None, headers={'Content-Type': 'application/json'})
+        try:
+            with urllib.request.urlopen(request, timeout=60) as response:
+                return json.load(response)['value']
+        except urllib.error.HTTPError as exc:
+            raise RuntimeError(exc.read().decode()) from None
+
+    with tempfile.TemporaryDirectory(prefix='rules-browser-') as state:
+        ai = fake_ai(proposal())
+        app = Session(state_dir=state, ai=ai)
+        server = make_server(app, 0)
+        threading.Thread(target=server.serve_forever, daemon=True).start()
+        sid = None
+        try:
+            sid = wd('POST', '/session', {'capabilities': {'alwaysMatch': {
+                'browserName': 'firefox', 'moz:firefoxOptions': {'args': ['-headless']}}}})['sessionId']
+            def js(script):
+                return wd('POST', f'/session/{sid}/execute/sync',
+                    {'script': 'return window.eval(' + json.dumps('(function(){' + script + '})()') + ')', 'args': []})
+            def wait(script):
+                for attempt in range(150):
+                    if js(script):
+                        return
+                    time.sleep(.2)
+                raise AssertionError('Timeout: ' + script)
+            wd('POST', f'/session/{sid}/window/rect', {'width': 1280, 'height': 1100})
+            wd('POST', f'/session/{sid}/url', {'url': f'http://127.0.0.1:{server.server_port}'})
+            wait('return $("ai-status").textContent.includes("ready")')
+            js('document.querySelector("[data-tab=rules]").click()')
+            wait('return activeRules !== null')
+            js('const f = new File(["# Test contract\\nWhole-hour billing from 2026-09-01 for PY03"], "test-contract.md", {type:"text/markdown"}); const dt=new DataTransfer(); dt.items.add(f); $("rules-file").files=dt.files; $("rules-file").dispatchEvent(new Event("change"));')
+            wait('return currentView !== null && !ruleBusy')
+            assert len(ai.calls) == 1
+            assert js('return currentView.draft.code.includes("apply_rule")')
+            assert js('return document.querySelectorAll(".example-review").length === currentView.evaluation.examples.filter(e=>e.changed).length')
+            assert js('return !document.body.textContent.includes("Unaffected baseline")')
+            js('document.querySelector(".example-select").click(); $("rule-message").value="Please check this case again."; $("rule-composer").requestSubmit()')
+            wait('return currentView.draft.messages.length === 4 && !ruleBusy')
+            assert len(ai.calls) == 2
+            assert 'Regarding this example:' in ai.calls[-1]['messages'][-1]['content']
+            assert 'date_of_service' in ai.calls[-1]['messages'][-1]['content']
+            assert js('return document.querySelectorAll(".rule-message.assistant").length === 2')
+            assert js('return $("example-context").hidden')
+            js('document.querySelectorAll(".rule-title-button")[1].click()')
+            assert js('return selectedExample.code === currentView.draft.code')
+            js('selectExample(null)')
+            count = js('return currentView.evaluation.undecided')
+            for i in range(count):
+                js('[...document.querySelectorAll(".example-review")].filter(e=>!e.hidden).map(e=>e.querySelector("button")).find(b=>b.closest(".example").querySelector(".example-title").textContent.includes("Needs your review")).click()')
+                wait('return !ruleBusy')
+            assert js('return currentView.evaluation.can_activate')
+            assert js('return document.documentElement.scrollWidth <= window.innerWidth')
+            if args.screenshots:
+                args.screenshots.mkdir(parents=True, exist_ok=True)
+                js('document.querySelectorAll(".rule-message.assistant")[1].scrollIntoView()')
+                (args.screenshots / 'rules-desktop.png').write_bytes(base64.b64decode(wd('GET', f'/session/{sid}/screenshot')))
+            wd('POST', f'/session/{sid}/window/rect', {'width': 390, 'height': 844})
+            assert js('return document.documentElement.scrollWidth <= window.innerWidth')
+            if args.screenshots:
+                (args.screenshots / 'rules-mobile.png').write_bytes(base64.b64decode(wd('GET', f'/session/{sid}/screenshot')))
+            js('[...document.querySelectorAll(".activation-row")].filter(e=>!e.hidden).at(-1).querySelector("button").click()')
+            wait('return !ruleBusy && document.querySelector(".activation-success") !== null')
+            assert js('return $("rule-composer").hidden')
+            js('[...$("mode-tools").querySelectorAll("button")].find(b=>b.textContent.includes("Start historical")).click()')
+            wait('return $("mode-tools").textContent.includes("Historical demo")')
+            assert js('return $("rules-empty").hidden === false')
+            js('[...$("mode-tools").querySelectorAll("button")].find(b=>b.textContent.includes("Advance")).click()')
+            wait('return !$("demo-report").hidden && $("demo-report").textContent.includes("734 claims")')
+            assert js('return $("demo-report").textContent.includes("Replay passed")')
+            assert js('return document.documentElement.scrollWidth <= window.innerWidth')
+            js('[...$("mode-tools").querySelectorAll("button")].find(b=>b.textContent.includes("Return to full")).click()')
+            wait('return $("mode-tools").textContent.includes("Start historical")')
+            assert js('return $("demo-report").hidden')
+            assert not js('return !$("error").hidden')
+            print('PASS: executable rules, upload, comments, revisions, acceptance, desktop/mobile, dated demo and full-state restore.')
+        finally:
+            if sid:
+                wd('DELETE', f'/session/{sid}')
+            app.end_demo()
+            server.shutdown()
+            server.server_close()
+
+
+if __name__ == '__main__':
+    main()
