@@ -179,7 +179,7 @@ class Session:
     # rules ------------------------------------------------------------
     def rules_view(self):
         return dict(payers={pid: dict(name=p["name"], versions=self.rules.versions(pid)) for pid, p in self.rules.payers.items()},
-                    acceptance=self.rules.acceptance)
+                    acceptance=self.rules.acceptance, updates=self.rules.updates)
 
     def reset_rules_to_baseline(self):
         with self.lock:
@@ -245,7 +245,9 @@ class Session:
     def add_example(self, draft_id, scenario):
         with self.lock:
             d = self.draft(draft_id)
-            s = dict(scenario, id=f"user-{len(d['examples'])}", origin="user", payer_id=d["payer_id"])
+            s = dict(scenario, id=f"user-{len(d['examples'])}", origin="user")
+            if "payer" not in s.get("claim", {}) and d.get("payer_id"):
+                s["payer_id"] = d["payer_id"]
             errs = validate_scenario(s)
             if errs:
                 raise ValueError("; ".join(errs))

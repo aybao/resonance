@@ -144,10 +144,10 @@ class RuleUpdateByDate(HttpCase):
         self.assertTrue(draft["evaluation"]["can_activate"])
         code, out = self.api.call("POST", f"/api/drafts/{did}/activate", {})
         self.assertEqual(code, 200)
-        self.assertEqual(out["version"]["params"]["timely_filing_days"], 50)
+        self.assertEqual(out["version"]["code"], UPDATE["code"])
         # saved to disk as a versioned rule set
         saved = json.loads((Path(self.tmp.name) / "rules.json").read_text())
-        self.assertEqual(len(saved["payers"]["PY01"]["versions"]), 3)
+        self.assertEqual(len(saved["payers"]["PY01"]["versions"]), 2)
 
         _, res = self.api.call("GET", "/api/results")
         after = {r["claim_id"]: r["denial_codes"] for r in res["rows"]}
@@ -165,7 +165,7 @@ class CodeAndDemo(HttpCase):
     def test_novel_rule_acceptance_rechecks_real_claims_and_exports_reasons(self):
         from tests.test_code_rules import proposal
         update = proposal()
-        update['effective_from'] = '2026-07-01'
+        update['code'] = update['code'].replace('2026-09-01', '2026-07-01')
         self.session.ai = fake_ai(update)
         code, before = self.api.call('POST', '/api/claims', csv_text([claim_row(units='5')]))
         self.assertEqual(code, 200)

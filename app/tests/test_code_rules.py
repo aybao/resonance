@@ -12,6 +12,8 @@ from claimcheck.rules import baseline_store, full_store, RuleStore
 from tests.test_drafts import fake_ai
 
 WHOLE_HOURS = '''def apply_rule(claim, context, failures):
+    if claim['payer'] != 'PY03' or claim['date_of_service'] < '2026-09-01':
+        return failures
     if int(claim['units']) % 4 != 0:
         failures.append({'code': 'D10', 'meaning': 'Whole-hour billing required',
             'reason': 'Units must be a multiple of four', 'suggestion': 'Review the supplied contract; do not alter documented care automatically.'})
@@ -20,9 +22,8 @@ WHOLE_HOURS = '''def apply_rule(claim, context, failures):
 
 
 def proposal(code=WHOLE_HOURS):
-    return dict(assistant_message='The supplied test contract requires whole hours.', payer_id='PY03',
-                effective_from='2026-09-01', code=code, summary='Whole-hour billing', source_quote='Test contract: whole hours only',
-                examples=[dict(title='Five units', claim=dict(service_code='T1019', units=5, modifier='',
+    return dict(assistant_message='The supplied test contract requires whole hours.', code=code, summary='Whole-hour billing', source_quote='Test contract: whole hours only',
+                examples=[dict(title='Five units', claim=dict(payer='PY03', service_code='T1019', units=5, modifier='',
                     date_of_service='2026-09-01', submitted_date='2026-09-02'), context={'evv_minutes': [75]},
                     expected_codes=[])])  # Intentionally wrong model expectation.
 
@@ -60,7 +61,7 @@ class ExecutableRules(unittest.TestCase):
         self.assertEqual(run_scenario(scenario, loaded)['codes'], ['D10'])
         scenario['claim'].update(date_of_service='2026-08-31', submitted_date='2026-08-31')
         self.assertEqual(run_scenario(scenario, loaded)['codes'], [])
-        scenario['payer_id'] = 'PY01'
+        scenario['claim']['payer'] = 'PY01'
         self.assertEqual(run_scenario(scenario, loaded)['codes'], [])
 
     def test_revision_compares_with_accepted_rules_and_makes_one_call(self):
@@ -90,11 +91,11 @@ class ExecutableRules(unittest.TestCase):
 
     def test_worker_does_not_mutate_host_inputs_and_preserves_other_failures(self):
         failures = [dict(code='D07', meaning='Auth missing', reason='No auth', suggestion='Confirm auth')]
-        claim = {'units': '5'}
+        claim = {'payer': 'PY03', 'date_of_service': '2026-09-01', 'units': '5'}
         result = apply_code(WHOLE_HOURS, claim, {}, failures)
         self.assertEqual([f['code'] for f in result], ['D07', 'D10'])
         self.assertEqual(len(failures), 1)
-        self.assertEqual(claim, {'units': '5'})
+        self.assertEqual(claim, {'payer': 'PY03', 'date_of_service': '2026-09-01', 'units': '5'})
 
     def test_full_app_includes_dated_bulletins(self):
         rules = full_store()

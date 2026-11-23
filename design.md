@@ -74,6 +74,13 @@ Give the AI a standard skill containing:
   context needed to reproduce the examples; and a concise explanation of the
   update and its source.
 
+Payer and effective-date applicability belong inside the generated code, using
+conditions on each claim's payer and date of service. The AI does not return
+proposal-level `payer_id` or `effective_from` fields. One update may cover several
+payers and dates; each example row supplies its own payer and dates. Accepted
+updates are versioned as code changes and run after earlier accepted updates.
+Existing saved payer/date versions remain valid as the baseline.
+
 For each initial request or follow-up, make one AI call to return the proposed
 code update and example rows together. Do not display internal thinking. A helper
 script validates the examples and executes both the currently accepted code and

@@ -4,8 +4,8 @@ A scenario builds a tiny controlled world (one member, one authorization, a few 
 optional history) so the expected code set can be reasoned about independently of the engine.
 
 scenario = {
-  id, title, payer_id,
-  claim:   {service_code, date_of_service, submitted_date, units, modifier, frequency_code?},
+  id, title,
+  claim:   {payer, service_code, date_of_service, submitted_date, units, modifier, frequency_code?},
   context: {evv_minutes: [int,...], unverified_evv_minutes?: [int,...],
             auth: "valid"|"missing"|"wrong_service"|"wrong_patient"|"outside_dates" (default valid),
             auth_units_remaining?: int (default 1000), daily_paid_units?: int, prior_submission?: bool},
@@ -64,15 +64,17 @@ def validate_scenario(s):
     ec = s.get("expected_codes")
     if ec is not None and not (isinstance(ec, list) and all(isinstance(c, str) and re.fullmatch(r"D\d{2}", c) for c in ec)):
         errors.append("expected_codes must be null or a list of denial codes")
-    if not isinstance(s.get("payer_id"), str):
-        errors.append("payer_id required")
+    payer = claim.get("payer", s.get("payer_id"))
+    if not isinstance(payer, str) or not re.fullmatch(r"PY\d{2}", payer):
+        errors.append("claim.payer must be a payer ID such as PY01")
     return errors
 
 
 def build_world(s):
     claim_in, c = s["claim"], s.get("context", {})
     dos = claim_in["date_of_service"]
-    claim = dict(claim_id="C999999", agency_id="AG999", payer=s["payer_id"], patient_id=PATIENT,
+    payer = claim_in.get("payer", s.get("payer_id"))
+    claim = dict(claim_id="C999999", agency_id="AG999", payer=payer, patient_id=PATIENT,
                  service_code=claim_in["service_code"], date_of_service=dos,
                  submitted_date=claim_in["submitted_date"], units=str(claim_in["units"]),
                  auth_id="", modifier=claim_in.get("modifier", ""), frequency_code=claim_in.get("frequency_code", "1"),
@@ -84,7 +86,7 @@ def build_world(s):
     auths = []
     if auth_state != "missing":
         claim["auth_id"] = AUTH
-        a = dict(auth_id=AUTH, patient_id=PATIENT, payer_id=s["payer_id"], service_code=claim["service_code"],
+        a = dict(auth_id=AUTH, patient_id=PATIENT, payer_id=payer, service_code=claim["service_code"],
                  start_date="2000-01-01", end_date="2099-12-31",
                  units_authorized=str(c.get("auth_units_remaining", 1000)))
         if auth_state == "wrong_service":
@@ -125,9 +127,9 @@ def run_examples(examples, rules):
     for s in examples:
         actual = run_scenario(s, rules)
         exp = s.get("expected_codes")
-        out.append(dict(id=s.get("id"), title=s.get("title"), payer_id=s["payer_id"], claim=s["claim"],
+        out.append(dict(id=s.get("id"), title=s.get("title"), payer_id=s["claim"].get("payer", s.get("payer_id")), claim=s["claim"],
                         context=s.get("context", {}), expected_codes=exp, actual=actual,
-                        confirmed=s.get("confirmed", False), basis=s.get("basis", ""),
+                        confirmed=s.get("confirmed", False), basis=s.get("basis", ""), origin=s.get("origin", ""),
                         passed=None if exp is None else sorted(exp) == sorted(actual["codes"])))
     return out
 

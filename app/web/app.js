@@ -316,6 +316,11 @@ function ruleValue(value) {
   return String(value).replaceAll("_", " ");
 }
 function ruleSummary(d) {
+  if (d.code != null || !d.payer_id) return h("section", { class: "rule-summary" },
+    h("div", { class: "rule-summary-heading" }, h("button", { type: "button", class: "rule-title-button", onclick: () => selectExample({ key: `${d.id}-rule`, title: d.summary || "Proposed rule update", code: d.code, source: d.source }) }, d.summary || "Proposed rule update", h("span", { class: "small muted" }, " · Click to comment")), badge("review", "Draft")),
+    h("p", { class: "muted" }, d.code ? "Payer and service-date conditions are defined in the rule. One update can cover multiple payers and dates." : "Reply below to clarify the proposed update."),
+    d.code ? h("details", {}, h("summary", {}, "Proposed rule code"), h("pre", {}, d.code)) : null,
+    d.source ? h("details", { class: "source-detail" }, h("summary", {}, "Source passage"), h("blockquote", {}, d.source)) : null);
   const versions = activeRules?.payers[d.payer_id]?.versions || [];
   const prior = versions.filter((v) => v.effective_from <= d.effective_from).at(-1);
   const changes = Object.entries(d.params).filter(([key, value]) => JSON.stringify(prior?.params[key]) !== JSON.stringify(value));
@@ -407,7 +412,7 @@ function exampleCard(d, e) {
   return h("div", { class: "example" + (e.matches_decision === false ? " fail" : "") },
     h("div", { class: "example-content" },
       h("div", { class: "example-title" }, h("strong", {}, e.title)),
-      h("p", { class: "claim-facts" }, `${c.service_code} · ${c.units} units · Service ${c.date_of_service} · Submitted ${c.submitted_date}`),
+      h("p", { class: "claim-facts" }, `${c.payer || e.payer_id} · ${c.service_code} · ${c.units} units · Service ${c.date_of_service} · Submitted ${c.submitted_date}`),
       comparison(e.before_status, e.before, e.actual.status, e.actual.codes)),
     h("details", { class: "example-evidence" }, h("summary", {}, "Why this changes / claim context"),
       ...e.actual.reasons.map((r) => h("p", {}, r)),

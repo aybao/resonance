@@ -64,8 +64,12 @@ includes the code contract, data formats and a worked Northwind update.
 Novel rules do not require adding another parameter to the engine. Python
 `apply_rule(claim, context, failures)` transforms the baseline failure list. The
 host handles CSV input, ordering, historical state and output codes/reasons.
-Each version carries the complete code transform that should remain in force;
-legacy parameter-based drafts still work.
+The AI returns code and example rows, without proposal-level `payer_id` or
+`effective_from` fields. The function checks `claim["payer"]` and
+`claim["date_of_service"]` itself, so one update can cover multiple payers and
+dates. Accepted updates run in order after baseline checks; a new proposal adds
+one transform and preserves earlier accepted updates. Legacy saved payer/date
+versions and parameter-based manual drafts remain supported.
 
 After every response the app validates code and examples, executes before/after
 comparisons, runs saved tests, and reports historical impact. Acceptance rechecks

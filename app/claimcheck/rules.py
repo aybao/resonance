@@ -1,6 +1,7 @@
 """Versioned payer rules.
 
-Versions combine baseline parameters with optional Python rule functions.
+Legacy payer versions provide baseline parameters and optional Python functions.
+New updates are global code transforms that check payer and date themselves.
 AI can propose novel behaviour as code; users review executed examples before approval.
 A version applies to claims whose *date of service* is on or after its
 `effective_from`, until a later version of the same payer takes over.
@@ -110,16 +111,19 @@ def valid_date(text):
 class RuleStore:
     """payer_id -> {name, versions:[{version, effective_from, params, source, summary, approved_at}]}.
 
-    Also holds user-confirmed acceptance examples (versioned tests).
+    Also holds globally applied code updates in acceptance order, plus versioned
+    acceptance examples. Global code owns its payer/date conditions.
     """
 
     def __init__(self, path=None):
         self.path = Path(path) if path else None
         self.payers = {}
         self.acceptance = []
+        self.updates = []
         if self.path and self.path.exists():
             data = json.loads(self.path.read_text())
             self.payers, self.acceptance = data["payers"], data.get("acceptance", [])
+            self.updates = data.get("updates", [])
             for payer in self.payers.values():
                 for version in payer["versions"]:
                     version.setdefault("code", "")
@@ -131,10 +135,12 @@ class RuleStore:
             self.path.write_text(json.dumps(self.snapshot(), indent=2) + "\n")
 
     def snapshot(self):
-        return {"payers": copy.deepcopy(self.payers), "acceptance": copy.deepcopy(self.acceptance)}
+        return {"payers": copy.deepcopy(self.payers), "acceptance": copy.deepcopy(self.acceptance),
+                "updates": copy.deepcopy(self.updates)}
 
     def restore(self, snap):
         self.payers, self.acceptance = copy.deepcopy(snap["payers"]), copy.deepcopy(snap["acceptance"])
+        self.updates = copy.deepcopy(snap.get("updates", []))
 
     # lookup ------------------------------------------------------------
     def versions(self, payer_id):
@@ -156,6 +162,15 @@ class RuleStore:
         return merged
 
     # mutation ----------------------------------------------------------
+    def add_update(self, code, source="", summary="", approved_at=None):
+        """Append one accepted transform; its code controls all payer/date applicability."""
+        from .code_rules import validate_code
+        validate_code(code)
+        update = dict(version=max((u["version"] for u in self.updates), default=0) + 1,
+                      code=code, source=source, summary=summary, approved_at=approved_at)
+        self.updates.append(update)
+        return update
+
     def add_version(self, payer_id, effective_from, params, source="", summary="", payer_name=None, approved_at=None, code=None):
         if not valid_date(effective_from):
             raise ValueError("effective_from must be YYYY-MM-DD")

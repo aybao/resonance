@@ -7,6 +7,7 @@ from pathlib import Path
 from claimcheck.ai import AIClient, AIUnavailable
 from claimcheck.drafts import DraftError, activate, apply_ai_proposal, chat, decide, evaluate, new_draft, refresh_boundary_examples
 from claimcheck.pipeline import Dataset, load_sample
+from claimcheck.examples import run_scenario
 from claimcheck.rules import RuleStore, baseline_store
 
 SAMPLE = Path(__file__).resolve().parent.parent / "sample_data"
@@ -21,12 +22,19 @@ def base_store():
 
 UPDATE = dict(
     assistant_message="Filing limit becomes 50 days for service on/after the effective date.",
-    payer_id="PY01", effective_from="2026-08-01", params={"timely_filing_days": 50},
+    code="""def apply_rule(claim, context, failures):
+    if claim['payer'] != 'PY01' or claim['date_of_service'] < '2026-08-01':
+        return failures
+    result = [f for f in failures if f['code'] != 'D03']
+    if context['filing_days'] > 50:
+        result.append({'code': 'D03', 'meaning': 'Filing deadline exceeded',
+            'reason': 'Filing exceeds 50 days', 'suggestion': 'Review payer exceptions.'})
+    return result
+""",
     summary="50-day filing", source_quote="Test fixture rule text: 50 calendar days",
     examples=[
-        dict(title="40 days after service", claim=dict(service_code="T1019", date_of_service="2026-08-01",
+        dict(title="40 days after service", claim=dict(payer="PY01", service_code="T1019", date_of_service="2026-08-01",
              submitted_date="2026-09-10", units=4, modifier=""), context=dict(evv_minutes=[60]), expected_codes=[]),
-        dict(title="Garbage example", claim=dict(service_code="NOPE"), context={}, expected_codes=[]),
     ])
 
 
@@ -52,18 +60,24 @@ class Workflow(unittest.TestCase):
         return d, notes
 
     def test_chat_builds_validated_draft_and_drops_bad_examples(self):
-        d, notes = self.drafted()
-        self.assertEqual((d["payer_id"], d["effective_from"], d["params"]), ("PY01", "2026-08-01", {"timely_filing_days": 50}))
+        import copy
+        update = copy.deepcopy(UPDATE)
+        update["examples"].append(dict(title="Garbage example", claim=dict(service_code="NOPE"), context={}))
+        d = new_draft()
+        notes = chat(d, self.store, self.ds, fake_ai(update), "Rule text")
+        self.assertEqual(d["code"], UPDATE["code"])
+        self.assertNotIn("payer_id", d)
+        self.assertNotIn("effective_from", d)
         self.assertTrue(any("Garbage example" in n for n in notes))
         self.assertEqual(len([e for e in d["examples"] if e["origin"] == "ai"]), 1)
         self.assertTrue(any(e["origin"] == "boundary" for e in d["examples"]))
         self.assertEqual([m["role"] for m in d["messages"]], ["user", "assistant"])
 
-    def test_invalid_ai_rules_are_not_applied(self):
+    def test_deprecated_ai_scope_fields_are_not_applied(self):
         d = new_draft(payer_id="PY01", effective_from="2026-08-01")
         notes = apply_ai_proposal(d, dict(params={"timely_filing_days": "soon"}))
         self.assertEqual(d["params"], {})
-        self.assertTrue(any("invalid rules" in n for n in notes))
+        self.assertTrue(any("inside code" in p for p in d["proposal_errors"]))
 
     def test_clarifying_question_leaves_draft_empty(self):
         d = new_draft()
@@ -96,10 +110,13 @@ class Workflow(unittest.TestCase):
             decide(d, r["id"], "set", r["actual"]["codes"])
         before = self.store.resolve("PY01", "2026-08-01")["params"]["timely_filing_days"]
         v = activate(d, self.store, self.ds)
-        self.assertEqual((before, v["params"]["timely_filing_days"]), (30, 50))
+        self.assertEqual(before, 30)
+        self.assertEqual(v["code"], UPDATE["code"])
+        self.assertEqual(self.store.updates[-1], v)
+        self.assertEqual(run_scenario({**UPDATE["examples"][0]}, self.store)["codes"], [])
         self.assertEqual(self.store.resolve("PY01", "2026-07-31")["params"]["timely_filing_days"], 30)
         self.assertGreater(len(self.store.acceptance), 3)
-        self.assertTrue(all(t["basis"] == "user_confirmed" and t["effective_from"] == "2026-08-01" for t in self.store.acceptance))
+        self.assertTrue(all(t["basis"] == "user_confirmed" and t["update_version"] == v["version"] for t in self.store.acceptance))
 
     def test_single_acceptance_saves_changed_actual_outputs_with_distinct_provenance(self):
         d, _ = self.drafted()
@@ -133,8 +150,8 @@ class Workflow(unittest.TestCase):
             decide(d, r["id"], "set", r["actual"]["codes"])
         activate(d, self.store, self.ds)
         # a later change that flips the confirmed 50-day behaviour on the same effective date
-        d2 = new_draft("PY01", "2026-08-01", {"timely_filing_days": 30}, source="Mistaken edit")
-        refresh_boundary_examples(d2, self.store)
+        d2 = new_draft()
+        chat(d2, self.store, self.ds, fake_ai({**UPDATE, "code": UPDATE["code"].replace("50", "30")}), "Restore 30 days")
         ev = evaluate(d2, self.store, self.ds)
         self.assertTrue(ev["regressions"])
         for r in ev["examples"]:

@@ -8,6 +8,7 @@ import tempfile
 from claimcheck.ai import AIClient
 from claimcheck.demo_fixtures import bulletin_text, fixture_ai
 from claimcheck.session import Session
+from claimcheck.drafts import decide
 
 
 def accept_bulletin(session, payer, live=False, interactive=False):
@@ -32,7 +33,7 @@ def accept_bulletin(session, payer, live=False, interactive=False):
             # Fixture expectations were transcribed from the source; never approve code just because it ran.
             raise ValueError('Bulletin fixture result differs from the independent expected code set')
         if not live:
-            session.decide(draft['id'], dict(example_id=ex['id'], decision='set', codes=ex['actual']['codes']))
+            decide(draft, ex['id'], 'set', codes=ex['actual']['codes'])
     if live and input('Accept this rule update and its displayed examples? [y/N] ').lower() != 'y':
         raise ValueError('Live proposal not accepted; raise an issue or revise it in the web chat')
     return session.activate(draft['id'])

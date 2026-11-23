@@ -58,12 +58,20 @@ update, setdefault, count, index, startswith, endswith, split, strip, lower,
 upper, join. Imports, I/O, introspection and external packages are unavailable;
 execution has memory, instruction and time limits. Describe missing input data
 instead of fabricating it. Novel business rules are welcome; they need not fit
-the legacy `params` schema. `params` is optional for backwards compatibility.
+a fixed parameter vocabulary. Do not return `params`, `payer_id`, `payer_name`,
+or `effective_from` as proposal fields.
 
-The code is the complete transform over baseline parameter-based checks for this
-payer version. It replaces the prior code transform; include prior accepted code
-behaviour that must continue. Do not call the accepted transform yourself. The
-host selects payer/effective date before calling the function. Keep business
+The host calls your update for **every claim**, across all payers and service
+dates, after baseline checks and previously accepted updates. Put all payer,
+service-date and other applicability conditions **inside the code**. One update
+may cover several payers and effective dates with separate conditions. Return
+unchanged failures outside those conditions.
+
+Return the complete implementation of this **new update**, not a copy of all
+previously accepted transforms: those already run before it. To revise an older
+rule, replace its relevant failure inside the appropriate payer/date condition,
+leaving unrelated failures intact. A follow-up replaces the current unaccepted
+candidate; it does not append another accepted transform. Keep business
 corrections as suggestions rather than altering claim inputs.
 
 ## Worked response
@@ -74,6 +82,8 @@ when `context['filing_days']` exceeds the old limit. Implement the update as:
 
 ```python
 def apply_rule(claim, context, failures):
+    if claim['payer'] != 'PY01' or claim['date_of_service'] < '2026-08-01':
+        return failures
     result = [f for f in failures if f['code'] != 'D03']
     if context['filing_days'] > 45:
         result.append({'code': 'D03', 'meaning': 'Timely filing limit exceeded',
@@ -82,16 +92,19 @@ def apply_rule(claim, context, failures):
     return result
 ```
 
-Return payer_id PY01, effective_from 2026-08-01, that `code`, a concise summary,
-the source passage as `source_quote`, and `examples` in this shape:
+Return that `code`, a concise summary, the source passage as `source_quote`,
+and `examples` in this shape. Payer and dates belong to each **claim row**, not
+to proposal-level routing fields:
 
 ```json
-{"title":"40-day filing becomes payable", "claim":{"service_code":"T1019","date_of_service":"2026-08-01","submitted_date":"2026-09-10","units":4,"modifier":"","frequency_code":"1"},"context":{"evv_minutes":[60],"auth":"valid","auth_units_remaining":1000},"expected_codes":[]}
+{"title":"40-day filing becomes payable", "claim":{"payer":"PY01","service_code":"T1019","date_of_service":"2026-08-01","submitted_date":"2026-09-10","units":4,"modifier":"","frequency_code":"1"},"context":{"evv_minutes":[60],"auth":"valid","auth_units_remaining":1000},"expected_codes":[]}
 ```
 
 Also propose the 45/46-day boundary, an earlier-service-date control, and an
-unrelated-service or payer control where relevant. Example `claim` units are
-integers; its service is T1019, T1005 or S5125. Scenario `context` supports:
+unrelated-service or payer control where relevant. Every example claim must
+include its normalized `payer` (e.g. PY01), `date_of_service`, and
+`submitted_date`. Example `claim` units are integers; its service is T1019, T1005
+or S5125. Scenario `context` supports:
 evv_minutes and unverified_evv_minutes (lists of visit durations, 1–600 minutes),
 auth (valid/missing/wrong_service/wrong_patient/outside_dates),
 auth_units_remaining, daily_paid_units (nonnegative integers), prior_submission

@@ -10,7 +10,7 @@ from claimcheck.rules import RuleStore, full_store
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('draft', type=Path, help='JSON draft with payer_id, effective_from, code and examples')
+    parser.add_argument('draft', type=Path, help='JSON draft with code and payer/date-bearing example claims')
     parser.add_argument('--rules', type=Path, help='Accepted rules snapshot; defaults to all supplied rules')
     parser.add_argument('--data-dir', type=Path, default=Path(__file__).resolve().parent / 'sample_data')
     args = parser.parse_args()
@@ -25,7 +25,8 @@ def main():
     problems = []
     for i, ex in enumerate(d['examples']):
         ex.setdefault('id', f'file-{i}')
-        ex.setdefault('payer_id', d['payer_id'])
+        if 'payer' not in ex.get('claim', {}) and d.get('payer_id'):
+            ex.setdefault('payer_id', d['payer_id'])
         problems.extend(validate_scenario(ex))
     if problems:
         print(json.dumps({'problems': problems}, indent=2))

@@ -20,25 +20,25 @@ SYSTEM = SKILL_PATH.read_text() + "\n\nDenial code meanings: " + json.dumps(DENI
 
 TOOL = {
     "name": "propose_rule_update",
-    "description": "Propose a rule version and example scenarios for human review.",
+    "description": "Propose a code update and example claims spanning any relevant payers and service dates.",
     "input_schema": {
         "type": "object",
         "properties": {
             "assistant_message": {"type": "string", "description": "Short explanation for the user, incl. anything not modelled"},
             "clarifying_question": {"type": "string"},
-            "payer_id": {"type": "string"},
-            "payer_name": {"type": "string"},
-            "effective_from": {"type": "string", "description": "YYYY-MM-DD, applies by date of service"},
-            "params": {"type": "object", "description": "Optional legacy baseline parameter changes"},
-            "code": {"type": "string", "description": "Complete Python apply_rule(claim, context, failures) implementation"},
+            "code": {"type": "string", "description": "Python apply_rule(claim, context, failures) update, including its own payer and service-date conditions"},
             "summary": {"type": "string"},
             "source_quote": {"type": "string"},
             "examples": {"type": "array", "items": {"type": "object", "properties": {
-                "title": {"type": "string"}, "claim": {"type": "object"}, "context": {"type": "object"},
+                "title": {"type": "string"}, "claim": {"type": "object",
+                    "properties": {"payer": {"type": "string"}},
+                    "required": ["payer", "service_code", "date_of_service", "submitted_date", "units"]},
+                "context": {"type": "object"},
                 "expected_codes": {"type": "array", "items": {"type": "string"}}},
                 "required": ["title", "claim", "expected_codes"]}},
         },
         "required": ["assistant_message"],
+        "additionalProperties": False,
     },
 }
 

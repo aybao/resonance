@@ -65,6 +65,8 @@ def main():
             wait('return currentView !== null && !ruleBusy')
             assert len(ai.calls) == 1
             assert js('return currentView.draft.code.includes("apply_rule")')
+            assert js('return !("payer_id" in currentView.draft) && !("effective_from" in currentView.draft)')
+            assert js('return !document.body.textContent.includes("Payer to confirm")')
             assert js('return document.querySelectorAll(".example-evidence").length === currentView.evaluation.examples.filter(e=>e.changed).length')
             assert js('return !document.body.textContent.includes("Unaffected baseline")')
             js('document.querySelector(".example-select").click(); $("rule-message").value="Please check this case again."; $("rule-composer").requestSubmit()')
