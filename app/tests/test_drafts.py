@@ -72,13 +72,11 @@ class Workflow(unittest.TestCase):
         self.assertIn("Question: Which payer?", d["messages"][-1]["content"])
         self.assertFalse(evaluate(d, self.store, self.ds)["can_activate"])
 
-    def test_activation_requires_user_decisions_and_matching_results(self):
+    def test_acceptance_needs_no_per_example_decisions_but_respects_explicit_expectations(self):
         d, _ = self.drafted()
         ev = evaluate(d, self.store, self.ds)
-        self.assertFalse(ev["can_activate"])
+        self.assertTrue(ev["can_activate"])
         self.assertGreater(ev["undecided"], 0)
-        with self.assertRaises(DraftError):
-            activate(d, self.store, self.ds)
         # AI's own expectation is a proposal until confirmed; confirming a wrong one blocks activation
         wrong = next(e for e in d["examples"] if e["origin"] == "ai")
         decide(d, wrong["id"], "set", ["D03"])
@@ -103,7 +101,7 @@ class Workflow(unittest.TestCase):
         self.assertGreater(len(self.store.acceptance), 3)
         self.assertTrue(all(t["basis"] == "user_confirmed" and t["effective_from"] == "2026-08-01" for t in self.store.acceptance))
 
-    def test_only_changed_examples_require_review_and_are_saved(self):
+    def test_single_acceptance_saves_changed_actual_outputs_with_distinct_provenance(self):
         d, _ = self.drafted()
         ev = evaluate(d, self.store, self.ds)
         changed = [r for r in ev["examples"] if r["changed"]]
@@ -111,12 +109,12 @@ class Workflow(unittest.TestCase):
         self.assertTrue(changed)
         self.assertTrue(unchanged)
         self.assertEqual(ev["undecided"], len(changed))
-        for r in changed:
-            self.assertIn("before_status", r)
-            decide(d, r["id"], "set", r["actual"]["codes"])
+        self.assertFalse(d["decisions"])
         self.assertTrue(evaluate(d, self.store, self.ds)["can_activate"])
         activate(d, self.store, self.ds)
         self.assertEqual(len(self.store.acceptance), len(changed))
+        self.assertTrue(all(t["basis"] == "accepted_with_rule" for t in self.store.acceptance))
+        self.assertEqual([t["expected_codes"] for t in self.store.acceptance], [r["actual"]["codes"] for r in changed])
         self.assertEqual({t["title"] for t in self.store.acceptance}, {r["title"] for r in changed})
 
     def test_impact_on_history_shows_changed_outcomes_for_affected_dates_only(self):

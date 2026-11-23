@@ -21,10 +21,7 @@ def accept_bulletin(session, payer, live=False, interactive=False):
         if not ex['changed']:
             continue
         print(f"  {ex['title']}: {ex['before']} -> {ex['actual']['codes']}")
-        if live:
-            if input('Confirm this result against the bulletin? [y/N] ').lower() != 'y':
-                raise ValueError('Live proposal not accepted; inspect or revise it in the web chat')
-        else:
+        if not live:
             from claimcheck.examples import run_scenario
             from claimcheck.rules import full_store
             # Independent source-transcribed parameter rules also judge generated boundaries.
@@ -34,7 +31,10 @@ def accept_bulletin(session, payer, live=False, interactive=False):
         if not live and ex['expected_codes'] is not None and sorted(ex['expected_codes']) != ex['actual']['codes']:
             # Fixture expectations were transcribed from the source; never approve code just because it ran.
             raise ValueError('Bulletin fixture result differs from the independent expected code set')
-        session.decide(draft['id'], dict(example_id=ex['id'], decision='set', codes=ex['actual']['codes']))
+        if not live:
+            session.decide(draft['id'], dict(example_id=ex['id'], decision='set', codes=ex['actual']['codes']))
+    if live and input('Accept this rule update and its displayed examples? [y/N] ').lower() != 'y':
+        raise ValueError('Live proposal not accepted; raise an issue or revise it in the web chat')
     return session.activate(draft['id'])
 
 
@@ -61,7 +61,7 @@ def run_replay(session, interactive=False, live=False):
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--interactive', action='store_true', help='Pause between stages for a guided demo')
-    parser.add_argument('--live-ai', action='store_true', help='Call Claude and manually review each changed example (requires key)')
+    parser.add_argument('--live-ai', action='store_true', help='Call Claude and review and accept each rule update once (requires key)')
     parser.add_argument('--report', type=Path, help='Write all stage reports and every mismatch as JSON')
     args = parser.parse_args()
     with tempfile.TemporaryDirectory(prefix='claimcheck-replay-') as tmp:

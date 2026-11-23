@@ -147,6 +147,7 @@ function showDetail(line, keepScroll) {
     h("div", {}, `Earlier unresolved claims: ${r.unresolved_prior_claim_ids.join(", ")}. Balance could be ${r.balance_range[0]}–${r.balance_range[1]} units; this claim bills ${r.clean.units}.`)));
   for (const w of r.warnings) kids.push(h("div", { class: "warning" }, w));
   if (r.changes.length) kids.push(h("p", { class: "small" }, h("b", {}, "Normalised automatically: "), r.changes.map((c) => `${c.field}: "${c.before}" → "${c.after}"`).join("; ")));
+  kids.push(claimReferencePanel(r));
   const pc = Object.entries(r.proposed_changes || {});
   if (pc.length) kids.push(h("div", {}, h("h3", {}, "Proposed fixes (need your confirmation)"), ...pc.map(([field, p]) =>
     h("div", { class: "row" }, h("span", {}, h("b", {}, field), " → ", h("span", { class: "fix" }, p.value), " — " + p.reason),
@@ -165,6 +166,32 @@ function showDetail(line, keepScroll) {
   kids.push(h("details", {}, h("summary", {}, "Evidence"), h("pre", {}, JSON.stringify(r.evidence, null, 2))));
   d.replaceChildren(...kids);
   if (!keepScroll) d.scrollIntoView({ behavior: "smooth", block: "nearest" });
+}
+function claimReferencePanel(r) {
+  const refs = r.reference_data || { evv_visits: [], authorizations: [] };
+  const visits = refs.evv_visits;
+  const verifiedMinutes = visits.filter((v) => v.verification_status === "verified").reduce((total, v) => total + v.duration_minutes, 0);
+  const fact = (name, value) => h("div", {}, h("dt", {}, name), h("dd", {}, value == null || value === "" ? "—" : value));
+  const evv = h("section", { class: "reference-panel" }, h("h3", {}, "EVV visits"),
+    h("p", { class: "reference-summary" }, h("strong", {}, `${verifiedMinutes} verified minutes`), ` · ${r.clean.units || "—"} units billed`),
+    h("p", { class: "small muted" }, `Patient ${r.clean.patient_id || "—"} · ${r.clean.service_code || "—"} · Service ${r.clean.date_of_service || "—"}. Visits are matched by their clock-in date.`),
+    visits.length ? h("div", { class: "table-wrap" }, h("table", {},
+      h("tr", {}, ...["Visit", "Caregiver", "Clock in", "Clock out", "Minutes", "Verification"].map((name) => h("th", {}, name))),
+      ...visits.map((v) => h("tr", {}, h("td", {}, v.visit_id), h("td", {}, v.caregiver_id), h("td", {}, v.clock_in), h("td", {}, v.clock_out), h("td", {}, v.duration_minutes),
+        h("td", {}, badge(v.verification_status === "verified" ? "payable" : "review", v.verification_status.replaceAll("_", " "))))))) : h("p", { class: "muted" }, "No EVV visits found for this patient, service and date."),
+    visits.some((v) => v.verification_status !== "verified") ? h("p", { class: "small muted" }, "Only verified visits count toward billable time.") : null);
+  const auth = h("section", { class: "reference-panel" }, h("h3", {}, "Authorization"),
+    h("p", { class: "reference-summary" }, "Claim reference: ", h("strong", {}, r.clean.auth_id || "Missing")),
+    r.clean.auth_id && !refs.authorizations.some((a) => a.referenced) ? h("p", { class: "warning" }, "The authorization referenced by this claim was not found.") : null,
+    !refs.authorizations.length ? h("p", { class: "muted" }, "No related authorization found for this payer, patient and service.") : null,
+    ...refs.authorizations.map((a) => h("article", { class: "authorization-record" },
+      h("div", { class: "example-title" }, h("strong", {}, a.auth_id), badge(a.issues.length ? "review" : "payable", a.referenced ? "Referenced by claim" : "Related coverage")),
+      h("dl", { class: "reference-facts" }, fact("Payer", a.payer_id), fact("Patient", a.patient_id), fact("Service", a.service_code), fact("Coverage", `${a.start_date} to ${a.end_date}`), fact("Authorized units", a.units_authorized),
+        a.referenced && !a.issues.length ? fact("Remaining before this claim", r.evidence.authorization_remaining) : null,
+        a.referenced && !a.issues.length && r.evidence.authorization_remaining != null ? fact("Used in current ledger", Number(a.units_authorized) - r.evidence.authorization_remaining) : null),
+      a.issues.length ? h("p", { class: "warning" }, a.issues.join(" · ")) : null)),
+    r.balance_uncertain ? h("p", { class: "warning" }, `Earlier unresolved claims could leave ${r.balance_range[0]}–${r.balance_range[1]} units available.`) : null);
+  return h("div", { class: "claim-references" }, evv, auth);
 }
 function applyEdit(line, fields) { if (!Object.keys(fields).length) return; guard(async () => { results = await api("POST", `/api/claims/line/${line}/edit`, { fields }); render(); }); }
 
@@ -323,7 +350,8 @@ function showDraft(view) {
   // Previous turns remain readable, while decisions always apply to the latest revision.
   for (const t of threads.values()) for (const [index, node] of t.turns) {
     const old = t !== thread || index !== last;
-    node.querySelectorAll(".rule-actions").forEach((el) => { el.hidden = old; });
+    node.querySelectorAll(".activation-row").forEach((el) => { el.hidden = old; });
+    node.querySelectorAll(".example-review").forEach((el) => { el.hidden = d.status === "activated"; });
   }
   $("rule-composer").hidden = d.status === "activated";
   setRuleControls();
@@ -337,7 +365,7 @@ function updateOutput(view) {
   for (const note of [...(view.notes || []), ...ev.problems]) output.append(h("p", { class: "warning" }, note));
   if (((Object.keys(d.params).length || d.code) && !ev.problems.length) || examples.length) {
     output.append(h("h3", { class: "examples-heading" }, `${examples.length} affected example${examples.length === 1 ? "" : "s"}`),
-      h("p", { class: "small muted" }, "Only changed outcomes are shown. Click an example to discuss it, or review its result below."));
+      h("p", { class: "small muted" }, "Only changed outcomes are shown. Raise an issue if something looks wrong, or accept the rule update below."));
     output.append(...examples.map((e) => exampleCard(d, e)));
     if (!examples.length) output.append(h("p", { class: "muted" }, "No generated example outcomes change with this update."));
   }
@@ -346,47 +374,46 @@ function updateOutput(view) {
     output.append(h("p", { class: "history-impact" }, h("strong", {}, `${i.changed_count} recorded claim outcome${i.changed_count === 1 ? "" : "s"} would change.`), ` ${i.now_correct} would match their recorded outcome; ${i.now_wrong} would stop matching.`));
     if (i.examples.length) output.append(h("details", {}, h("summary", {}, `Changed historical claims (${i.examples.length} shown)`), ...i.examples.map((c) => {
       const data = { key: `${d.id}-history-${c.claim_id}`, title: `Historical claim ${c.claim_id}`, ...c };
-      return h("div", { class: "example" }, h("button", { type: "button", class: "example-select", "data-example-key": data.key, "aria-pressed": "false", onclick: () => selectExample(data) }, h("strong", {}, c.claim_id), h("span", { class: "small muted" }, `${c.payer} · Service ${c.date_of_service}`), comparison(c.before.status, c.before.codes, c.after.status, c.after.codes), h("span", { class: "small muted" }, `Recorded outcome: ${c.actual.status}${c.actual.code ? " · " + c.actual.code : ""} · Click to comment →`)));
+      return h("div", { class: "example" }, h("div", { class: "example-content" }, h("strong", {}, c.claim_id), h("span", { class: "small muted" }, ` · ${c.payer} · Service ${c.date_of_service}`), comparison(c.before.status, c.before.codes, c.after.status, c.after.codes), h("span", { class: "small muted" }, `Recorded outcome: ${c.actual.status}${c.actual.code ? " · " + c.actual.code : ""}`)),
+        h("div", { class: "rule-actions example-review" }, raiseIssueButton(data)));
     })));
   }
-  const reason = h("input", { placeholder: "Reason / source for changing earlier confirmed expectations", "aria-label": "Reason for changing earlier confirmed expectations" });
-  if (ev.regressions.length) output.append(h("div", { class: "warning" }, h("strong", {}, `${ev.regressions.length} previously confirmed tests would change`), ...ev.regressions.map((r) => h("p", {}, `${r.title}: ${r.expected_codes.join(", ") || "payable"} → ${r.actual.codes.join(", ") || "payable"}`)), reason));
+  const reason = h("input", { placeholder: "Reason / source for changing saved expectations", "aria-label": "Reason for changing saved expectations" });
+  if (ev.regressions.length) output.append(h("div", { class: "warning" }, h("strong", {}, `${ev.regressions.length} saved example checks would change`), ...ev.regressions.map((r) => h("p", {}, `${r.title}: ${r.expected_codes.join(", ") || "payable"} → ${r.actual.codes.join(", ") || "payable"}`)), reason));
   const activate = h("button", { type: "button", disabled: !ev.can_activate, "data-blocked": String(!ev.can_activate), onclick: () => ruleTask(async () => {
     await api("POST", `/api/drafts/${d.id}/activate`, { regression_reason: reason.value });
     d.status = "activated";
     output.querySelectorAll(".rule-actions").forEach((el) => { el.hidden = true; });
+    document.querySelectorAll(".example-review").forEach((el) => { el.hidden = true; });
     output.append(h("p", { class: "activation-success", role: "status" }, "✓ New rule accepted. Current claims have been re-checked."));
     $("rule-composer").hidden = true;
     selectExample(null);
     await loadRules(); await refreshResults();
     $("rules-status").textContent = "Rules saved. Upload another document to start a new update.";
   }, "Activating reviewed rules…") }, "Accept new rule");
-  output.append(h("div", { class: "rule-actions activation-row" }, activate, h("span", { class: "small muted" }, ev.undecided ? `${ev.undecided} affected example${ev.undecided === 1 ? "" : "s"} to review` : ev.can_activate ? "Ready to activate after your review." : "Reply below to complete this draft.")));
+  output.append(h("div", { class: "rule-actions activation-row" }, activate, h("span", { class: "small muted" }, ev.can_activate ? "Accept this update in one step, or raise an issue above." : "Reply below to complete this draft.")));
   return output;
 }
 function comparison(beforeStatus, beforeCodes, afterStatus, afterCodes) {
   return h("div", { class: "outcome-comparison" }, h("div", {}, h("span", { class: "outcome-label" }, "Before"), outcome(beforeStatus, beforeCodes)), h("span", { class: "change-arrow", "aria-hidden": "true" }, "→"), h("div", {}, h("span", { class: "outcome-label" }, "After update"), outcome(afterStatus, afterCodes)));
 }
+function raiseIssueButton(data) {
+  return h("button", { type: "button", class: "secondary example-select", "data-example-key": data.key,
+    "aria-pressed": String(selectedExample?.key === data.key), onclick: () => selectExample(data) }, "Raise issue");
+}
 function exampleCard(d, e) {
-  const c = e.claim, x = e.context, dec = e.decision;
+  const c = e.claim, x = e.context;
   const data = { key: `${d.id}-${e.id}`, title: e.title, claim: c, context: x, before: { status: e.before_status, codes: e.before }, after: e.actual };
-  const decide = (decision, codes) => ruleTask(async () => { showDraft(await api("POST", `/api/drafts/${d.id}/decide`, { example_id: e.id, decision, codes, note: "" })); $("rules-status").textContent = "Example review saved."; }, "Saving example review…");
-  const codeSelect = [...new Set([...CODES, ...e.actual.codes, ...(e.expected_codes || []), ...(dec?.codes || [])])].sort().map((code) => h("label", {}, h("input", { type: "checkbox", value: code, checked: !!dec?.codes?.includes(code) }), code + " · " + (DENIAL_MEANING[code] || "Additional payer rule")));
-  const status = dec ? dec.decision === "unclear" ? "Needs payer clarification" : e.matches_decision ? "✓ Reviewed" : "Expectation differs — revise the rule" : "Needs your review";
-  return h("div", { class: "example" + (e.matches_decision === false ? " fail" : dec ? " done" : "") },
-    h("button", { type: "button", class: "example-select", "data-example-key": data.key, "aria-pressed": String(selectedExample?.key === data.key), onclick: () => selectExample(data) },
-      h("div", { class: "example-title" }, h("strong", {}, e.title), h("span", { class: "small " + (dec ? "ok" : "muted") }, status)),
+  return h("div", { class: "example" + (e.matches_decision === false ? " fail" : "") },
+    h("div", { class: "example-content" },
+      h("div", { class: "example-title" }, h("strong", {}, e.title)),
       h("p", { class: "claim-facts" }, `${c.service_code} · ${c.units} units · Service ${c.date_of_service} · Submitted ${c.submitted_date}`),
-      comparison(e.before_status, e.before, e.actual.status, e.actual.codes),
-      h("span", { class: "comment-hint" }, "Click to comment on this example →")),
+      comparison(e.before_status, e.before, e.actual.status, e.actual.codes)),
     h("details", { class: "example-evidence" }, h("summary", {}, "Why this changes / claim context"),
       ...e.actual.reasons.map((r) => h("p", {}, r)),
       !e.actual.codes.length && e.before.length ? h("p", {}, "This update removes: " + e.before.map((code) => `${code} (${DENIAL_MEANING[code]})`).join(", ")) : null,
       h("dl", {}, ...Object.entries({ ...c, ...x }).map(([key, value]) => h("div", {}, h("dt", {}, key.replaceAll("_", " ")), h("dd", {}, Array.isArray(value) ? value.join(" + ") || "None" : String(value)))))),
-    h("div", { class: "rule-actions example-review" },
-      h("button", { type: "button", class: "secondary", onclick: () => decide("set", e.actual.codes) }, "Result is correct"),
-      h("button", { type: "button", class: "text-button", onclick: () => decide("unclear") }, "Needs payer clarification"),
-      h("details", { class: "correct-expectation" }, h("summary", {}, "Set a different expectation"), h("p", { class: "small muted" }, "Choose all expected denial codes, or leave empty for payable."), h("div", { class: "code-options" }, codeSelect), h("button", { type: "button", class: "secondary", onclick: () => decide("set", codeSelect.map((label) => label.firstChild).filter((i) => i.checked).map((i) => i.value)) }, "Save expectation"))));
+    h("div", { class: "rule-actions example-review" }, raiseIssueButton(data)));
 }
 
 guard(async () => { await loadStatus(); await refreshResults(); });

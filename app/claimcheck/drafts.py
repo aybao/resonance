@@ -1,6 +1,7 @@
-"""Rule-update workflow: propose -> test and show impact -> user confirms examples -> activate.
+"""Rule-update workflow: propose -> execute examples -> user raises issues or accepts the rule.
 
-AI-proposed expectations are *proposals*. Only expectations a user confirms become acceptance tests.
+Single rule acceptance saves changed outputs as regression baselines. Explicitly
+confirmed expectations retain their separate provenance; generated outputs are not proof of accuracy.
 """
 
 import copy
@@ -195,7 +196,7 @@ def evaluate(draft, store, dataset):
         errors += ev["impact"].get("errors", [])
     if errors:
         ev["problems"].extend(sorted(set(errors)))
-    ev["can_activate"] = not (ev["undecided"] or mismatched or errors)
+    ev["can_activate"] = not (mismatched or errors)
     if mismatched:
         ev["problems"].append(f"{len(mismatched)} confirmed expectation(s) differ from the rule result; fix the rule or the expectation")
     return ev
@@ -223,9 +224,9 @@ def activate(draft, store, dataset, regression_reason=""):
     if ev["problems"] and not ev["can_activate"]:
         raise DraftError("; ".join(ev["problems"]) or "Draft not ready")
     if not ev["can_activate"]:
-        raise DraftError(f"{ev['undecided']} example(s) still need your decision")
+        raise DraftError("Draft is not ready for acceptance")
     if ev["regressions"] and not regression_reason.strip():
-        raise DraftError(f"{len(ev['regressions'])} previously confirmed test(s) would change; "
+        raise DraftError(f"{len(ev['regressions'])} saved example test(s) would change; "
                          "give the reason/source for changing earlier expectations")
     version = store.add_version(draft["payer_id"], draft["effective_from"], draft["params"], source=draft["source"],
                                 summary=draft["summary"], payer_name=draft.get("payer_name") or None, approved_at=_now(), code=draft.get("code"))
@@ -238,8 +239,15 @@ def activate(draft, store, dataset, regression_reason=""):
                     old["superseded_reason"] = regression_reason.strip()
     for r in ev["examples"]:
         d = r["decision"]
+        basis = "user_confirmed"
         if not d:
-            continue  # Unchanged examples run in the background and need no user decision.
+            if not r["changed"]:
+                continue
+            # The single acceptance action approves the version as a whole. Keep
+            # these snapshots distinct from independently confirmed expectations.
+            d = dict(decision="set", codes=r["actual"]["codes"], note="Accepted with rule version")
+            r["final_expected"] = list(r["actual"]["codes"])
+            basis = "accepted_with_rule"
         if d["decision"] == "unclear":
             version.setdefault("open_questions", []).append(f"{r['title']}: {d.get('note') or 'payer clarification needed'}")
             continue
@@ -247,7 +255,7 @@ def activate(draft, store, dataset, regression_reason=""):
             id=f"{draft['payer_id']}-v{version['version']}-{r['id']}-{uuid.uuid4().hex[:4]}",
             title=r["title"], payer_id=draft["payer_id"], claim=r["claim"], context=r["context"],
             expected_codes=r["final_expected"], version=version["version"], effective_from=draft["effective_from"],
-            source=draft["source"], basis="user_confirmed", note=d.get("note", ""), confirmed_at=_now(),
+            source=draft["source"], basis=basis, note=d.get("note", ""), confirmed_at=_now(),
             ai_proposed=r.get("origin") == "ai"))
     draft["status"] = "activated"
     store.save()

@@ -136,8 +136,7 @@ class RuleUpdateByDate(HttpCase):
         self.assertEqual(code, 200)
         did = draft["draft"]["id"]
         ev = draft["evaluation"]
-        self.assertFalse(ev["can_activate"])
-        self.assertEqual(self.api.call("POST", f"/api/drafts/{did}/activate", {})[0], 400)
+        self.assertTrue(ev["can_activate"])
         for r in ev["examples"]:
             code, draft = self.api.call("POST", f"/api/drafts/{did}/decide",
                                         {"example_id": r["id"], "decision": "set", "codes": r["actual"]["codes"]})
@@ -174,11 +173,8 @@ class CodeAndDemo(HttpCase):
         code, view = self.api.call('POST', '/api/drafts', {'message': 'Test contract: whole hours only'})
         self.assertEqual(code, 200)
         did = view['draft']['id']
-        for ex in view['evaluation']['examples']:
-            if ex['changed']:
-                code, view = self.api.call('POST', f'/api/drafts/{did}/decide',
-                    {'example_id': ex['id'], 'decision': 'set', 'codes': ex['actual']['codes']})
-                self.assertEqual(code, 200)
+        self.assertTrue(view['evaluation']['can_activate'])
+        self.assertFalse(view['draft']['decisions'])
         self.assertEqual(self.api.call('POST', f'/api/drafts/{did}/activate', {})[0], 200)
         _, after = self.api.call('GET', '/api/results')
         self.assertEqual(after['rows'][0]['denial_codes'], ['D10'])

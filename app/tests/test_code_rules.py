@@ -43,7 +43,7 @@ class ExecutableRules(unittest.TestCase):
         self.assertEqual(ex['before'], [])
         self.assertEqual(ex['actual']['codes'], ['D10'])
         self.assertEqual(ex['expected_codes'], [])
-        self.assertFalse(ev['can_activate'])
+        self.assertTrue(ev['can_activate'])
         decide(d, ex['id'], 'confirm')
         self.assertFalse(evaluate(d, self.store, self.ds)['can_activate'])
         decide(d, ex['id'], 'set', ['D10'])

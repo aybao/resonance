@@ -3,7 +3,8 @@
 Home-care billing demo: check claims deterministically and use Claude to propose
 payer rule code. The rules chat returns code and synthetic example rows in one
 call per turn. A helper executes accepted and candidate rules on identical rows;
-users review changed outcomes before clicking **Accept new rule**.
+users can raise issues with changed examples or accept the whole update with
+**Accept new rule**.
 
 Python standard library only (3.10+; tested on 3.14/Linux). No install step.
 
@@ -36,13 +37,15 @@ not been verified; automated/browser tests use an injected test transport.
 - **Check claims:** upload a CSV or use sample claims. Review normalization,
   every denial code and its evidence, uncertain balances and proposed business
   corrections. Edit fields or classifications, re-check, and export the original
-  columns with results and an audit trail.
+  columns with results and an audit trail. Clicking a claim also shows its matching
+  EVV visits (including verification state) and referenced/related authorization
+  records, coverage dates, and the balance before that claim.
 - **Payer rules:** upload Markdown. Read the proposed update and changed examples
-  with actual before/after results. Click a rule or example to attach its context
-  to a message, or request an edit directly. Every revision is compared with the
-  accepted rules. Review affected examples; unchanged controls run in the
-  background. Conflicting confirmed tests need an explicit reason/source before
-  acceptance. New versions and confirmed examples persist in `state/rules.json`.
+  with actual before/after results. Click a rule or use **Raise issue** on an
+  example to attach its context to a message, or request an edit directly. Every revision is compared with the
+  accepted rules. Each example has a **Raise issue** button; individual example
+  approval is not required. Unchanged controls run in the background. Conflicting
+  saved expectations need an explicit reason/source before acceptance. New versions and example baselines persist in `state/rules.json`.
 - **Historical demo:** use the header button to start with base manuals and dated
   history, then **Advance and check claims**. Advance through July, upload/review
   Northwind's July bulletin, advance through August, then upload/review Harbor's
@@ -67,7 +70,9 @@ legacy parameter-based drafts still work.
 After every response the app validates code and examples, executes before/after
 comparisons, runs saved tests, and reports historical impact. Acceptance rechecks
 the exact candidate. Invalid code/output, execution errors and conflicting
-confirmed expectations block acceptance. Unresolved payer questions remain
+confirmed expectations block acceptance. Single rule acceptance saves changed
+outputs as regression baselines with `accepted_with_rule` provenance, distinct
+from explicitly confirmed expectations. Unresolved payer questions remain
 explicit; AI-proposed expected results are not independent validation.
 
 Rule code runs in a separate worker without API keys, imports, I/O or

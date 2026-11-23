@@ -4,6 +4,7 @@ import csv
 import io
 import json
 from collections import defaultdict
+from datetime import datetime
 
 from .engine import Context, PendingReview, State, check_claim
 from .normalize import (AUTH_FIELDS, CLAIM_FIELDS, EVV_FIELDS, HISTORY_EXTRA, normalize_claims,
@@ -66,6 +67,29 @@ def load_sample(dataset, directory):
         dataset.load_text(kind, (directory / name).read_text(encoding="utf-8-sig"))
 
 
+def claim_references(claim, ctx, visits_by_key):
+    """Referenced authorization (even if wrong) plus related coverage and same-day EVV."""
+    key = (claim.get("payer"), claim.get("patient_id"), claim.get("service_code"))
+    candidates = list(ctx.auth_index.get(key, []))
+    selected = ctx.authorizations.get(claim.get("auth_id"))
+    if selected is not None and selected not in candidates:
+        candidates.insert(0, selected)
+    authorizations = []
+    for auth in candidates:
+        issues = [label for field, claim_field, label in (
+            ("payer_id", "payer", "Payer does not match"),
+            ("patient_id", "patient_id", "Patient does not match"),
+            ("service_code", "service_code", "Service does not match")) if auth[field] != claim.get(claim_field)]
+        if not auth["start_date"] <= claim.get("date_of_service", "") <= auth["end_date"]:
+            issues.append("Service date is outside coverage")
+        authorizations.append(dict(auth, referenced=auth["auth_id"] == claim.get("auth_id"), issues=issues))
+    authorizations.sort(key=lambda a: not a["referenced"])
+    visits = [dict(v, duration_minutes=(datetime.strptime(v["clock_out"], "%Y-%m-%d %H:%M") -
+                                       datetime.strptime(v["clock_in"], "%Y-%m-%d %H:%M")).total_seconds() / 60)
+              for v in visits_by_key.get((claim.get("patient_id"), claim.get("service_code"), claim.get("date_of_service")), [])]
+    return dict(evv_visits=visits, authorizations=authorizations)
+
+
 def run_batch(records, dataset, rules, overrides=None):
     """Check normalised records in submission order. Returns a list of result rows (input order).
 
@@ -74,6 +98,9 @@ def run_batch(records, dataset, rules, overrides=None):
     """
     overrides = overrides or {}
     ctx = dataset.ctx
+    visits_by_key = defaultdict(list)
+    for visit in dataset.visits:
+        visits_by_key[(visit["patient_id"], visit["service_code"], visit["clock_in"][:10])].append(visit)
     valid = [r for r in records if not r["duplicate_of"] and not any(i["severity"] == "error" for i in r["issues"])]
     pending = PendingReview(ctx)
     for r in records:  # rows with unresolved input are undecided: never assumed paid
@@ -115,6 +142,7 @@ def run_batch(records, dataset, rules, overrides=None):
             if review["status"] == "check_previous_claims":
                 row["summary"] = "Authorization balance uncertain: it fits only if earlier unresolved claims are not paid"
             row["denial_codes"] = list(base["denial_codes"])
+        row["reference_data"] = claim_references(claim, ctx, visits_by_key)
         row["category"] = _category(row)
         row["predicted_status"] = row["status"]
         row["predicted_codes"] = list(row["denial_codes"])

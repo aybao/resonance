@@ -106,6 +106,10 @@ The user uploads a claims CSV. The system:
    correction or review, including uncertain authorization balances.
 5. Allows the user to correct fields or classifications and re-check the results.
 
+Clicking a claim shows its matching EVV visits, durations and verification state,
+plus referenced and related authorizations, coverage dates and remaining units
+at the point the claim was checked. Flag mismatched or missing references clearly.
+
 Business corrections require user review. A correction to one claim does not
 silently change the payer rules; that requires a separate rule update.
 
@@ -269,15 +273,18 @@ establishes the expected behaviour where a new rule is unclear.
 1. Show the source passage and affected examples with relevant history and actual
    before/after results. Include passing, failing and boundary cases where they
    change; run unaffected cases in the background.
-2. For established rules, compare expected and actual results. For unresolved
-   cases, let the user confirm or correct the expected code set or mark the case
-   as needing payer clarification.
+2. For established rules, compare expected and actual results. Each displayed
+   example has only a **Raise issue** button, which attaches its context to chat.
+   Users can request a correction or payer clarification without approving
+   examples individually.
 3. Show which outcomes differ under the overall proposed update and why. Let the
    user comment on a rule/example or request another edit; record a reason/source
    for deliberate changes to earlier confirmed expectations.
-4. Save confirmed examples with their expected outputs, payer, effective dates
-   and supporting source as versioned acceptance tests. Retain earlier-version
-   cases and rerun runtime validation and regressions before activation.
+4. A single **Accept new rule** action accepts the update without requiring
+   per-example clicks. Save changed outputs as versioned regression baselines
+   with payer, effective dates and source. Distinguish these from independently
+   confirmed expectations; retain earlier-version cases and rerun runtime
+   validation and regressions before activation.
 
 Cases awaiting clarification remain explicitly unresolved and are not saved as
 confirmed tests. Unchanged control cases do not require a user decision.

@@ -164,5 +164,56 @@ class Export(unittest.TestCase):
         self.assertIn("payer", out["normalisation_changes"])
 
 
+class ClaimReferenceDetails(unittest.TestCase):
+    def test_related_records_are_scoped_to_claim_and_balance_is_from_its_check(self):
+        ds = dataset()
+        rows = run([claim_row(cid='C000201', units='4'),
+                    claim_row(cid='C000202', dos='2026-07-02', units='5')], ds)
+        first, second = rows
+        self.assertEqual(first['evidence']['authorization_remaining'], 10)
+        self.assertEqual(second['evidence']['authorization_remaining'], 6)
+        for row in rows:
+            refs = row['reference_data']
+            self.assertEqual([a['auth_id'] for a in refs['authorizations']], ['AUTH00001'])
+            self.assertTrue(refs['authorizations'][0]['referenced'])
+            self.assertEqual(refs['authorizations'][0]['issues'], [])
+            self.assertEqual(len(refs['evv_visits']), 1)
+            visit = refs['evv_visits'][0]
+            self.assertEqual(visit['patient_id'], row['clean']['patient_id'])
+            self.assertEqual(visit['service_code'], row['clean']['service_code'])
+            self.assertEqual(visit['clock_in'][:10], row['clean']['date_of_service'])
+            self.assertEqual(visit['duration_minutes'], 180)
+
+    def test_wrong_referenced_authorization_is_shown_with_mismatches_and_alternative(self):
+        row = run([claim_row(auth='AUTH00002')])[0]
+        auths = row['reference_data']['authorizations']
+        self.assertEqual([a['auth_id'] for a in auths], ['AUTH00002', 'AUTH00001'])
+        self.assertTrue(auths[0]['referenced'])
+        self.assertEqual(set(auths[0]['issues']), {'Payer does not match', 'Patient does not match', 'Service does not match'})
+        self.assertFalse(auths[1]['referenced'])
+        self.assertEqual(auths[1]['issues'], [])
+
+    def test_unverified_and_overnight_visits_remain_visible_on_clock_in_date(self):
+        ds = dataset()
+        ds.load_text('evv', EVV +
+            'V000020,CG0002,PT0001,T1005,2026-07-01 23:00,2026-07-02 01:00,manual_edit_pending\n')
+        rows = run([claim_row(cid='C000301', units='1'),
+                    claim_row(cid='C000302', dos='2026-07-02', units='1')], ds)
+        visits = rows[0]['reference_data']['evv_visits']
+        self.assertEqual(len(visits), 2)
+        overnight = next(v for v in visits if v['visit_id'] == 'V000020')
+        self.assertEqual(overnight['duration_minutes'], 120)
+        self.assertEqual(overnight['verification_status'], 'manual_edit_pending')
+        self.assertEqual(rows[0]['evidence']['verified_minutes'], 180)
+        self.assertNotIn('V000020', [v['visit_id'] for v in rows[1]['reference_data']['evv_visits']])
+
+    def test_missing_references_have_empty_visits_and_useful_related_coverage(self):
+        row = run([claim_row(dos='2026-07-20', sub='2026-07-20', auth='AUTH99999')])[0]
+        refs = row['reference_data']
+        self.assertEqual(refs['evv_visits'], [])
+        self.assertTrue(refs['authorizations'])
+        self.assertFalse(any(a['referenced'] for a in refs['authorizations']))
+
+
 if __name__ == "__main__":
     unittest.main()
