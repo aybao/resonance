@@ -7,7 +7,36 @@ the available data; claim execution remains deterministic. See
 [app/README.md](app/README.md) for commands and implementation limits. Live-AI
 integration is an explicit on-demand check; automated tests use test transports.
 
-## Architecture and starting state
+## Results from evaluation
+
+The original experiment evaluated **1,090 unique claims**. These results describe
+that experiment, rather than validation of the code-generating updater.
+
+| Measure | Original rules-only prediction | After previous-claim review step |
+|---|---:|---:|
+| Claims receiving a paid/denied decision | 1,090 (100%) | **1,076 (98.72%)** |
+| Correct paid/denied decisions, among automatic decisions | 1,057 / 1,090 (96.97%) | **1,053 / 1,076 (97.86%)** |
+| Correct status and matching code set, among automatic decisions | 1,051 / 1,090 (96.42%) | **1,047 / 1,076 (97.30%)** |
+| Actual denial code detected by the rules | 348 / 387 (89.92%) | **348 / 387 (89.92%)** |
+| Actual denials still marked payable | 33 | **23: 17 D99 + 6 D10** |
+| Claims classified as `check_previous_claims` | 0 | **14: 10 actually denied + 4 actually paid** |
+| Actually paid claims marked payable | 703 / 703 | **699 / 703**; four sent to review |
+| False definite denials on recorded paid claims | 0 / 703 | **0 / 703** |
+
+Review cases are excluded from automatic-decision accuracy; a denial-code match means the reported code appears in the predicted set.
+
+After sending **14 claims to review**, **23 actually denied claims are still predicted payable**:
+
+- **6 D10 cases:** Denied under a Summit contract requirement, apparently whole-hour billing, which was not included in the supplied rules.
+- **17 D99 cases:** Fifteen have only vague contact/review remarks; two mention the same whole-hour requirement but were recorded as D99 rather than D10.
+
+Separately, **6 claims are correctly flagged as denied but have the wrong denial code**: four actual D10 cases flagged as D09, and two actual D02 cases flagged as D03.
+
+**Design conclusion:** Keep deterministic checks, review uncertain balances, and obtain the missing contracts/correspondence before adding rules for these exceptions; there is no demonstrated benefit yet from per-claim AI calls.
+
+## Proposed architecture
+
+### Starting state
 
 Build a small web app around the supplied, fixed CSV data format. AI maintains
 the rules; the checker runs approved rule code without an AI call for each claim.
@@ -79,6 +108,33 @@ The user uploads a claims CSV. The system:
 
 Business corrections require user review. A correction to one claim does not
 silently change the payer rules; that requires a separate rule update.
+
+**Rules setup and updates**
+
+```mermaid
+flowchart TD
+    R1["Upload payer rules or request an update"]
+    R2["AI creates or updates deterministic rules"]
+    R3["Run tests and generate examples"]
+    R4["User reviews rule changes, examples and test results"]
+    R1 --> R2 --> R3 --> R4
+    R4 -->|Request changes| R2
+```
+
+**Claims checking**
+
+```mermaid
+flowchart TD
+    C1["Upload claims CSV"]
+    C2["Normalize data and flag missing or invalid fields"]
+    C3["Apply approved rules using EVV,<br/>authorizations and claim history"]
+    C4["Flag denials, suggested fixes<br/>and uncertain balances"]
+    C5["User reviews results and highlighted changes"]
+    C1 --> C2 --> C3 --> C4 --> C5
+```
+
+AI helps maintain the rules; claim-by-claim checks execute deterministically,
+with unresolved evidence and proposed business corrections left for user review.
 
 ## Testing
 
@@ -165,11 +221,66 @@ candidate need not fit a predefined list of rule parameters. Missing labels are
 not a reason to prevent the user from reviewing a new rule, and AI-generated
 expectations are suggestions rather than independent evidence.
 
-During review, users can confirm or correct the expected outcomes of affected
-examples, mark a case as needing payer clarification, or request another edit.
-Save confirmed examples as versioned acceptance tests. Cases awaiting
-clarification remain explicitly unresolved and are not saved as confirmed tests.
-Unchanged control cases run in the background and do not require a user decision.
+### Unit tests
+
+Expected results come from source rules or a reviewed specification, rather than
+copying the implementation's output. Controlled fixtures assert the complete
+expected code set, including the absence of unintended failures.
+
+| Area | Examples and expected behaviour |
+|---|---|
+| Normalization | Payer aliases, whitespace, lowercase modifiers and US dates become canonical; cleaning twice makes no further changes; unknown values are flagged |
+| EVV | Only verified visits count; aggregate visits before rounding; overnight visits belong to the clock-in date; test Northwind's 7/8-minute boundary and other payers' complete units |
+| Authorizations | Missing reference → D07; wrong payer/patient/service/date → D08; exact remaining balance passes, one unit over → D02 |
+| Filing and modifiers | Exact deadline passes, next day fails; test both sides of effective dates, plus Harbor weekdays and weekends |
+| Historical state | Paid claims consume units; denied claims do not; both establish duplicate history; corrected claims are exempt; Harbor totals span services |
+| Uncertainty and output | Pending claims trigger review only when they could change the balance decision; exclude later claims; retain definite denials; output every detected code and keep proposed edits separate |
+| Generated rule code | Validate the input/output contract, execution limits, malformed examples, failure handling, persistence, and novel rules outside the legacy parameter vocabulary |
+
+The existing app and experiment tests provide a starting point. Browser coverage
+must exercise the user-facing workflow; passing CSV or API tests alone does not
+establish that the interface works. Keep ordinary automated tests repeatable
+without a live API key; run live-AI integration checks explicitly on demand.
+
+### End-to-end tests
+
+These run during development after relevant changes, before a release/demo, and
+on demand, as specified in the testing schedule.
+
+- **Upload to results:** Process a small fixture containing payable, denied,
+  multiple-failure, malformed and review cases through the full pipeline; verify
+  displayed changes, explanations and downloaded CSV, preserving source data.
+- **Sequential batch:** Include prior paid/denied claims, authorization exhaustion,
+  daily limits, duplicates and pending submissions; check results against an
+  independently worked-through ledger.
+- **Rule update:** Run the same dated fixtures before and after activating an
+  update; affected outcomes must change as specified, while earlier service
+  dates and unrelated payers retain their expected results.
+- **Browser workflow:** Exercise upload, chat revisions, example comments, rule
+  acceptance, claim review/corrections, and export. Also verify dated demo controls
+  and restoration of full-app state.
+
+### Using examples to review a rule update
+
+Automated testing and user acceptance are **two different purposes that can
+share the same examples**: tests verify agreed behaviour, while user review
+establishes the expected behaviour where a new rule is unclear.
+
+1. Show the source passage and affected examples with relevant history and actual
+   before/after results. Include passing, failing and boundary cases where they
+   change; run unaffected cases in the background.
+2. For established rules, compare expected and actual results. For unresolved
+   cases, let the user confirm or correct the expected code set or mark the case
+   as needing payer clarification.
+3. Show which outcomes differ under the overall proposed update and why. Let the
+   user comment on a rule/example or request another edit; record a reason/source
+   for deliberate changes to earlier confirmed expectations.
+4. Save confirmed examples with their expected outputs, payer, effective dates
+   and supporting source as versioned acceptance tests. Retain earlier-version
+   cases and rerun runtime validation and regressions before activation.
+
+Cases awaiting clarification remain explicitly unresolved and are not saved as
+confirmed tests. Unchanged control cases do not require a user decision.
 
 When the user clicks **Accept new rule**, rerun validation and regressions against
 the exact candidate and current state. Block activation for execution/format
@@ -178,59 +289,18 @@ to an earlier confirmed expectation requires a recorded reason/source and user
 confirmation. Do not run the full historical demo or invoke the entire developer
 test suite on every chat message or ordinary claims upload.
 
-### Developer test coverage
+AI may propose examples, but AI-generated expectations alone are not independent
+validation. A one-off user correction to a claim should not silently change a
+payer rule; broader changes need explicit confirmation and supporting evidence.
 
-Expected results come from source rules or a reviewed specification, rather than
-copying the implementation's output. Controlled fixtures assert the complete
-expected code set, including the absence of unintended failures.
+## Evaluation limitations
 
-| Area | Required coverage |
-|---|---|
-| Normalization | Aliases, whitespace, modifier casing, US dates, idempotence, and unknown values |
-| EVV | Verified visits only, aggregate-before-rounding, overnight visits assigned to clock-in date, Northwind's 7/8-minute boundary, and complete units for other payers |
-| Authorizations | Missing reference → D07; wrong payer/patient/service/date → D08; exact remaining balance passes; one unit over → D02 |
-| Filing and modifiers | Exact deadline and next day; both sides of effective dates; Harbor weekday/weekend requirements |
-| Historical state | Paid claims consume units; denied claims do not; both establish duplicate history; corrected claims are exempt; Harbor totals span services |
-| Uncertainty and output | Review only when earlier pending claims could change the balance decision; exclude later claims; retain definite denials; return all codes; keep proposed edits separate |
-| Integrated claim batches | Payable, denied, multiple-failure, malformed, and review rows through upload, processing, corrections, and CSV export; preserve source data and check against an independently worked-through ledger |
-| Rule-update workflow | Candidate code and example validation, actual before/after execution, revisions compared with accepted rules, confirmed-test regressions, acceptance, and correct version selection |
+For recorded denials, the historical metric counts a code match when the recorded
+code appears in the predicted set; it does not prove equality of the complete code
+set. Controlled tests should use full expected sets.
 
-The existing app and experiment tests provide a starting point. Browser coverage
-must exercise the user-facing workflow; passing CSV or API tests alone does not
-establish that the interface works. Keep ordinary automated tests repeatable
-without a live API key; run live-AI integration checks explicitly on demand.
-
-## Evaluation evidence and limitations
-
-The original experiment evaluated **1,090 unique claims**. These figures describe
-that experiment, not validation of the proposed code-generating updater.
-
-| Measure | Original rules-only prediction | After previous-claim review step |
-|---|---:|---:|
-| Claims receiving a paid/denied decision | 1,090 (100%) | **1,076 (98.72%)** |
-| Correct paid/denied decisions, among automatic decisions | 1,057 / 1,090 (96.97%) | **1,053 / 1,076 (97.86%)** |
-| Correct status and matching code set, among automatic decisions | 1,051 / 1,090 (96.42%) | **1,047 / 1,076 (97.30%)** |
-| Actual denial code detected by the rules | 348 / 387 (89.92%) | **348 / 387 (89.92%)** |
-| Actual denials still marked payable | 33 | **23: 17 D99 + 6 D10** |
-| Claims classified as `check_previous_claims` | 0 | **14: 10 actually denied + 4 actually paid** |
-| Actually paid claims marked payable | 703 / 703 | **699 / 703**; four sent to review |
-| False definite denials on recorded paid claims | 0 / 703 | **0 / 703** |
-
-Review cases are excluded from automatic-decision accuracy. For recorded denials,
-the historical metric counts a code match when the recorded code appears in the
-predicted set; it does not prove equality of the complete code set. Controlled
-tests should use full expected sets.
-
-After referral, the 23 missed denials comprise six D10 cases apparently requiring
-whole-hour billing under an unavailable Summit contract, and 17 D99 cases:
-fifteen with vague contact/review remarks and two mentioning that requirement.
-Six further denials have the wrong code: four actual D10 cases flagged as D09,
-and two actual D02 cases flagged as D03.
-
-These findings support deterministic claim execution, review of uncertain
-balances, and obtaining missing payer evidence. The more flexible updater should
-allow new rules when that evidence is supplied. Historical replay on already
-inspected data is a diagnostic/demo, not a fresh accuracy estimate; use a new
-holdout for future claims about generalization. Report review workload and false
-alarms alongside accuracy. See [experiment_results.md](experiment_results.md) for
-the full evaluation.
+The more flexible updater allows new rules when supporting payer evidence is
+supplied. Historical replay on already inspected data is a diagnostic/demo, not a
+fresh accuracy estimate; use a new holdout for future claims about generalization.
+Report review workload and false alarms alongside accuracy. See
+[experiment_results.md](experiment_results.md) for the full evaluation.
