@@ -52,6 +52,8 @@ not been verified; automated/browser tests use an injected test transport.
   **Fast forward: update system data** to reach June 30, then upload the June CSV
   from `../demo-data/claim-checking-csvs/` into Check claims. Fast forward updates
   reference data and clears the previous batch; uploading runs the checker.
+  The selected month is pending: June 30 has June visits/authorizations but only
+  pre-June claim outcomes. July 31 adds June outcomes and holds out July claims.
   Continue with each dated monthly CSV after advancing to its end date.
   Compare July with the original rules, then upload/review Northwind's July bulletin;
   do the same for Harbor after August. Documents are in `../demo-data/payer-updates/`.

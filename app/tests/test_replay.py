@@ -54,6 +54,10 @@ class HistoricalDemo(unittest.TestCase):
             self.assertFalse(seen)
             self.assertIsNone(result['report'])
             self.assertEqual(result['results']['rows'], [])
+            self.assertTrue(all(r['submitted_date'] < '2026-06-01' for r in self.session.dataset.history))
+            history_ids = {r['claim_id'] for r in self.session.dataset.history}
+            june_ids = {r['claim_id'] for r in self.session.demo.source.history if r['submitted_date'].startswith('2026-06')}
+            self.assertTrue(history_ids.isdisjoint(june_ids))
             csv = (DEMO_DIR / 'claim-checking-csvs' / 'claims_2026-06-01_to_2026-06-30.csv').read_text()
             self.session.upload_claims(csv)
         self.assertEqual(len(seen), 361)
@@ -71,7 +75,10 @@ class HistoricalDemo(unittest.TestCase):
         self.session.advance_demo('2026-07-31')
         self.assertIsNone(self.session.demo.last_report)
         self.assertEqual(self.session.rows, [])
-        self.assertTrue(any(r['submitted_date'] > '2026-06-30' for r in self.session.dataset.history))
+        self.assertTrue(all(r['submitted_date'] < '2026-07-01' for r in self.session.dataset.history))
+        july_history_ids = {r['claim_id'] for r in self.session.dataset.history}
+        self.assertTrue(june_ids.issubset(july_history_ids))
+        self.assertEqual(self.session.status()['demo']['pending_month'], '2026-07')
 
     def test_rejects_backwards_dates_and_reference_replacement(self):
         self.session.start_demo()

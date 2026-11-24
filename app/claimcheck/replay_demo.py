@@ -7,6 +7,7 @@ import copy
 import csv
 import io
 import json
+from datetime import date, timedelta
 from pathlib import Path
 import tempfile
 
@@ -58,6 +59,8 @@ class HistoricalReplay:
         ds = self.session.dataset
         return dict(as_of=self.as_of, start=self.start, last_report=self.last_report,
                     reference_data_as_of=self.as_of, prediction_history_before=history_before,
+                    pending_month=self.as_of[:7],
+                    history_through=max((r['submitted_date'] for r in ds.history), default=None),
                     history_from=min((r['submitted_date'] for r in ds.history), default=None),
                     evv_from=min((r['clock_in'][:10] for r in ds.visits), default=None),
                     authorizations_from=min((r['start_date'] for r in ds.authorizations), default=None),
@@ -68,7 +71,11 @@ class HistoricalReplay:
         if not valid_date(until) or until <= self.as_of:
             raise ValueError('Advance to a date after the current demo date (YYYY-MM-DD)')
         self.as_of = until
-        self.session.dataset = self.context_at(until, until)
+        # The selected month's claims are pending. Only earlier months' outcomes
+        # belong in the visible reference history; current-month labels remain
+        # exclusively in the comparison source.
+        history_until = (date.fromisoformat(until).replace(day=1) - timedelta(days=1)).isoformat()
+        self.session.dataset = self.context_at(history_until, until)
         self.session._accuracy = None
         self.last_report = None
         self.session.claims_header, self.session.raw_rows = [], []

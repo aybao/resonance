@@ -88,10 +88,10 @@ async function loadStatus() {
     h("h2", {}, "Reference data"),
     s.demo ? h("div", { class: "demo-data-dates" },
       h("p", {}, h("strong", {}, `Reference data available as of: ${referenceDate}`)),
-      Object.hasOwn(s.demo, "authorizations_from") ? h("p", { class: "small muted" }, `Authorizations: start dates from ${s.demo.authorizations_from || "no records"} through ${referenceDate}. EVV visits: ${s.demo.evv_from || "no records"} through ${referenceDate}. Claim history: ${s.demo.history_from || "no records"} through ${referenceDate} (submission dates).`) : null,
+      Object.hasOwn(s.demo, "authorizations_from") ? h("p", { class: "small muted" }, `Authorizations: start dates from ${s.demo.authorizations_from || "no records"} through ${referenceDate}. EVV visits: ${s.demo.evv_from || "no records"} through ${referenceDate}. Claim outcome history: ${s.demo.history_from || "no records"} through ${s.demo.history_through || "no records"} (submission dates).`) : null,
       h("p", { class: "small muted" }, s.demo.prediction_history_before
-        ? `For the uploaded batch, predictions use only claim history submitted before ${s.demo.prediction_history_before}. Outcomes from the batch period are excluded, then used separately for comparison.`
-        : "Fast forward loads reference data available by the chosen date. Upload a dated demo CSV to run predictions and compare them with recorded outcomes.")) : null,
+        ? `For the uploaded batch, predictions use only claim history submitted before ${s.demo.prediction_history_before}. The pending month is absent from reference history. True outcomes are used separately for comparison.`
+        : `Pending batch: ${s.demo.pending_month || s.demo.as_of.slice(0, 7)}. This month’s claim outcomes are held out of reference history. Upload this month’s CSV to check it; the true outcomes are used separately for comparison. Fast forwarding to the next month adds the previous month’s outcomes to history.`)) : null,
     h("p", { class: d.authorizations && d.evv_visits ? "" : "bad" },
       `${d.authorizations} authorizations · ${d.evv_visits} EVV visits · ${d.history} past claims (history used for balances and duplicates)`),
     d.problems.length ? h("pre", {}, d.problems.join("\n")) : null,
