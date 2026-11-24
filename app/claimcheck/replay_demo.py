@@ -54,7 +54,13 @@ class HistoricalReplay:
         return ds
 
     def status(self):
+        history_before = min((r['clean'].get('submitted_date', '') for r in self.session.rows), default=None)
+        ds = self.session.dataset
         return dict(as_of=self.as_of, start=self.start, last_report=self.last_report,
+                    reference_data_as_of=self.as_of, prediction_history_before=history_before,
+                    history_from=min((r['submitted_date'] for r in ds.history), default=None),
+                    evv_from=min((r['clock_in'][:10] for r in ds.visits), default=None),
+                    authorizations_from=min((r['start_date'] for r in ds.authorizations), default=None),
                     end=max((r['submitted_date'] for r in self.source.history), default=self.as_of),
                     availability_note='Submission date proxies outcome availability; labels are revealed only after the entire batch is predicted.')
 
@@ -115,7 +121,7 @@ class HistoricalReplay:
             rows.append(row)
         mismatches = [r for r in rows if not matches(r)]
         report = dict(from_date=from_date, through_date=until, **accuracy(rows),
-            mismatches=mismatches, known_exceptions=sum(r['known_exception'] for r in mismatches),
+            mismatches=mismatches, unexplained_d99=sum(r['actual_status'] == 'denied' and r['actual_code'] == 'D99' for r in mismatches), known_exceptions=sum(r['known_exception'] for r in mismatches),
             unexpected_mismatches=sum(not r['known_exception'] for r in mismatches),
             passed=all(r['known_exception'] for r in mismatches))
         return report

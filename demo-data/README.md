@@ -10,6 +10,8 @@ Start **Historical demo** in the app: the initial date is **2026-04-30**.
 
 CSV filenames describe inclusive **submission date** ranges. The CSVs contain claim input fields only, with recorded statuses and denial codes removed. Use the file picker in Check claims to load them. Advancing clears the previous batch without running a check or accepting rule updates.
 
-`reference-data/` holds the source reference CSVs, including recorded outcomes for comparison. `payer-updates/` contains the supplied manuals and bulletins. `replay_exceptions.*` documents known differences for the original three-stage CLI replay; monthly batches may differ because pending claims within each batch consume balances according to predictions.
+`reference-data/` holds the source reference CSVs, including recorded outcomes for comparison. `payer-updates/` contains the supplied manuals and bulletins. `replay_exceptions.*` documents the seven unexplained June D99 denials and known differences for the original three-stage CLI replay; monthly batches may differ because pending claims within each batch consume balances according to predictions.
 
 The system date limits available reference data. For prediction, history is further restricted to submissions before the first date in the uploaded batch, preventing its recorded outcomes from entering the checker. Historical comparison uses the original recorded outcomes after prediction. Submission dates proxy outcome availability because adjudication dates were not supplied. Recorded outcomes are synthetic demonstration data, not evidence of production accuracy.
+
+The header labels **Today’s date (simulated)**. Reference data shows its availability date, the start of each available record range, and the earlier claim history cutoff actually used for an uploaded batch. Documented differences remain prediction errors and stay in the agreement denominator.

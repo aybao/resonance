@@ -68,7 +68,7 @@ async function loadStatus() {
     const nextMonthEnd = new Date(Date.UTC(current.getUTCFullYear(), current.getUTCMonth() + 2, 0)).toISOString().slice(0, 10);
     const nextDate = s.demo.as_of < "2026-06-30" ? "2026-06-30" : nextMonthEnd;
     const date = h("input", { type: "date", value: nextDate > s.demo.end ? s.demo.end : nextDate, min: s.demo.as_of, "aria-label": "Advance demo through date" });
-    mode.replaceChildren(badge("review", `Historical demo · ${s.demo.as_of}`), date,
+    mode.replaceChildren(badge("review", `Historical demo · Today’s date (simulated): ${s.demo.as_of}`), h("label", {}, "Fast forward to", date),
       h("button", { class: "secondary", onclick: () => guard(async () => {
         await api("POST", "/api/demo/advance", { date: date.value });
         await refreshResults(); await loadStatus(); await loadRules(); $("demo-report").hidden = true;
@@ -85,6 +85,12 @@ async function loadStatus() {
   const card = $("data-card");
   card.replaceChildren(
     h("h2", {}, "Reference data"),
+    s.demo ? h("div", { class: "demo-data-dates" },
+      h("p", {}, h("strong", {}, `Reference data available as of: ${s.demo.reference_data_as_of}`)),
+      h("p", { class: "small muted" }, `Authorizations: start dates from ${s.demo.authorizations_from || "no records"} through ${s.demo.reference_data_as_of}. EVV visits: ${s.demo.evv_from || "no records"} through ${s.demo.reference_data_as_of}. Claim history: ${s.demo.history_from || "no records"} through ${s.demo.reference_data_as_of} (submission dates).`),
+      h("p", { class: "small muted" }, s.demo.prediction_history_before
+        ? `For the uploaded batch, predictions use only claim history submitted before ${s.demo.prediction_history_before}. Outcomes from the batch period are excluded, then used separately for comparison.`
+        : "Fast forward loads reference data available by the chosen date. Upload a dated demo CSV to run predictions and compare them with recorded outcomes.")) : null,
     h("p", { class: d.authorizations && d.evv_visits ? "" : "bad" },
       `${d.authorizations} authorizations · ${d.evv_visits} EVV visits · ${d.history} past claims (history used for balances and duplicates)`),
     d.problems.length ? h("pre", {}, d.problems.join("\n")) : null,
@@ -127,12 +133,15 @@ function clearRuleConversation() {
 function renderDemoReport(report) {
   const root = $("demo-report"); root.hidden = false;
   root.replaceChildren(h("h2", {}, "DEMO - COMPARING WITH TRUE HISTORICAL RESULTS"),
-    h("p", {}, `${report.from_date} to ${report.through_date} · ${(report.accuracy * 100).toFixed(2)}% agreement across ${report.claims} claims · ${report.known_exceptions} known exceptions · ${report.unexpected_mismatches} unexpected mismatches · ${report.manual_review} need review · ${report.false_alarms} false alarms`),
-    h("p", { class: report.passed ? "ok" : "bad" }, report.passed ? "Replay passed: all other rows match." : "Replay found unexpected mismatches. All mismatches are listed below."),
+    h("p", {}, `${report.from_date} to ${report.through_date} · ${(report.accuracy * 100).toFixed(2)}% agreement across ${report.claims} claims · ${report.unexplained_d99 || 0} unexplained historical D99 denials · ${report.known_exceptions} documented differences · ${report.unexpected_mismatches} other differences to investigate · ${report.manual_review} need review · ${report.false_alarms} false alarms`),
+    h("p", { class: report.mismatches.length ? "warning" : "ok" }, report.mismatches.length
+      ? `${report.mismatches.length} predictions differ from recorded outcomes. All differences count against agreement, including documented differences.`
+      : "All predictions match the recorded outcomes."),
+    report.unexplained_d99 ? h("p", {}, "Unexplained historical D99 denials were recorded with an unspecified reason or a reference to payer correspondence. The supplied data does not establish the denial condition. These remain prediction errors; documenting them does not make them correct.") : null,
     h("p", { class: "small muted" }, "Uploaded claims are checked before comparison with recorded outcomes. History from the uploaded batch period is excluded from prediction. Submission dates proxy outcome availability because adjudication dates are unavailable."),
     h("details", {}, h("summary", {}, `All mismatches (${report.mismatches.length})`), h("div", { class: "table-wrap" }, h("table", {},
       h("tr", {}, ...["Claim", "Predicted", "Recorded", "Basis"].map((text) => h("th", {}, text))),
-      ...report.mismatches.map((r) => h("tr", {}, h("td", {}, r.claim_id, fullClaimRow(r.claim)), h("td", {}, `${r.status} ${r.codes.join(", ")}`), h("td", {}, `${r.actual_status} ${r.actual_code}`), h("td", { class: "reason" }, r.exception_reason || "Unexpected: " + r.remark)))))));
+      ...report.mismatches.map((r) => h("tr", {}, h("td", {}, r.claim_id, fullClaimRow(r.claim)), h("td", {}, `${r.status} ${r.codes.join(", ")}`), h("td", {}, `${r.actual_status} ${r.actual_code}`), h("td", { class: "reason" }, r.exception_reason || (r.actual_code === "D99" ? "Unexplained historical D99 denial; payer reason not supplied. Recorded remark: " : "Difference to investigate. Recorded remark: ") + r.remark)))))));
 }
 
 function render() {

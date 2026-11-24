@@ -1067,5 +1067,61 @@
     "reason": "Supplied manuals omit the Summit contract/amendment requirement referenced by this recorded D10 denial.",
     "recorded_remark": "Units not billable per amendment 3 (hourly increments)",
     "replay_period_end": "2026-07-31"
+  },
+  "C011567": {
+    "actual_status": "denied",
+    "actual_code": "D99",
+    "predicted_status": "paid",
+    "predicted_codes": [],
+    "replay_period_end": "2026-06-30",
+    "reason": "Unexplained historical D99 denial: \"Under review - see payer correspondence\". The payer correspondence giving the denial reason was not supplied; no supplied rule identifies this denial. This remains a missed denial and counts against agreement."
+  },
+  "C001044": {
+    "actual_status": "denied",
+    "actual_code": "D99",
+    "predicted_status": "paid",
+    "predicted_codes": [],
+    "replay_period_end": "2026-06-30",
+    "reason": "Unexplained historical D99 denial: \"Denied - contact payer\". The payer correspondence giving the denial reason was not supplied; no supplied rule identifies this denial. This remains a missed denial and counts against agreement."
+  },
+  "C009944": {
+    "actual_status": "denied",
+    "actual_code": "D99",
+    "predicted_status": "paid",
+    "predicted_codes": [],
+    "replay_period_end": "2026-06-30",
+    "reason": "Unexplained historical D99 denial: \"Denied - contact payer\". The payer correspondence giving the denial reason was not supplied; no supplied rule identifies this denial. This remains a missed denial and counts against agreement."
+  },
+  "C001155": {
+    "actual_status": "denied",
+    "actual_code": "D99",
+    "predicted_status": "paid",
+    "predicted_codes": [],
+    "replay_period_end": "2026-06-30",
+    "reason": "Unexplained historical D99 denial: \"Denied - contact payer\". The payer correspondence giving the denial reason was not supplied; no supplied rule identifies this denial. This remains a missed denial and counts against agreement."
+  },
+  "C011706": {
+    "actual_status": "denied",
+    "actual_code": "D99",
+    "predicted_status": "paid",
+    "predicted_codes": [],
+    "replay_period_end": "2026-06-30",
+    "reason": "Unexplained historical D99 denial: \"Under review - see payer correspondence\". The payer correspondence giving the denial reason was not supplied; no supplied rule identifies this denial. This remains a missed denial and counts against agreement."
+  },
+  "C009183": {
+    "actual_status": "denied",
+    "actual_code": "D99",
+    "predicted_status": "paid",
+    "predicted_codes": [],
+    "replay_period_end": "2026-06-30",
+    "reason": "Unexplained historical D99 denial: \"Denied - contact payer\". The payer correspondence giving the denial reason was not supplied; no supplied rule identifies this denial. This remains a missed denial and counts against agreement."
+  },
+  "C015574": {
+    "actual_status": "denied",
+    "actual_code": "D99",
+    "predicted_status": "paid",
+    "predicted_codes": [],
+    "replay_period_end": "2026-06-30",
+    "reason": "Unexplained historical D99 denial: \"Under review - see payer correspondence\". The payer correspondence giving the denial reason was not supplied; no supplied rule identifies this denial. This remains a missed denial and counts against agreement."
   }
 }

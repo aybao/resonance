@@ -1,11 +1,16 @@
 # Historical replay exceptions
 
-`replay_exceptions.json` records 114 specific discrepancies inspected during
-implementation of the three-stage demo (June 30 start; July 31, August 31,
+`replay_exceptions.json` records 121 specific discrepancies inspected during
+implementation of the June monthly upload and three-stage demo (June 30 start; July 31, August 31,
 January 31 period ends). These are limitations of this diagnostic, not corrected
 claims or evidence of accurate predictions. The demo always reports all of them
 as mismatches and includes them in the overall accuracy denominator.
 
+- Seven June rows are unexplained D99 denials: C011567, C001044, C009944,
+  C001155, C011706, C009183 and C015574. Their source remarks only refer to
+  contacting the payer or unavailable correspondence. Their exact predicted
+  and recorded outcomes are pinned for the June 30 batch. They still count as
+  missed denials; documenting them does not improve accuracy.
 - 101 rows have recorded D10/D99 denials referring to unavailable contracts,
   amendments or unspecified correspondence. The supplied manuals do not define
   their complete expected denial conditions.

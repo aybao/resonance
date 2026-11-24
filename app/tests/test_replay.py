@@ -58,6 +58,16 @@ class HistoricalDemo(unittest.TestCase):
             self.session.upload_claims(csv)
         self.assertEqual(len(seen), 361)
         self.assertEqual(self.session.demo.last_report['claims'], 361)
+        report = self.session.demo.last_report
+        self.assertEqual(report['unexplained_d99'], 7)
+        self.assertEqual(report['known_exceptions'], 7)
+        self.assertEqual(report['unexpected_mismatches'], 0)
+        self.assertAlmostEqual(report['accuracy'], 354 / 361)
+        self.assertTrue(all('Unexplained historical D99 denial' in r['exception_reason'] for r in report['mismatches']))
+        status = self.session.status()['demo']
+        self.assertEqual(status['as_of'], '2026-06-30')
+        self.assertEqual(status['reference_data_as_of'], '2026-06-30')
+        self.assertEqual(status['prediction_history_before'], '2026-06-02')
         self.session.advance_demo('2026-07-31')
         self.assertIsNone(self.session.demo.last_report)
         self.assertEqual(self.session.rows, [])
