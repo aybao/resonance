@@ -81,13 +81,14 @@ async function loadStatus() {
   }) }, "Start historical demo"));
   $("use-sample-claims").hidden = !!s.demo;
   $("demo-upload-help").hidden = !s.demo;
+  const referenceDate = s.demo?.reference_data_as_of ?? s.demo?.as_of ?? "Date unavailable";
   const d = s.data;
   const card = $("data-card");
   card.replaceChildren(
     h("h2", {}, "Reference data"),
     s.demo ? h("div", { class: "demo-data-dates" },
-      h("p", {}, h("strong", {}, `Reference data available as of: ${s.demo.reference_data_as_of}`)),
-      h("p", { class: "small muted" }, `Authorizations: start dates from ${s.demo.authorizations_from || "no records"} through ${s.demo.reference_data_as_of}. EVV visits: ${s.demo.evv_from || "no records"} through ${s.demo.reference_data_as_of}. Claim history: ${s.demo.history_from || "no records"} through ${s.demo.reference_data_as_of} (submission dates).`),
+      h("p", {}, h("strong", {}, `Reference data available as of: ${referenceDate}`)),
+      Object.hasOwn(s.demo, "authorizations_from") ? h("p", { class: "small muted" }, `Authorizations: start dates from ${s.demo.authorizations_from || "no records"} through ${referenceDate}. EVV visits: ${s.demo.evv_from || "no records"} through ${referenceDate}. Claim history: ${s.demo.history_from || "no records"} through ${referenceDate} (submission dates).`) : null,
       h("p", { class: "small muted" }, s.demo.prediction_history_before
         ? `For the uploaded batch, predictions use only claim history submitted before ${s.demo.prediction_history_before}. Outcomes from the batch period are excluded, then used separately for comparison.`
         : "Fast forward loads reference data available by the chosen date. Upload a dated demo CSV to run predictions and compare them with recorded outcomes.")) : null,
