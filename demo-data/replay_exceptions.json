@@ -6,7 +6,10 @@
     "predicted_codes": [],
     "reason": "Recorded D99 refers to unspecified payer correspondence or an unavailable contract amendment; the supplied rules do not define a reproducible denial.",
     "recorded_remark": "Denied - contact payer",
-    "replay_period_end": "2027-01-31"
+    "replay_period_end": "2027-01-31",
+    "additional_replay_period_ends": [
+      "2026-09-30"
+    ]
   },
   "C000162": {
     "actual_status": "denied",
@@ -45,7 +48,10 @@
     ],
     "reason": "Recorded D99 refers to unspecified payer correspondence or an unavailable contract amendment; the supplied rules do not define a reproducible denial.",
     "recorded_remark": "Contract amendment 3: services must be billed in whole hours",
-    "replay_period_end": "2027-01-31"
+    "replay_period_end": "2027-01-31",
+    "additional_replay_period_ends": [
+      "2026-09-30"
+    ]
   },
   "C001437": {
     "actual_status": "denied",
@@ -63,7 +69,10 @@
     "predicted_codes": [],
     "reason": "Supplied manuals omit the Summit contract/amendment requirement referenced by this recorded D10 denial.",
     "recorded_remark": "Contract amendment 3: services must be billed in whole hours",
-    "replay_period_end": "2027-01-31"
+    "replay_period_end": "2027-01-31",
+    "additional_replay_period_ends": [
+      "2026-09-30"
+    ]
   },
   "C001719": {
     "actual_status": "denied",
@@ -72,7 +81,10 @@
     "predicted_codes": [],
     "reason": "Supplied manuals omit the Summit contract/amendment requirement referenced by this recorded D10 denial.",
     "recorded_remark": "Contract amendment 3: services must be billed in whole hours",
-    "replay_period_end": "2027-01-31"
+    "replay_period_end": "2027-01-31",
+    "additional_replay_period_ends": [
+      "2026-09-30"
+    ]
   },
   "C001931": {
     "actual_status": "denied",
@@ -92,7 +104,10 @@
     ],
     "reason": "Supplied manuals omit the Summit contract/amendment requirement referenced by this recorded D10 denial.",
     "recorded_remark": "Units not billable per amendment 3 (hourly increments)",
-    "replay_period_end": "2027-01-31"
+    "replay_period_end": "2027-01-31",
+    "additional_replay_period_ends": [
+      "2026-09-30"
+    ]
   },
   "C002219": {
     "actual_status": "denied",
@@ -119,7 +134,10 @@
     "predicted_codes": [],
     "reason": "Recorded D99 refers to unspecified payer correspondence or an unavailable contract amendment; the supplied rules do not define a reproducible denial.",
     "recorded_remark": "Contract amendment 3: services must be billed in whole hours",
-    "replay_period_end": "2027-01-31"
+    "replay_period_end": "2027-01-31",
+    "additional_replay_period_ends": [
+      "2026-09-30"
+    ]
   },
   "C003243": {
     "actual_status": "denied",
@@ -155,7 +173,10 @@
     "predicted_codes": [],
     "reason": "Supplied manuals omit the Summit contract/amendment requirement referenced by this recorded D10 denial.",
     "recorded_remark": "Contract amendment 3: services must be billed in whole hours",
-    "replay_period_end": "2027-01-31"
+    "replay_period_end": "2027-01-31",
+    "additional_replay_period_ends": [
+      "2026-09-30"
+    ]
   },
   "C003828": {
     "actual_status": "denied",
@@ -175,7 +196,10 @@
     ],
     "reason": "Supplied manuals omit the Summit contract/amendment requirement referenced by this recorded D10 denial.",
     "recorded_remark": "Contract amendment 3: services must be billed in whole hours",
-    "replay_period_end": "2027-01-31"
+    "replay_period_end": "2027-01-31",
+    "additional_replay_period_ends": [
+      "2026-09-30"
+    ]
   },
   "C004121": {
     "actual_status": "denied",
@@ -249,7 +273,10 @@
     "predicted_codes": [],
     "reason": "Supplied manuals omit the Summit contract/amendment requirement referenced by this recorded D10 denial.",
     "recorded_remark": "Contract amendment 3: services must be billed in whole hours",
-    "replay_period_end": "2027-01-31"
+    "replay_period_end": "2027-01-31",
+    "additional_replay_period_ends": [
+      "2026-09-30"
+    ]
   },
   "C005591": {
     "actual_status": "denied",
@@ -260,7 +287,10 @@
     ],
     "reason": "Supplied manuals omit the Summit contract/amendment requirement referenced by this recorded D10 denial.",
     "recorded_remark": "Contract amendment 3: services must be billed in whole hours",
-    "replay_period_end": "2027-01-31"
+    "replay_period_end": "2027-01-31",
+    "additional_replay_period_ends": [
+      "2026-09-30"
+    ]
   },
   "C005597": {
     "actual_status": "denied",
@@ -278,7 +308,10 @@
     "predicted_codes": [],
     "reason": "Recorded D99 refers to unspecified payer correspondence or an unavailable contract amendment; the supplied rules do not define a reproducible denial.",
     "recorded_remark": "Under review - see payer correspondence",
-    "replay_period_end": "2027-01-31"
+    "replay_period_end": "2027-01-31",
+    "additional_replay_period_ends": [
+      "2026-09-30"
+    ]
   },
   "C006068": {
     "actual_status": "denied",
@@ -307,7 +340,10 @@
     ],
     "reason": "Recorded D99 refers to unspecified payer correspondence or an unavailable contract amendment; the supplied rules do not define a reproducible denial.",
     "recorded_remark": "Contract amendment 3: services must be billed in whole hours",
-    "replay_period_end": "2027-01-31"
+    "replay_period_end": "2027-01-31",
+    "additional_replay_period_ends": [
+      "2026-09-30"
+    ]
   },
   "C006366": {
     "actual_status": "denied",
@@ -336,7 +372,10 @@
     ],
     "reason": "Sequential propagation of missing contract rule: earlier C003575 (9 units) is predicted paid but recorded D10. This leaves 13 rather than 22 units for the 20-unit C006764.",
     "recorded_remark": "",
-    "replay_period_end": "2027-01-31"
+    "replay_period_end": "2027-01-31",
+    "additional_replay_period_ends": [
+      "2026-09-30"
+    ]
   },
   "C006770": {
     "actual_status": "denied",
@@ -356,7 +395,10 @@
     "predicted_codes": [],
     "reason": "Recorded D99 refers to unspecified payer correspondence or an unavailable contract amendment; the supplied rules do not define a reproducible denial.",
     "recorded_remark": "Denied - contact payer",
-    "replay_period_end": "2027-01-31"
+    "replay_period_end": "2027-01-31",
+    "additional_replay_period_ends": [
+      "2026-09-30"
+    ]
   },
   "C007272": {
     "actual_status": "denied",
@@ -410,7 +452,10 @@
     "predicted_codes": [],
     "reason": "Recorded D99 refers to unspecified payer correspondence or an unavailable contract amendment; the supplied rules do not define a reproducible denial.",
     "recorded_remark": "Under review - see payer correspondence",
-    "replay_period_end": "2027-01-31"
+    "replay_period_end": "2027-01-31",
+    "additional_replay_period_ends": [
+      "2026-09-30"
+    ]
   },
   "C007725": {
     "actual_status": "denied",
@@ -430,7 +475,10 @@
     "predicted_codes": [],
     "reason": "Recorded D99 refers to unspecified payer correspondence or an unavailable contract amendment; the supplied rules do not define a reproducible denial.",
     "recorded_remark": "Denied - contact payer",
-    "replay_period_end": "2027-01-31"
+    "replay_period_end": "2027-01-31",
+    "additional_replay_period_ends": [
+      "2026-09-30"
+    ]
   },
   "C008094": {
     "actual_status": "denied",
@@ -488,7 +536,10 @@
     "predicted_codes": [],
     "reason": "Recorded D99 refers to unspecified payer correspondence or an unavailable contract amendment; the supplied rules do not define a reproducible denial.",
     "recorded_remark": "Denied - contact payer",
-    "replay_period_end": "2027-01-31"
+    "replay_period_end": "2027-01-31",
+    "additional_replay_period_ends": [
+      "2026-09-30"
+    ]
   },
   "C008707": {
     "actual_status": "denied",
@@ -533,7 +584,10 @@
     "predicted_codes": [],
     "reason": "Recorded D99 refers to unspecified payer correspondence or an unavailable contract amendment; the supplied rules do not define a reproducible denial.",
     "recorded_remark": "Denied - contact payer",
-    "replay_period_end": "2027-01-31"
+    "replay_period_end": "2027-01-31",
+    "additional_replay_period_ends": [
+      "2026-09-30"
+    ]
   },
   "C010183": {
     "actual_status": "denied",
@@ -652,7 +706,10 @@
     "predicted_codes": [],
     "reason": "Recorded D99 refers to unspecified payer correspondence or an unavailable contract amendment; the supplied rules do not define a reproducible denial.",
     "recorded_remark": "Under review - see payer correspondence",
-    "replay_period_end": "2027-01-31"
+    "replay_period_end": "2027-01-31",
+    "additional_replay_period_ends": [
+      "2026-09-30"
+    ]
   },
   "C012104": {
     "actual_status": "denied",
@@ -688,7 +745,10 @@
     "predicted_codes": [],
     "reason": "Recorded D99 refers to unspecified payer correspondence or an unavailable contract amendment; the supplied rules do not define a reproducible denial.",
     "recorded_remark": "Denied - contact payer",
-    "replay_period_end": "2027-01-31"
+    "replay_period_end": "2027-01-31",
+    "additional_replay_period_ends": [
+      "2026-09-30"
+    ]
   },
   "C012961": {
     "actual_status": "denied",
@@ -697,7 +757,10 @@
     "predicted_codes": [],
     "reason": "Supplied manuals omit the Summit contract/amendment requirement referenced by this recorded D10 denial.",
     "recorded_remark": "Units not billable per amendment 3 (hourly increments)",
-    "replay_period_end": "2027-01-31"
+    "replay_period_end": "2027-01-31",
+    "additional_replay_period_ends": [
+      "2026-09-30"
+    ]
   },
   "C013097": {
     "actual_status": "denied",
@@ -726,7 +789,10 @@
     "predicted_codes": [],
     "reason": "Recorded D99 refers to unspecified payer correspondence or an unavailable contract amendment; the supplied rules do not define a reproducible denial.",
     "recorded_remark": "Denied - contact payer",
-    "replay_period_end": "2027-01-31"
+    "replay_period_end": "2027-01-31",
+    "additional_replay_period_ends": [
+      "2026-09-30"
+    ]
   },
   "C013491": {
     "actual_status": "denied",
@@ -811,7 +877,10 @@
     "predicted_codes": [],
     "reason": "Recorded D99 refers to unspecified payer correspondence or an unavailable contract amendment; the supplied rules do not define a reproducible denial.",
     "recorded_remark": "Under review - see payer correspondence",
-    "replay_period_end": "2027-01-31"
+    "replay_period_end": "2027-01-31",
+    "additional_replay_period_ends": [
+      "2026-09-30"
+    ]
   },
   "C015557": {
     "actual_status": "denied",
@@ -849,7 +918,10 @@
     "predicted_codes": [],
     "reason": "Recorded D99 refers to unspecified payer correspondence or an unavailable contract amendment; the supplied rules do not define a reproducible denial.",
     "recorded_remark": "Under review - see payer correspondence",
-    "replay_period_end": "2027-01-31"
+    "replay_period_end": "2027-01-31",
+    "additional_replay_period_ends": [
+      "2026-09-30"
+    ]
   },
   "C016259": {
     "actual_status": "denied",
@@ -880,7 +952,10 @@
     ],
     "reason": "Supplied manuals omit the Summit contract/amendment requirement referenced by this recorded D10 denial.",
     "recorded_remark": "Units not billable per amendment 3 (hourly increments)",
-    "replay_period_end": "2027-01-31"
+    "replay_period_end": "2027-01-31",
+    "additional_replay_period_ends": [
+      "2026-09-30"
+    ]
   },
   "C016569": {
     "actual_status": "denied",
@@ -898,7 +973,10 @@
     "predicted_codes": [],
     "reason": "Supplied manuals omit the Summit contract/amendment requirement referenced by this recorded D10 denial.",
     "recorded_remark": "Units not billable per amendment 3 (hourly increments)",
-    "replay_period_end": "2027-01-31"
+    "replay_period_end": "2027-01-31",
+    "additional_replay_period_ends": [
+      "2026-09-30"
+    ]
   },
   "C016741": {
     "actual_status": "denied",
@@ -1008,7 +1086,10 @@
     "predicted_codes": [],
     "reason": "Recorded D99 refers to unspecified payer correspondence or an unavailable contract amendment; the supplied rules do not define a reproducible denial.",
     "recorded_remark": "Under review - see payer correspondence",
-    "replay_period_end": "2027-01-31"
+    "replay_period_end": "2027-01-31",
+    "additional_replay_period_ends": [
+      "2026-09-30"
+    ]
   },
   "C018204": {
     "actual_status": "denied",
@@ -1028,7 +1109,10 @@
     ],
     "reason": "Supplied manuals omit the Summit contract/amendment requirement referenced by this recorded D10 denial.",
     "recorded_remark": "Contract amendment 3: services must be billed in whole hours",
-    "replay_period_end": "2027-01-31"
+    "replay_period_end": "2027-01-31",
+    "additional_replay_period_ends": [
+      "2026-09-30"
+    ]
   },
   "C018324": {
     "actual_status": "denied",
@@ -1037,7 +1121,10 @@
     "predicted_codes": [],
     "reason": "Recorded D99 refers to unspecified payer correspondence or an unavailable contract amendment; the supplied rules do not define a reproducible denial.",
     "recorded_remark": "Denied - contact payer",
-    "replay_period_end": "2027-01-31"
+    "replay_period_end": "2027-01-31",
+    "additional_replay_period_ends": [
+      "2026-09-30"
+    ]
   },
   "C018583": {
     "actual_status": "denied",

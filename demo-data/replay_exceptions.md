@@ -23,8 +23,18 @@ as mismatches and includes them in the overall accuracy denominator.
   C006764's 20-unit claim. It passes with observed prior outcomes, but this demo
   deliberately predicts the complete batch without observing its labels.
 
+The September monthly batch has also been checked independently using both
+source-transcribed bulletin rules. Its 29 mismatches exactly match the previously
+recorded claim outcomes and prediction code sets from the January-ending replay.
+These entries list September 30 in `additional_replay_period_ends`. September
+therefore has 29 documented differences, zero unexpected differences, 805/834
+matches (96.52%), 21 missed denials and one false alarm. The 29 differences comprise
+17 recorded D99 denials, 11 D10 contract denials, and C006764's D02 false alarm.
+For C006764, predicting C003575 paid consumes nine units that the recorded denial
+would not consume. The two bulletins do not resolve that missing-contract effect.
+
 Each entry pins the claim ID, recorded status/code, predicted status/full code
-set, and replay period. A changed prediction is not automatically excused by the
+set, and replay period (including any independently verified additional period ends). A changed prediction is not automatically excused by the
 same claim ID. Other cohorts or starting dates can therefore reveal unexpected
 mismatches and fail. The replay never writes or expands this file. Changes need
 an explicit review of the source record, ledger and expected outcome.

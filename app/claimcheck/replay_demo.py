@@ -119,7 +119,7 @@ class HistoricalReplay:
                        actual_code=actual['denial_code'], remark=actual.get('remark', ''),
                        status=pred['status'], codes=pred['denial_codes'])
             exception = known.get(row['claim_id'])
-            row['known_exception'] = bool(exception and exception.get('replay_period_end') == until
+            row['known_exception'] = bool(exception and until in [exception.get('replay_period_end'), *exception.get('additional_replay_period_ends', [])]
                 and exception['actual_status'] == row['actual_status']
                 and exception['actual_code'] == row['actual_code']
                 and exception['predicted_status'] == row['status']

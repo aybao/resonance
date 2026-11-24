@@ -103,6 +103,29 @@ class HistoricalDemo(unittest.TestCase):
         self.assertEqual(self.session.results()['demo_report']['false_alarms'], 9)
         self.assertEqual(self.session.results()['demo_report']['missed_denials'], after['demo_report']['missed_denials'] + 1)
 
+    def test_september_both_bulletins_match_verified_investigation(self):
+        from claimcheck.replay_demo import DEMO_DIR
+        from claimcheck.rules import full_store
+        self.session.start_demo()
+        self.session.advance_demo('2026-09-30')
+        self.session.rules = full_store(self.session.rules.path)
+        text = (DEMO_DIR / 'claim-checking-csvs' / 'claims_2026-09-01_to_2026-09-30.csv').read_text()
+        report = self.session.upload_claims(text)['demo_report']
+        self.assertEqual(report['status_and_code_set_correct'], 805)
+        self.assertEqual(report['claims'], 834)
+        self.assertEqual(report['known_exceptions'], 29)
+        self.assertEqual(report['unexpected_mismatches'], 0)
+        self.assertEqual(report['false_alarms'], 1)
+        self.assertEqual(report['missed_denials'], 21)
+        self.assertTrue(report['passed'])
+        # Removing the bulletins changes real predictions, not the baseline.
+        self.session.rules = baseline_store()
+        self.session._recheck()
+        changed = self.session.demo.last_report
+        self.assertGreater(changed['unexpected_mismatches'], 0)
+        self.assertFalse(changed['passed'])
+        self.assertEqual(changed['false_alarms'], 26)
+
     def test_rejects_backwards_dates_and_reference_replacement(self):
         self.session.start_demo()
         for date in ['invalid', '2026-04-29', '2026-04-30']:
