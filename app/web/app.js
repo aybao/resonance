@@ -61,7 +61,7 @@ document.querySelectorAll("nav button").forEach((b) => b.addEventListener("click
 
 async function loadStatus() {
   const s = await api("GET", "/api/status");
-  $("ai-status").textContent = s.ai_available ? `AI rule assistant ready (${s.model})` : "AI rule assistant off: set ANTHROPIC_API_KEY to create or update rules";
+  $("ai-status").textContent = s.ai_available ? `AI rule assistant ready (${s.model})` : "Rule assistant unavailable: API key not configured";
   const mode = $("mode-tools");
   if (s.mode === "demo") {
     const current = new Date(s.demo.as_of + "T00:00:00Z");
@@ -90,8 +90,8 @@ async function loadStatus() {
       h("p", {}, h("strong", {}, `Reference data available as of: ${referenceDate}`)),
       Object.hasOwn(s.demo, "authorizations_from") ? h("p", { class: "small muted" }, `Authorizations: start dates from ${s.demo.authorizations_from || "no records"} through ${referenceDate}. EVV visits: ${s.demo.evv_from || "no records"} through ${referenceDate}. Claim outcome history: ${s.demo.history_from || "no records"} through ${s.demo.history_through || "no records"} (submission dates).`) : null,
       h("p", { class: "small muted" }, s.demo.prediction_history_before
-        ? `For the uploaded batch, predictions use only claim history submitted before ${s.demo.prediction_history_before}. The pending month is absent from reference history. True outcomes are used separately for comparison.`
-        : `Pending batch: ${s.demo.pending_month || s.demo.as_of.slice(0, 7)}. This month’s claim outcomes are held out of reference history. Upload this month’s CSV to check it; the true outcomes are used separately for comparison. Fast forwarding to the next month adds the previous month’s outcomes to history.`)) : null,
+        ? `Prediction history: submissions before ${s.demo.prediction_history_before}. Recorded batch outcomes are used only for comparison.`
+        : `Pending batch: ${s.demo.pending_month || s.demo.as_of.slice(0, 7)}. Upload this month’s CSV. Its outcomes enter reference history next month.`)) : null,
     h("p", { class: d.authorizations && d.evv_visits ? "" : "bad" },
       `${d.authorizations} authorizations · ${d.evv_visits} EVV visits · ${d.history} past claims (history used for balances and duplicates)`),
     d.problems.length ? h("pre", {}, d.problems.join("\n")) : null,
@@ -133,16 +133,18 @@ function clearRuleConversation() {
 }
 function renderDemoReport(report) {
   const root = $("demo-report"); root.hidden = false;
-  root.replaceChildren(h("h2", {}, "DEMO - COMPARING WITH TRUE HISTORICAL RESULTS"),
-    h("p", {}, `${report.from_date} to ${report.through_date} · ${(report.accuracy * 100).toFixed(2)}% agreement across ${report.claims} claims · ${report.unexplained_d99 || 0} unexplained historical D99 denials · ${report.known_exceptions} documented differences · ${report.unexpected_mismatches} other differences to investigate · ${report.manual_review} need review · ${report.false_alarms} false alarms`),
-    h("p", { class: report.mismatches.length ? "warning" : "ok" }, report.mismatches.length
-      ? `${report.mismatches.length} predictions differ from recorded outcomes. All differences count against agreement, including documented differences.`
-      : "All predictions match the recorded outcomes."),
-    report.unexplained_d99 ? h("p", {}, "Unexplained historical D99 denials were recorded with an unspecified reason or a reference to payer correspondence. The supplied data does not establish the denial condition. These remain prediction errors; documenting them does not make them correct.") : null,
-    h("p", { class: "small muted" }, "Uploaded claims are checked before comparison with recorded outcomes. History from the uploaded batch period is excluded from prediction. Submission dates proxy outcome availability because adjudication dates are unavailable."),
-    h("details", {}, h("summary", {}, `All mismatches (${report.mismatches.length})`), h("div", { class: "table-wrap" }, h("table", {},
+  root.replaceChildren(
+    h("p", { class: "demo-accuracy" }, `ACCURACY: ${(report.accuracy * 100).toFixed(2)}%.`),
+    h("h2", {}, "DEMO - COMPARING WITH TRUE HISTORICAL RESULTS"),
+    h("p", {}, `${report.from_date} to ${report.through_date} · ${report.status_and_code_set_correct} of ${report.claims} claims match · ${report.mismatches.length} mismatches`),
+    h("p", { class: "small muted" }, "A match requires the recorded status and, for denials, the recorded denial code. Documented mismatches still reduce accuracy."),
+    report.unexplained_d99 ? h("p", {}, `${report.unexplained_d99} recorded D99 denials have no supplied denial rule or payer correspondence.`) : null,
+    h("details", {}, h("summary", {}, `Mismatches (${report.mismatches.length})`), h("div", { class: "table-wrap" }, h("table", {},
       h("tr", {}, ...["Claim", "Predicted", "Recorded", "Basis"].map((text) => h("th", {}, text))),
-      ...report.mismatches.map((r) => h("tr", {}, h("td", {}, r.claim_id, fullClaimRow(r.claim)), h("td", {}, `${r.status} ${r.codes.join(", ")}`), h("td", {}, `${r.actual_status} ${r.actual_code}`), h("td", { class: "reason" }, r.exception_reason || (r.actual_code === "D99" ? "Unexplained historical D99 denial; payer reason not supplied. Recorded remark: " : "Difference to investigate. Recorded remark: ") + r.remark)))))));
+      ...report.mismatches.map((r) => h("tr", {}, h("td", {}, r.claim_id, fullClaimRow(r.claim)), h("td", {}, `${r.status} ${r.codes.join(", ")}`), h("td", {}, `${r.actual_status} ${r.actual_code}`), h("td", { class: "reason" }, r.exception_reason || (r.actual_code === "D99" ? "D99: payer reason not supplied. Recorded remark: " : "Recorded remark: ") + r.remark)))))),
+    h("p", { class: report.passed ? "ok demo-investigation-status" : "bad demo-investigation-status" },
+      h("strong", {}, report.passed ? "Matches documented results" : "Unexpected"),
+      report.passed ? " — All mismatches were documented in previous investigations." : ` — ${report.unexpected_mismatches} mismatches were not documented in previous investigations.`));
 }
 
 function render() {
@@ -153,7 +155,7 @@ function render() {
   $("tiles").replaceChildren(...tiles.map(([k, label, n]) =>
     h("button", { class: "tile" + (filter === k ? " on" : ""), onclick: () => { filter = k; render(); } }, h("b", {}, n), label)));
   const rows = results.rows.filter((r) => filter === "all" || (filter === "formatted" ? r.changes.length : r.category === filter));
-  $("filters").replaceChildren(h("span", { class: "muted" }, `${rows.length} shown. Yellow cells were normalised automatically (hover for the original value).`),
+  $("filters").replaceChildren(h("span", { class: "muted" }, `${rows.length} claims shown. Yellow cells: formatted or edited; hover for the uploaded value. Click a row for details.`),
     results.summary.by_code && Object.keys(results.summary.by_code).length ? h("span", { class: "muted" }, " Codes: " + Object.entries(results.summary.by_code).map(([c, n]) => `${c}×${n}`).join("  ")) : null);
   const cols = ["line", ...CLAIM_COLUMNS.map(([key]) => key)];
   const table = $("claims-table");
@@ -175,7 +177,7 @@ function showDetail(line, keepScroll) {
   const d = $("detail"); d.hidden = false;
   const kids = [h("h2", {}, `Claim ${r.claim_id || "(no ID)"} — line ${r.line}`),
     h("p", {}, badge(r.status === "paid" ? "payable" : r.status, STATUS_LABEL[r.status] || r.status), " ", codeChips(r.denial_codes),
-      r.override ? h("span", { class: "muted" }, ` (your classification; model predicted ${STATUS_LABEL[r.predicted_status] || r.predicted_status} ${r.predicted_codes.join(", ")})`) : null)];
+      r.override ? h("span", { class: "muted" }, ` (your classification; rules predicted ${STATUS_LABEL[r.predicted_status] || r.predicted_status} ${r.predicted_codes.join(", ")})`) : null)];
   kids.push(h("h3", {}, "Complete claim row"), fullClaimRow(r.clean));
   for (const i of r.issues) kids.push(h("div", { class: i.severity === "error" ? "failure" : "warning" }, h("b", {}, i.field + ": "), i.message,
     i.severity === "error" ? h("div", { class: "muted small" }, "Edit this value below, then the batch is re-checked.") : null));
@@ -235,10 +237,10 @@ function applyEdit(line, fields) { if (!Object.keys(fields).length) return; guar
 
 function overrideForm(r) {
   const ov = r.override;
-  const sel = h("select", {}, ...[["", "No override (use model)"], ["paid", "Treat as paid"], ["denied", "Treat as denied"], ["manual_review", "Needs review"]].map(([v, t]) => h("option", { value: v, selected: (ov ? ov.status : "") === v }, t)));
+  const sel = h("select", {}, ...[["", "No override (use rules)"], ["paid", "Treat as paid"], ["denied", "Treat as denied"], ["manual_review", "Needs review"]].map(([v, t]) => h("option", { value: v, selected: (ov ? ov.status : "") === v }, t)));
   const boxes = CODES.map((c) => h("label", { style: "display:inline-block;margin-right:8px" }, h("input", { type: "checkbox", value: c, style: "display:inline", checked: ov && ov.denial_codes.includes(c) }), " " + c));
   const note = h("input", { size: 40, placeholder: "Reason / source (kept in the export)", value: ov ? ov.note : "" });
-  return h("div", {}, h("h3", {}, "Your classification"), h("p", { class: "muted small" }, "Overrides this claim only; it does not change payer rules. Later claims use your decision for balances."),
+  return h("div", {}, h("h3", {}, "Your classification"), h("p", { class: "muted small" }, "Your classification sets this claim’s outcome and affects later authorization balances."),
     h("div", { class: "row" }, sel, ...boxes), h("div", { class: "row" }, note, h("button", { onclick: () => guard(async () => {
       const codes = boxes.map((b) => b.firstChild).filter((i) => i.checked).map((i) => i.value);
       results = sel.value ? await api("POST", `/api/claims/${r.claim_id}/override`, { status: sel.value, denial_codes: codes, note: note.value })
@@ -316,7 +318,7 @@ $("rules-file").addEventListener("change", (event) => {
     return;
   }
   setRuleAttachment(file);
-  $("rules-status").textContent = "Markdown attached. Add a prompt or send the document on its own.";
+  $("rules-status").textContent = "Document attached. Send to generate a rule proposal.";
   $("rule-message").focus();
 });
 $("rule-message").addEventListener("input", setRuleControls);
@@ -346,8 +348,8 @@ $("rule-composer").addEventListener("submit", (event) => {
     $("rule-message").value = "";
     setRuleAttachment(null);
     showDraft(view);
-    $("rules-status").textContent = draftId ? "Rule update revised. Review the latest examples below." : "Proposed rules are ready below.";
-  }, "Reviewing your request and checking affected examples…");
+    $("rules-status").textContent = draftId ? "Proposal revised. Review changed examples." : "Proposal ready for review.";
+  }, "Generating rules and checking examples…");
 });
 $("rule-message").addEventListener("keydown", (event) => {
   if (event.key === "Enter" && !event.shiftKey && !event.isComposing) { event.preventDefault(); $("rule-composer").requestSubmit(); }
@@ -374,7 +376,7 @@ function ruleValue(value) {
 function ruleSummary(d) {
   if (d.code != null || !d.payer_id) return h("section", { class: "rule-summary" },
     h("div", { class: "rule-summary-heading" }, h("button", { type: "button", class: "rule-title-button", onclick: () => selectExample({ key: `${d.id}-rule`, title: d.summary || "Proposed rule update", code: d.code, source: d.source }) }, d.summary || "Proposed rule update", h("span", { class: "small muted" }, " · Click to comment")), badge("review", "Draft")),
-    h("p", { class: "muted" }, d.code ? "Payer and service-date conditions are defined in the rule. One update can cover multiple payers and dates." : "Reply below to clarify the proposed update."),
+    h("p", { class: "muted" }, d.code ? "Review the proposed code, source passage and changed examples before accepting." : "Reply below to clarify the proposed update."),
     d.code ? h("details", {}, h("summary", {}, "Proposed rule code"), h("pre", {}, d.code)) : null,
     d.source ? h("details", { class: "source-detail" }, h("summary", {}, "Source passage"), h("blockquote", {}, d.source)) : null);
   const versions = activeRules?.payers[d.payer_id]?.versions || [];
@@ -429,9 +431,9 @@ function updateOutput(view) {
   for (const note of [...(view.notes || []), ...ev.problems]) output.append(h("p", { class: "warning" }, note));
   if (((Object.keys(d.params).length || d.code) && !ev.problems.length) || examples.length) {
     output.append(h("h3", { class: "examples-heading" }, `${examples.length} affected example${examples.length === 1 ? "" : "s"}`),
-      h("p", { class: "small muted" }, "Only changed outcomes are shown. Raise an issue if something looks wrong, or accept the rule update below."));
+      h("p", { class: "small muted" }, "Examples below show predictions changed by this proposal."));
     output.append(...examples.map((e) => exampleCard(d, e)));
-    if (!examples.length) output.append(h("p", { class: "muted" }, "No generated example outcomes change with this update."));
+    if (!examples.length) output.append(h("p", { class: "muted" }, "No example predictions changed."));
   }
   if (ev.impact) {
     const i = ev.impact;
@@ -449,13 +451,13 @@ function updateOutput(view) {
     d.status = "activated";
     output.querySelectorAll(".rule-actions").forEach((el) => { el.hidden = true; });
     document.querySelectorAll(".example-review").forEach((el) => { el.hidden = true; });
-    output.append(h("p", { class: "activation-success", role: "status" }, "✓ New rule accepted. Current claims have been re-checked."));
+    output.append(h("p", { class: "activation-success", role: "status" }, "Rules accepted; loaded claims rechecked."));
     $("rule-composer").hidden = false;
     selectExample(null);
     await loadRules(); await refreshResults();
-    $("rules-status").textContent = "Rules saved. Send a prompt or Markdown document to start another update.";
+    $("rules-status").textContent = "Rules saved; loaded claims rechecked.";
   }, "Activating reviewed rules…") }, "Accept new rule");
-  output.append(h("div", { class: "rule-actions activation-row" }, activate, h("span", { class: "small muted" }, ev.can_activate ? "Accept this update in one step, or raise an issue above." : "Reply below to complete this draft.")));
+  output.append(h("div", { class: "rule-actions activation-row" }, activate, h("span", { class: "small muted" }, ev.can_activate ? "Accepting saves the rules and rechecks loaded claims." : "Resolve the issues above before accepting.")));
   return output;
 }
 function comparison(beforeStatus, beforeCodes, afterStatus, afterCodes) {
@@ -473,7 +475,7 @@ function exampleCard(d, e) {
       h("div", { class: "example-title" }, h("strong", {}, e.title)),
       fullClaimRow(c),
       comparison(e.before_status, e.before, e.actual.status, e.actual.codes)),
-    h("details", { class: "example-evidence" }, h("summary", {}, "Why this changes / claim context"),
+    h("details", { class: "example-evidence" }, h("summary", {}, "Rule evidence and example inputs"),
       ...e.actual.reasons.map((r) => h("p", {}, r)),
       !e.actual.codes.length && e.before.length ? h("p", {}, "This update removes: " + e.before.map((code) => `${code} (${DENIAL_MEANING[code]})`).join(", ")) : null,
       h("dl", {}, ...Object.entries({ ...c, ...x }).map(([key, value]) => h("div", {}, h("dt", {}, key.replaceAll("_", " ")), h("dd", {}, Array.isArray(value) ? value.join(" + ") || "None" : String(value)))))),
