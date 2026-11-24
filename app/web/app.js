@@ -137,6 +137,7 @@ function renderDemoReport(report) {
     h("p", { class: "demo-accuracy" }, `ACCURACY: ${(report.accuracy * 100).toFixed(2)}%.`),
     h("h2", {}, "DEMO - COMPARING WITH TRUE HISTORICAL RESULTS"),
     h("p", {}, `${report.from_date} to ${report.through_date} · ${report.status_and_code_set_correct} of ${report.claims} claims match · ${report.mismatches.length} mismatches`),
+    h("p", {}, `${report.false_alarms} false alarms (predicted denied, recorded paid) · ${report.missed_denials} missed denials (predicted paid, recorded denied) · ${report.manual_review} need review`),
     h("p", { class: "small muted" }, "A match requires the recorded status and, for denials, the recorded denial code. Documented mismatches still reduce accuracy."),
     report.unexplained_d99 ? h("p", {}, `${report.unexplained_d99} recorded D99 denials have no supplied denial rule or payer correspondence.`) : null,
     h("details", {}, h("summary", {}, `Mismatches (${report.mismatches.length})`), h("div", { class: "table-wrap" }, h("table", {},
@@ -148,6 +149,10 @@ function renderDemoReport(report) {
 }
 
 function render() {
+  if (Object.hasOwn(results, "demo_report")) {
+    if (results.demo_report) renderDemoReport(results.demo_report);
+    else $("demo-report").hidden = true;
+  }
   $("results").hidden = false; $("export").hidden = false;
   const by = results.summary.by_category;
   const tiles = [["all", "All claims", results.summary.total], ["denied", "Likely denied", by.denied || 0], ["review", "Needs review", by.review || 0],

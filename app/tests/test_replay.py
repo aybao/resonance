@@ -80,6 +80,29 @@ class HistoricalDemo(unittest.TestCase):
         self.assertTrue(june_ids.issubset(july_history_ids))
         self.assertEqual(self.session.status()['demo']['pending_month'], '2026-07')
 
+    def test_rule_acceptance_recomputes_live_report_and_false_alarms(self):
+        from claimcheck.replay_demo import DEMO_DIR
+        self.session.start_demo()
+        self.session.advance_demo('2026-09-30')
+        csv = (DEMO_DIR / 'claim-checking-csvs' / 'claims_2026-09-01_to_2026-09-30.csv').read_text()
+        before = self.session.upload_claims(csv)
+        self.assertEqual(before['demo_report']['false_alarms'], 26)
+        self.assertEqual(self.session.find('C005332')['denial_codes'], ['D03'])
+        accept_bulletin(self.session, 'PY01')
+        after = self.session.results()
+        self.assertEqual(after['demo_report']['false_alarms'], 9)
+        self.assertEqual(after['demo_report'], self.session.demo.last_report)
+        self.assertEqual(self.session.find('C005332')['status'], 'paid')
+        self.assertEqual(self.session.find('C005332')['denial_codes'], [])
+        # The source outcome is used for comparison, not to set the prediction.
+        original_predictions = [(r['claim_id'], r['status'], r['denial_codes']) for r in after['rows']]
+        actual = next(r for r in self.session.demo.source.history if r['claim_id'] == 'C005332')
+        actual['status'], actual['denial_code'] = 'denied', 'D99'
+        self.session._recheck()
+        self.assertEqual(original_predictions, [(r['claim_id'], r['status'], r['denial_codes']) for r in self.session.rows])
+        self.assertEqual(self.session.results()['demo_report']['false_alarms'], 9)
+        self.assertEqual(self.session.results()['demo_report']['missed_denials'], after['demo_report']['missed_denials'] + 1)
+
     def test_rejects_backwards_dates_and_reference_replacement(self):
         self.session.start_demo()
         for date in ['invalid', '2026-04-29', '2026-04-30']:

@@ -8,6 +8,8 @@ Start **Historical demo** in the app: the initial date is **2026-04-30**.
 4. Fast forward to July 31. June's recorded outcomes now enter history, while July's remain held out. Upload July's CSV. Review/upload the Northwind July bulletin in Payer rules and re-upload the CSV to see the effect.
 5. Repeat for August 31 and the Harbor August bulletin, then subsequent month ends through January 31, 2027.
 
+Northwind’s 30-to-45-day filing extension applies to service dates from August 1. The first affected claims occur in the **September submission CSV**, not August: for example C005332 has August 3 service and September 3 submission (31 days). With baseline manuals, September has 26 false alarms; accepting only the Northwind update reduces that to 9. Harbor’s separate modifier update affects the remaining results.
+
 CSV filenames describe inclusive **submission date** ranges. The CSVs contain claim input fields only, with recorded statuses and denial codes removed. Use the file picker in Check claims to load them. Advancing clears the previous batch without running a check or accepting rule updates.
 
 `reference-data/` holds the source reference CSVs, including recorded outcomes for comparison. `payer-updates/` contains the supplied manuals and bulletins. `replay_exceptions.*` documents the seven unexplained June D99 denials and known differences for the original three-stage CLI replay; monthly batches may differ because pending claims within each batch consume balances according to predictions.

@@ -137,7 +137,8 @@ class Session:
             r["edits"] = rec["edits"]
 
     def results(self):
-        return dict(summary=summarize(self.rows), rows=self.rows)
+        return dict(summary=summarize(self.rows), rows=self.rows,
+                    demo_report=self.demo.last_report if self.demo else None)
 
     def find(self, claim_id, line=None):
         for r in self.rows:
