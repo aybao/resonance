@@ -101,7 +101,7 @@ class HistoricalReplay:
         known = json.loads(EXCEPTIONS_PATH.read_text()) if EXCEPTIONS_PATH.exists() else {}
         for pred in predictions:
             actual = labels[pred['claim_id']]
-            row = dict(claim_id=pred['claim_id'], payer=pred['clean']['payer'],
+            row = dict(claim=dict(pred['clean']), claim_id=pred['claim_id'], payer=pred['clean']['payer'],
                        date_of_service=pred['clean']['date_of_service'], actual_status=actual['status'],
                        actual_code=actual['denial_code'], remark=actual.get('remark', ''),
                        status=pred['status'], codes=pred['denial_codes'])

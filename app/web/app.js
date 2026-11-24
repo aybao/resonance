@@ -19,6 +19,20 @@ const CODES = ["D01","D02","D03","D04","D05","D06","D07","D08","D09","D10","D99"
 const LABEL = { payable: "Likely paid", denied: "Likely denied", review: "Needs review", must_correct: "Must correct", duplicate_row: "Repeated row" };
 const STATUS_LABEL = { paid: "Likely paid", denied: "Likely denied", manual_review: "Needs review", check_previous_claims: "Check earlier claims", duplicate_row: "Repeated row" };
 
+const CLAIM_COLUMNS = [
+  ["claim_id", "Claim ID"], ["agency_id", "Agency ID"], ["payer", "Payer"],
+  ["patient_id", "Patient ID"], ["service_code", "Service code"],
+  ["date_of_service", "Service date"], ["submitted_date", "Submission date"],
+  ["units", "Units"], ["auth_id", "Authorization ID"], ["modifier", "Modifier"],
+  ["frequency_code", "Frequency code"], ["original_claim_id", "Original claim ID"],
+  ["billed_amount", "Billed amount"]
+];
+function fullClaimRow(claim) {
+  return h("div", { class: "table-wrap full-claim-row", tabindex: 0, "aria-label": "Complete claim row; scroll horizontally to see all fields" },
+    h("table", {}, h("thead", {}, h("tr", {}, ...CLAIM_COLUMNS.map(([key, label]) => h("th", { scope: "col" }, label)))),
+      h("tbody", {}, h("tr", {}, ...CLAIM_COLUMNS.map(([key]) => h("td", {}, claim?.[key] === "" ? "(blank)" : claim?.[key] ?? "Not available"))))));
+}
+
 async function api(method, path, body, raw) {
   const opts = { method, headers: {} };
   if (body !== undefined) {
@@ -118,7 +132,7 @@ function renderDemoReport(report) {
     h("p", { class: "small muted" }, "Uploaded claims are checked before comparison with recorded outcomes. History from the uploaded batch period is excluded from prediction. Submission dates proxy outcome availability because adjudication dates are unavailable."),
     h("details", {}, h("summary", {}, `All mismatches (${report.mismatches.length})`), h("div", { class: "table-wrap" }, h("table", {},
       h("tr", {}, ...["Claim", "Predicted", "Recorded", "Basis"].map((text) => h("th", {}, text))),
-      ...report.mismatches.map((r) => h("tr", {}, h("td", {}, r.claim_id), h("td", {}, `${r.status} ${r.codes.join(", ")}`), h("td", {}, `${r.actual_status} ${r.actual_code}`), h("td", { class: "reason" }, r.exception_reason || "Unexpected: " + r.remark)))))));
+      ...report.mismatches.map((r) => h("tr", {}, h("td", {}, r.claim_id, fullClaimRow(r.claim)), h("td", {}, `${r.status} ${r.codes.join(", ")}`), h("td", {}, `${r.actual_status} ${r.actual_code}`), h("td", { class: "reason" }, r.exception_reason || "Unexpected: " + r.remark)))))));
 }
 
 function render() {
@@ -131,9 +145,9 @@ function render() {
   const rows = results.rows.filter((r) => filter === "all" || (filter === "formatted" ? r.changes.length : r.category === filter));
   $("filters").replaceChildren(h("span", { class: "muted" }, `${rows.length} shown. Yellow cells were normalised automatically (hover for the original value).`),
     results.summary.by_code && Object.keys(results.summary.by_code).length ? h("span", { class: "muted" }, " Codes: " + Object.entries(results.summary.by_code).map(([c, n]) => `${c}×${n}`).join("  ")) : null);
-  const cols = ["line", "claim_id", "payer", "patient_id", "service_code", "date_of_service", "submitted_date", "units", "auth_id", "modifier"];
+  const cols = ["line", ...CLAIM_COLUMNS.map(([key]) => key)];
   const table = $("claims-table");
-  table.replaceChildren(h("tr", {}, ...["Line", "Claim", "Payer", "Patient", "Service", "Service date", "Submitted", "Units", "Auth", "Mod", "Result", "Codes", "Why"].map((t) => h("th", {}, t))),
+  table.replaceChildren(h("tr", {}, ...["Line", ...CLAIM_COLUMNS.map(([, label]) => label), "Result", "Codes", "Why"].map((t) => h("th", {}, t))),
     ...rows.slice(0, 1500).map((r) => {
       const changed = Object.fromEntries(r.changes.map((c) => [c.field, c.before]));
       const edited = r.edits || {};
@@ -142,7 +156,7 @@ function render() {
         h("td", {}, badge(r.override ? r.status : r.status === "check_previous_claims" || r.status === "manual_review" ? "review" : r.status, (r.override ? "You: " : "") + (r.category === "must_correct" ? "Must correct" : STATUS_LABEL[r.status] || r.status))),
         h("td", {}, codeChips(r.denial_codes)), h("td", { class: "reason" }, r.summary));
     }));
-  if (rows.length > 1500) table.append(h("tr", {}, h("td", { colspan: 13 }, "Showing first 1500 rows; use filters or the CSV download.")));
+  if (rows.length > 1500) table.append(h("tr", {}, h("td", { colspan: cols.length + 3 }, "Showing first 1500 rows; use filters or the CSV download.")));
   if (selectedLine != null) showDetail(selectedLine, true);
 }
 
@@ -152,6 +166,7 @@ function showDetail(line, keepScroll) {
   const kids = [h("h2", {}, `Claim ${r.claim_id || "(no ID)"} — line ${r.line}`),
     h("p", {}, badge(r.status === "paid" ? "payable" : r.status, STATUS_LABEL[r.status] || r.status), " ", codeChips(r.denial_codes),
       r.override ? h("span", { class: "muted" }, ` (your classification; model predicted ${STATUS_LABEL[r.predicted_status] || r.predicted_status} ${r.predicted_codes.join(", ")})`) : null)];
+  kids.push(h("h3", {}, "Complete claim row"), fullClaimRow(r.clean));
   for (const i of r.issues) kids.push(h("div", { class: i.severity === "error" ? "failure" : "warning" }, h("b", {}, i.field + ": "), i.message,
     i.severity === "error" ? h("div", { class: "muted small" }, "Edit this value below, then the batch is re-checked.") : null));
   for (const f of r.failures) kids.push(h("div", { class: "failure" }, h("b", {}, f.code + " — " + f.meaning), h("div", {}, f.reason),
@@ -413,7 +428,7 @@ function updateOutput(view) {
     output.append(h("p", { class: "history-impact" }, h("strong", {}, `${i.changed_count} recorded claim outcome${i.changed_count === 1 ? "" : "s"} would change.`), ` ${i.now_correct} would match their recorded outcome; ${i.now_wrong} would stop matching.`));
     if (i.examples.length) output.append(h("details", {}, h("summary", {}, `Changed historical claims (${i.examples.length} shown)`), ...i.examples.map((c) => {
       const data = { key: `${d.id}-history-${c.claim_id}`, title: `Historical claim ${c.claim_id}`, ...c };
-      return h("div", { class: "example" }, h("div", { class: "example-content" }, h("strong", {}, c.claim_id), h("span", { class: "small muted" }, ` · ${c.payer} · Service ${c.date_of_service}`), comparison(c.before.status, c.before.codes, c.after.status, c.after.codes), h("span", { class: "small muted" }, `Recorded outcome: ${c.actual.status}${c.actual.code ? " · " + c.actual.code : ""}`)),
+      return h("div", { class: "example" }, h("div", { class: "example-content" }, h("strong", {}, c.claim_id), fullClaimRow(c.claim), h("span", { class: "small muted" }, ` · ${c.payer} · Service ${c.date_of_service}`), comparison(c.before.status, c.before.codes, c.after.status, c.after.codes), h("span", { class: "small muted" }, `Recorded outcome: ${c.actual.status}${c.actual.code ? " · " + c.actual.code : ""}`)),
         h("div", { class: "rule-actions example-review" }, raiseIssueButton(data)));
     })));
   }
@@ -441,12 +456,12 @@ function raiseIssueButton(data) {
     "aria-pressed": String(selectedExample?.key === data.key), onclick: () => selectExample(data) }, "Raise issue");
 }
 function exampleCard(d, e) {
-  const c = e.claim, x = e.context;
+  const c = e.full_claim || e.claim, x = e.context;
   const data = { key: `${d.id}-${e.id}`, title: e.title, claim: c, context: x, before: { status: e.before_status, codes: e.before }, after: e.actual };
   return h("div", { class: "example" + (e.matches_decision === false ? " fail" : "") },
     h("div", { class: "example-content" },
       h("div", { class: "example-title" }, h("strong", {}, e.title)),
-      h("p", { class: "claim-facts" }, `${c.payer || e.payer_id} · ${c.service_code} · ${c.units} units · Service ${c.date_of_service} · Submitted ${c.submitted_date}`),
+      fullClaimRow(c),
       comparison(e.before_status, e.before, e.actual.status, e.actual.codes)),
     h("details", { class: "example-evidence" }, h("summary", {}, "Why this changes / claim context"),
       ...e.actual.reasons.map((r) => h("p", {}, r)),

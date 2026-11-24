@@ -128,7 +128,7 @@ def run_examples(examples, rules):
         actual = run_scenario(s, rules)
         exp = s.get("expected_codes")
         out.append(dict(id=s.get("id"), title=s.get("title"), payer_id=s["claim"].get("payer", s.get("payer_id")), claim=s["claim"],
-                        context=s.get("context", {}), expected_codes=exp, actual=actual,
+                        full_claim=build_world(s)[0], context=s.get("context", {}), expected_codes=exp, actual=actual,
                         confirmed=s.get("confirmed", False), basis=s.get("basis", ""), origin=s.get("origin", ""),
                         passed=None if exp is None else sorted(exp) == sorted(actual["codes"])))
     return out

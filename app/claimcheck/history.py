@@ -5,13 +5,14 @@ outcomes would change under a proposed rule version. Labels never enter the chec
 """
 
 from .engine import State, check_claim
+from .normalize import CLAIM_FIELDS
 
 
 def replay(dataset, rules):
     state, rows = State(), []
     for h in dataset.history:
         r = check_claim(h, state, dataset.ctx, rules)
-        rows.append(dict(claim_id=h["claim_id"], payer=h["payer"], date_of_service=h["date_of_service"],
+        rows.append(dict(claim={k: h.get(k, "") for k in CLAIM_FIELDS}, claim_id=h["claim_id"], payer=h["payer"], date_of_service=h["date_of_service"],
                          actual_status=h["status"], actual_code=h["denial_code"], remark=h.get("remark", ""),
                          status=r["status"], codes=r["denial_codes"], error=r.get("rule_error")))
         state.record(h, h["status"])
@@ -41,7 +42,7 @@ def impact(dataset, old_rules, new_rules, limit=25):
     changed = []
     for x, y in zip(a, b):
         if (x["status"], x["codes"]) != (y["status"], y["codes"]):
-            changed.append(dict(claim_id=x["claim_id"], payer=x["payer"], date_of_service=x["date_of_service"],
+            changed.append(dict(claim=x["claim"], claim_id=x["claim_id"], payer=x["payer"], date_of_service=x["date_of_service"],
                                 before=dict(status=x["status"], codes=x["codes"]),
                                 after=dict(status=y["status"], codes=y["codes"]),
                                 actual=dict(status=x["actual_status"], code=x["actual_code"]),
