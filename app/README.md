@@ -14,7 +14,7 @@ From `app/`:
 
 ```bash
 python3 server.py                        # http://127.0.0.1:8000
-python3 server.py --demo                 # isolated base-manual state as of 2026-06-30
+python3 server.py --demo                 # isolated base-manual state as of 2026-04-30
 python3 server.py --demo --as-of 2026-07-31
 python3 -m unittest discover -s tests -t .
 ```
@@ -48,13 +48,16 @@ not been verified; automated/browser tests use an injected test transport.
   accepted rules. Each example has a **Raise issue** button; individual example
   approval is not required. Unchanged controls run in the background. Conflicting
   saved expectations need an explicit reason/source before acceptance. New versions and example baselines persist in `state/rules.json`.
-- **Historical demo:** use the header button to start with base manuals and dated
-  history, then **Advance and check claims**. Advance through July, upload/review
-  Northwind's July bulletin, advance through August, then upload/review Harbor's
-  August notice and advance through the remaining period. The supplied bulletins
-  are in `../Resonance - graduate preparation data/payers/`. Accuracy and every
-  mismatch appear under Check claims. **Return to full app** restores its saved
-  rules, data and claim batch; demo rule writes use a separate temporary directory.
+- **Historical demo:** starts on April 30, 2026 with base manuals. Use
+  **Fast forward: update system data** to reach June 30, then upload the June CSV
+  from `../demo-data/claim-checking-csvs/` into Check claims. Fast forward updates
+  reference data and clears the previous batch; uploading runs the checker.
+  Continue with each dated monthly CSV after advancing to its end date.
+  Compare July with the original rules, then upload/review Northwind's July bulletin;
+  do the same for Harbor after August. Documents are in `../demo-data/payer-updates/`.
+  The comparison card is labelled **DEMO - COMPARING WITH TRUE HISTORICAL RESULTS**.
+  Outcomes from the uploaded period are excluded from prediction. Returning to
+  the full app restores its saved rules, data and claim batch.
 
 ## AI skill and runtime checks
 

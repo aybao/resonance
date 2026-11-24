@@ -50,17 +50,23 @@ async function loadStatus() {
   $("ai-status").textContent = s.ai_available ? `AI rule assistant ready (${s.model})` : "AI rule assistant off: set ANTHROPIC_API_KEY to create or update rules";
   const mode = $("mode-tools");
   if (s.mode === "demo") {
-    const date = h("input", { type: "date", value: s.demo.as_of < "2026-07-31" ? "2026-07-31" : s.demo.as_of < "2026-08-31" ? "2026-08-31" : s.demo.end, min: s.demo.as_of, "aria-label": "Advance demo through date" });
+    const current = new Date(s.demo.as_of + "T00:00:00Z");
+    const nextMonthEnd = new Date(Date.UTC(current.getUTCFullYear(), current.getUTCMonth() + 2, 0)).toISOString().slice(0, 10);
+    const nextDate = s.demo.as_of < "2026-06-30" ? "2026-06-30" : nextMonthEnd;
+    const date = h("input", { type: "date", value: nextDate > s.demo.end ? s.demo.end : nextDate, min: s.demo.as_of, "aria-label": "Advance demo through date" });
     mode.replaceChildren(badge("review", `Historical demo · ${s.demo.as_of}`), date,
       h("button", { class: "secondary", onclick: () => guard(async () => {
-        const res = await api("POST", "/api/demo/advance", { date: date.value });
-        results = res.results; selectedLine = null; filter = "all"; render(); await loadStatus(); await loadRules(); renderDemoReport(res.report);
-      }) }, "Advance and check claims"),
+        await api("POST", "/api/demo/advance", { date: date.value });
+        await refreshResults(); await loadStatus(); await loadRules(); $("demo-report").hidden = true;
+      }) }, "Fast forward: update system data"),
       h("button", { class: "secondary", onclick: () => guard(async () => { await api("POST", "/api/demo/end"); clearRuleConversation(); await loadStatus(); await loadRules(); await refreshResults(); $("demo-report").hidden = true; }) }, "Return to full app"));
     if (s.demo.last_report) renderDemoReport(s.demo.last_report);
+    else $("demo-report").hidden = true;
   } else mode.replaceChildren(h("button", { class: "secondary", onclick: () => guard(async () => {
-    await api("POST", "/api/demo/start", { date: "2026-06-30" }); clearRuleConversation(); await loadStatus(); await loadRules(); await refreshResults();
+    await api("POST", "/api/demo/start", { date: "2026-04-30" }); clearRuleConversation(); await loadStatus(); await loadRules(); await refreshResults();
   }) }, "Start historical demo"));
+  $("use-sample-claims").hidden = !!s.demo;
+  $("demo-upload-help").hidden = !s.demo;
   const d = s.data;
   const card = $("data-card");
   card.replaceChildren(
@@ -82,9 +88,15 @@ async function uploadRef(kind, input) {
 
 // ---------- claims ----------
 let results = null, filter = "all", selectedLine = null;
-$("claims-file").addEventListener("change", async (e) => {
-  const text = await readFile(e.target); if (text == null) return;
-  await guard(async () => { results = await api("POST", "/api/claims", text); selectedLine = null; filter = "all"; render(); });
+async function uploadClaimsFile(file) {
+  if (!file) return;
+  const text = await file.text();
+  await guard(async () => { results = await api("POST", "/api/claims", text); selectedLine = null; filter = "all"; render(); await loadStatus(); });
+}
+$("claims-file").addEventListener("change", async (e) => { await uploadClaimsFile(e.target.files[0]); e.target.value = ""; });
+$("claims-upload").addEventListener("dragover", (e) => { e.preventDefault(); });
+$("claims-upload").addEventListener("drop", (e) => {
+  e.preventDefault(); uploadClaimsFile(e.dataTransfer.files[0]);
 });
 $("use-sample-claims").addEventListener("click", () => guard(async () => { results = await api("POST", "/api/claims/sample"); selectedLine = null; filter = "all"; render(); }));
 async function refreshResults() {
@@ -100,10 +112,10 @@ function clearRuleConversation() {
 }
 function renderDemoReport(report) {
   const root = $("demo-report"); root.hidden = false;
-  root.replaceChildren(h("h2", {}, `Historical replay · ${report.from_date} to ${report.through_date}`),
-    h("p", {}, `${(report.accuracy * 100).toFixed(2)}% agreement across ${report.claims} claims · ${report.known_exceptions} known exceptions · ${report.unexpected_mismatches} unexpected mismatches · ${report.manual_review} need review · ${report.false_alarms} false alarms`),
+  root.replaceChildren(h("h2", {}, "DEMO - COMPARING WITH TRUE HISTORICAL RESULTS"),
+    h("p", {}, `${report.from_date} to ${report.through_date} · ${(report.accuracy * 100).toFixed(2)}% agreement across ${report.claims} claims · ${report.known_exceptions} known exceptions · ${report.unexpected_mismatches} unexpected mismatches · ${report.manual_review} need review · ${report.false_alarms} false alarms`),
     h("p", { class: report.passed ? "ok" : "bad" }, report.passed ? "Replay passed: all other rows match." : "Replay found unexpected mismatches. All mismatches are listed below."),
-    h("p", { class: "small muted" }, "Batch labels were revealed after prediction. History advances by submission date because adjudication dates are unavailable. Use Payer rules to upload the next bulletin."),
+    h("p", { class: "small muted" }, "Uploaded claims are checked before comparison with recorded outcomes. History from the uploaded batch period is excluded from prediction. Submission dates proxy outcome availability because adjudication dates are unavailable."),
     h("details", {}, h("summary", {}, `All mismatches (${report.mismatches.length})`), h("div", { class: "table-wrap" }, h("table", {},
       h("tr", {}, ...["Claim", "Predicted", "Recorded", "Basis"].map((text) => h("th", {}, text))),
       ...report.mismatches.map((r) => h("tr", {}, h("td", {}, r.claim_id), h("td", {}, `${r.status} ${r.codes.join(", ")}`), h("td", {}, `${r.actual_status} ${r.actual_code}`), h("td", { class: "reason" }, r.exception_reason || "Unexpected: " + r.remark)))))));

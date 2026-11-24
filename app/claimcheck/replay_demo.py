@@ -15,8 +15,9 @@ from .normalize import CLAIM_FIELDS
 from .pipeline import Dataset, load_sample
 from .rules import baseline_store, valid_date
 
-DEFAULT_START = '2026-06-30'
-EXCEPTIONS_PATH = Path(__file__).resolve().parent.parent / 'sample_data' / 'replay_exceptions.json'
+DEFAULT_START = '2026-04-30'
+DEMO_DIR = Path(__file__).resolve().parents[2] / 'demo-data'
+EXCEPTIONS_PATH = DEMO_DIR / 'replay_exceptions.json'
 
 
 def claims_csv(rows):
@@ -33,7 +34,7 @@ class HistoricalReplay:
             raise ValueError('Demo start date must be YYYY-MM-DD')
         self.session = session
         self.source = Dataset()
-        load_sample(self.source, session.sample_dir)
+        load_sample(self.source, DEMO_DIR / 'reference-data')
         self.as_of = start
         self.start = start
         self.last_report = None
@@ -60,6 +61,27 @@ class HistoricalReplay:
     def advance(self, until):
         if not valid_date(until) or until <= self.as_of:
             raise ValueError('Advance to a date after the current demo date (YYYY-MM-DD)')
+        self.as_of = until
+        self.session.dataset = self.context_at(until, until)
+        self.session._accuracy = None
+        self.last_report = None
+        self.session.claims_header, self.session.raw_rows = [], []
+        self.session.edits, self.session.overrides, self.session.rows = {}, {}, []
+        return None
+
+    def compare(self, predictions):
+        labels = {r['claim_id']: r for r in self.source.history}
+        if not predictions or any(p['claim_id'] not in labels for p in predictions):
+            self.last_report = None
+            return
+        batch = [labels[p['claim_id']] for p in predictions]
+        until = max(r['submitted_date'] for r in batch)
+        self.last_report = self.report(predictions, batch,
+            min(r['submitted_date'] for r in batch), until)
+
+    def replay(self, until):
+        if not valid_date(until) or until <= self.as_of:
+            raise ValueError('Advance to a date after the current demo date (YYYY-MM-DD)')
         batch = [r for r in self.source.history if self.as_of < r['submitted_date'] <= until]
         if not batch:
             raise ValueError('No recorded claims in that period; choose a later date')
@@ -68,6 +90,12 @@ class HistoricalReplay:
         session.dataset = self.context_at(self.as_of, until)
         session._accuracy = None
         predictions = session.upload_claims(claims_csv(batch))['rows']
+        report = self.report(predictions, batch, self.as_of, until)
+        self.last_report = report
+        self.as_of = until
+        return report
+
+    def report(self, predictions, batch, from_date, until):
         labels = {r['claim_id']: r for r in batch}
         rows = []
         known = json.loads(EXCEPTIONS_PATH.read_text()) if EXCEPTIONS_PATH.exists() else {}
@@ -86,12 +114,11 @@ class HistoricalReplay:
             row['exception_reason'] = exception['reason'] if row['known_exception'] else ''
             rows.append(row)
         mismatches = [r for r in rows if not matches(r)]
-        self.last_report = dict(from_date=self.as_of, through_date=until, **accuracy(rows),
+        report = dict(from_date=from_date, through_date=until, **accuracy(rows),
             mismatches=mismatches, known_exceptions=sum(r['known_exception'] for r in mismatches),
             unexpected_mismatches=sum(not r['known_exception'] for r in mismatches),
             passed=all(r['known_exception'] for r in mismatches))
-        self.as_of = until
-        return self.last_report
+        return report
 
     def close(self):
         self.tmp.cleanup()

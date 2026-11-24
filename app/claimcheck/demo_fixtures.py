@@ -5,7 +5,7 @@ Never used as a fallback for real requests.
 """
 from pathlib import Path
 
-BULLETINS = Path(__file__).resolve().parents[2] / 'Resonance - graduate preparation data' / 'payers'
+BULLETINS = Path(__file__).resolve().parents[2] / 'demo-data' / 'payer-updates'
 NORTHWIND_CODE = '''def apply_rule(claim, context, failures):
     if claim['payer'] != 'PY01' or claim['date_of_service'] < '2026-08-01':
         return failures

@@ -21,8 +21,9 @@
   <section id="tab-claims">
     <div class="card" id="data-card"></div>
     <div class="card" id="demo-report" hidden></div>
-    <div class="card">
+    <div class="card" id="claims-upload">
       <h2>1. Upload claims</h2>
+      <p id="demo-upload-help" class="muted" hidden>Demo: fast forward to June 30, then drop the June CSV from demo-data/claim-checking-csvs here or choose it below. For later batches, advance to the month end shown in the filename before uploading.</p>
       <p class="muted">CSV with the standard claim columns. Dates, payer names, codes and spacing are normalised automatically; anything unclear is flagged, never guessed.</p>
       <input type="file" id="claims-file" accept=".csv,text/csv">
       <button id="use-sample-claims">Use sample claims</button>

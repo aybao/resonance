@@ -40,12 +40,12 @@ def accept_bulletin(session, payer, live=False, interactive=False):
 
 
 def run_replay(session, interactive=False, live=False):
-    session.start_demo()
+    session.start_demo('2026-06-30')
     reports = []
     for date, next_bulletin in [('2026-07-31', 'PY01'), ('2026-08-31', 'PY02'), ('2027-01-31', None)]:
         if interactive:
             input(f'Press Enter to advance and check claims through {date}…')
-        report = session.advance_demo(date)['report']
+        report = session.demo.replay(date)
         reports.append(report)
         print(f"{date}: {report['claims']} claims, {report['accuracy']:.2%} agreement, "
               f"{report['known_exceptions']} known exceptions, {report['unexpected_mismatches']} unexpected mismatches")

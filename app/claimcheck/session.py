@@ -35,7 +35,7 @@ class Session:
         if autoload:
             load_sample(self.dataset, self.sample_dir)
 
-    def start_demo(self, as_of="2026-06-30"):
+    def start_demo(self, as_of="2026-04-30"):
         from .replay_demo import HistoricalReplay
         from .rules import valid_date
         with self.lock:
@@ -107,6 +107,8 @@ class Session:
     def _recheck(self):
         if not self.raw_rows:
             self.rows = []
+            if self.demo:
+                self.demo.last_report = None
             return
         if not self.dataset.ready():
             raise ValueError("Load authorizations and EVV visits first")
@@ -119,7 +121,18 @@ class Session:
         for rec, raw in zip(records, self.raw_rows):
             rec["raw"] = dict(raw)  # source values stay as uploaded
             rec["edits"] = self.edits.get(rec["line"], {})
-        self.rows = run_batch(records, self.dataset, self.rules, self.overrides)
+        dataset = self.dataset
+        if self.demo:
+            import copy
+            dates = [r['clean'].get('submitted_date', '') for r in records]
+            # A historical upload is a pending batch: no outcomes from its period
+            # may enter prediction, even after the system date has advanced.
+            dataset = copy.copy(self.dataset)
+            cutoff = min(dates) if dates else self.demo.as_of
+            dataset.history = [r for r in dataset.history if r['submitted_date'] < cutoff]
+        self.rows = run_batch(records, dataset, self.rules, self.overrides)
+        if self.demo:
+            self.demo.compare(self.rows)
         for r, rec in zip(self.rows, records):
             r["edits"] = rec["edits"]
 

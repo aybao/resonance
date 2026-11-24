@@ -37,31 +37,35 @@ class HistoricalDemo(unittest.TestCase):
         self.assertEqual(self.session.rules.snapshot(), full_rules)
         self.assertEqual(self.session.dataset.history, full_history)
 
-    def test_advance_withholds_labels_for_entire_batch_and_advances_history_later(self):
+    def test_advance_updates_data_and_upload_withholds_batch_outcomes(self):
         self.session.start_demo()
+        self.assertEqual(self.session.demo.as_of, '2026-04-30')
         from claimcheck import session as module
+        from claimcheck.replay_demo import DEMO_DIR
         original = module.run_batch
         seen = []
         def inspect(records, ds, rules, overrides):
-            self.assertTrue(all(row['submitted_date'] <= '2026-06-30' for row in ds.history))
-            self.assertTrue(all('status' not in row['clean'] and 'denial_code' not in row['clean'] for row in records))
-            self.assertTrue(all(row['clean']['submitted_date'] > '2026-06-30' for row in records))
+            self.assertTrue(all(row['submitted_date'] < '2026-06-01' for row in ds.history))
+            self.assertTrue(all('status' not in row['clean'] for row in records))
             seen.extend(records)
             return original(records, ds, rules, overrides)
         with patch.object(module, 'run_batch', inspect):
-            result = self.session.advance_demo('2026-07-31')
-        self.assertTrue(seen)
-        self.assertEqual(result['report']['claims'], len(seen))
-        self.assertTrue(result['report']['mismatches'])
-        self.assertTrue(all(row['submitted_date'] <= '2026-06-30' for row in self.session.dataset.history))
-        accept_bulletin(self.session, 'PY01')
-        self.session.advance_demo('2026-08-31')
-        self.assertTrue(all(row['submitted_date'] <= '2026-07-31' for row in self.session.dataset.history))
-        self.assertGreater(max(row['submitted_date'] for row in self.session.dataset.history), '2026-06-30')
+            result = self.session.advance_demo('2026-06-30')
+            self.assertFalse(seen)
+            self.assertIsNone(result['report'])
+            self.assertEqual(result['results']['rows'], [])
+            csv = (DEMO_DIR / 'claim-checking-csvs' / 'claims_2026-06-01_to_2026-06-30.csv').read_text()
+            self.session.upload_claims(csv)
+        self.assertEqual(len(seen), 361)
+        self.assertEqual(self.session.demo.last_report['claims'], 361)
+        self.session.advance_demo('2026-07-31')
+        self.assertIsNone(self.session.demo.last_report)
+        self.assertEqual(self.session.rows, [])
+        self.assertTrue(any(r['submitted_date'] > '2026-06-30' for r in self.session.dataset.history))
 
     def test_rejects_backwards_dates_and_reference_replacement(self):
         self.session.start_demo()
-        for date in ['invalid', '2026-06-29', '2026-06-30']:
+        for date in ['invalid', '2026-04-29', '2026-04-30']:
             with self.assertRaises(ValueError):
                 self.session.advance_demo(date)
         with self.assertRaises(ValueError):
@@ -92,9 +96,9 @@ class HistoricalDemo(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             path = Path(tmp) / 'exceptions.json'
             path.write_text(json.dumps(original))
-            self.session.start_demo()
+            self.session.start_demo('2026-06-30')
             with patch.object(replay_demo, 'EXCEPTIONS_PATH', path):
-                report = self.session.advance_demo('2026-07-31')['report']
+                report = self.session.demo.replay('2026-07-31')
             self.assertFalse(report['passed'])
             self.assertEqual(report['unexpected_mismatches'], 1)
 
