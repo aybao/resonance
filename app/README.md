@@ -155,3 +155,18 @@ D99 denials still require evidence. Only full-app rules and acceptance tests
 persist; conversations and claim batches are session-local. The original
 experiment used a different split/state setup; its metrics are documented
 separately in [experiment_results.md](../experiment_results.md).
+
+## Automatic claim fixes
+
+The checker automatically fills a blank payer when valid authorization records
+identify one payer for that patient, service and date; a supplied authorization
+reference must agree. It also applies uniquely matching authorization references
+with sufficient balance and modifiers dictated by accepted rules. Explicit user
+edits take precedence. Ambiguous/conflicting reference records, insufficient or
+uncertain balances, units, amounts and service/submission dates remain for review.
+
+Fixes run in submission order before the ledger records each claim. The dashboard
+highlights them, exposes sources/reasons and provides an **Auto-fixed** filter.
+CSV source columns stay unchanged; `automatic_fixes` holds the audit and
+`checked_claim` holds the complete corrected row. In demo mode corrected rows are
+shown, while accuracy compares the original submitted claims with payer outcomes.

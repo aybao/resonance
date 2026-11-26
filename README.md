@@ -45,7 +45,9 @@ Never put a real key in source files or documentation.
    lists every column. Reference data can be replaced in full-app mode.
 2. Use the dashboard tiles to filter results. Yellow cells identify formatting
    changes or user edits; hover to see the uploaded value. Formatting changes are
-   automatic; business corrections require your action.
+   automatic. Uniquely supported payer, authorization and modifier values are
+   filled automatically; ambiguous matches and uncertain balances need review.
+   Use **Auto-fixed** to filter corrected rows and inspect each change’s source.
 3. Click a row to see every failure, suggested actions, matching EVV visits and
    authorization records. Check the visit verification state and the authorization
    balance **before that claim**. Apply a proposed fix or edit a field, then save
@@ -53,6 +55,8 @@ Never put a real key in source files or documentation.
    balance calculations; it does not change payer rules.
 4. Choose **Download results CSV**. Original uploaded values remain in their
    columns; additional columns record predictions, reasons, changes and overrides.
+   `automatic_fixes` records each correction and `checked_claim` contains the
+   complete corrected values used by the checker.
 
 | Displayed result | What it means |
 |---|---|
@@ -114,7 +118,9 @@ Alternatively, click **Start historical demo** in the app.
    the rules chat. Acceptance automatically re-checks the loaded batch. Northwind's
    extension applies from **1 August service dates**; Harbor's weekend modifier
    change applies from **1 September service dates**.
-5. Read **DEMO - COMPARING WITH TRUE HISTORICAL RESULTS** for agreement, missed
+5. The dashboard shows corrected claims. The demo score assesses the original
+   submissions before automatic fixes, because those are what the payer processed.
+   Read **DEMO - COMPARING WITH TRUE HISTORICAL RESULTS** for agreement, missed
    denials, false alarms and all mismatches. Documented exceptions still count as
    prediction errors. **Return to full app** restores its earlier server-side state.
 

@@ -65,7 +65,7 @@ rather than an invented rule.
 Give the AI a standard skill containing:
 
 - The product context, claim-checking workflow, and distinction between safe
-  formatting changes and business corrections requiring review.
+  formatting, uniquely supported automatic fixes and corrections requiring review.
 - The input data formats, relevant clean example rows, and available supporting
   data such as authorizations, EVV visits, and prior claims.
 - Existing rule code, payer versions, effective dates, and source documents.
@@ -109,10 +109,13 @@ effective service date, and confirmed examples with the accepted version.
 The user uploads a claims CSV. The system:
 
 1. Normalizes safe formatting differences, retaining the original values.
-2. Flags unresolved input problems, such as missing or ambiguous fields.
+2. Fills missing payers from unambiguous authorization coverage, applies uniquely
+   supported authorization references and approved modifiers, and records the
+   evidence for each change. Explicit edits take precedence. Ambiguous matches,
+   uncertain balances and other unresolved input problems remain for review.
 3. Applies the approved rules with the relevant authorization, EVV, and historical
    state, returning every detected denial code with reasons and suggested actions.
-4. Highlights automatic formatting changes and separately identifies rows needing
+4. Highlights automatic formatting and supported fixes, and separately identifies rows needing
    correction or review, including uncertain authorization balances.
 5. Allows the user to correct fields or classifications and re-check the results.
 
@@ -148,7 +151,9 @@ flowchart TD
 ```
 
 AI helps maintain the rules; claim-by-claim checks execute deterministically,
-with unresolved evidence and proposed business corrections left for user review.
+with unresolved evidence, ambiguous corrections and changes to care/amounts/dates
+left for user review. The demo scores original submissions before automatic fixes;
+corrected rows remain visible separately.
 
 ## Testing
 

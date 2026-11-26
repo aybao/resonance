@@ -134,6 +134,9 @@ class Session:
             dataset.history = [r for r in dataset.history if r['submitted_date'] < cutoff]
         self.rows = run_batch(records, dataset, self.rules, self.overrides)
         if self.demo:
+            original = run_batch(records, dataset, self.rules, self.overrides, autofix=False)
+            for row, submitted in zip(self.rows, original):
+                row["original_prediction"] = {key: submitted[key] for key in ("clean", "status", "denial_codes")}
             self.demo.compare(self.rows)
         for r, rec in zip(self.rows, records):
             r["edits"] = rec["edits"]

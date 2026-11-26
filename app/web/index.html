@@ -24,7 +24,7 @@
     <div class="card" id="claims-upload">
       <h2>1. Upload claims</h2>
       <p id="demo-upload-help" class="muted" hidden>Demo files: demo-data/claim-checking-csvs/. Advance to the CSV’s month end, then upload it. That month’s outcomes are excluded from reference history.</p>
-      <p class="muted">Upload or drop a claims CSV. The checker reports denial codes, supporting records and proposed corrections.</p>
+      <p class="muted">Upload or drop a claims CSV. The checker fills uniquely supported payer, authorization and modifier values, then reports remaining issues. Original values and automatic fixes are retained.</p>
       <input type="file" id="claims-file" accept=".csv,text/csv">
       <button id="use-sample-claims">Use sample claims</button>
       <a id="export" class="button" href="/api/export.csv" hidden>Download results CSV</a>

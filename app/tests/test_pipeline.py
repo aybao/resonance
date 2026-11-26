@@ -38,9 +38,9 @@ def dataset(history_rows=()):
     return ds
 
 
-def run(rows, ds=None, overrides=None):
+def run(rows, ds=None, overrides=None, *, autofix=True):
     _, recs = parse_claims_csv(csv_text(rows))
-    return run_batch(recs, ds or dataset(), baseline_store(), overrides)
+    return run_batch(recs, ds or dataset(), baseline_store(), overrides, autofix=autofix)
 
 
 class Normalisation(unittest.TestCase):
@@ -81,11 +81,12 @@ class Normalisation(unittest.TestCase):
         self.assertEqual(rows[1]["category"], "duplicate_row")
         self.assertEqual([r["category"] for r in rows[2:]], ["must_correct", "must_correct"])
 
-    def test_missing_auth_is_a_denial_not_a_format_error(self):
+    def test_missing_auth_is_automatically_filled_when_unique(self):
         r = run([claim_row(auth="")])[0]
-        self.assertEqual((r["category"], r["denial_codes"]), ("denied", ["D07"]))
-        self.assertEqual(r["proposed_changes"]["auth_id"]["value"], "AUTH00001")  # proposal, claim untouched
-        self.assertEqual(r["clean"]["auth_id"], "")
+        self.assertEqual((r["category"], r["denial_codes"]), ("payable", []))
+        self.assertEqual(r["automatic_fixes"][0]["after"], "AUTH00001")
+        self.assertEqual(r["clean"]["auth_id"], "AUTH00001")
+        self.assertEqual(r["raw"]["auth_id"], "")
 
 
 class Ledger(unittest.TestCase):
@@ -185,7 +186,7 @@ class ClaimReferenceDetails(unittest.TestCase):
             self.assertEqual(visit['duration_minutes'], 180)
 
     def test_wrong_referenced_authorization_is_shown_with_mismatches_and_alternative(self):
-        row = run([claim_row(auth='AUTH00002')])[0]
+        row = run([claim_row(auth='AUTH00002')], autofix=False)[0]
         auths = row['reference_data']['authorizations']
         self.assertEqual([a['auth_id'] for a in auths], ['AUTH00002', 'AUTH00001'])
         self.assertTrue(auths[0]['referenced'])
@@ -208,7 +209,7 @@ class ClaimReferenceDetails(unittest.TestCase):
         self.assertNotIn('V000020', [v['visit_id'] for v in rows[1]['reference_data']['evv_visits']])
 
     def test_missing_references_have_empty_visits_and_useful_related_coverage(self):
-        row = run([claim_row(dos='2026-07-20', sub='2026-07-20', auth='AUTH99999')])[0]
+        row = run([claim_row(dos='2026-07-20', sub='2026-07-20', auth='AUTH99999')], autofix=False)[0]
         refs = row['reference_data']
         self.assertEqual(refs['evv_visits'], [])
         self.assertTrue(refs['authorizations'])

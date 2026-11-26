@@ -1,13 +1,14 @@
 """Upload -> normalise -> validate -> check against rules and history -> flag -> export."""
 
 import csv
+import copy
 import io
 import json
 from collections import defaultdict
 from datetime import datetime
 
 from .engine import Context, PendingReview, State, check_claim
-from .normalize import (AUTH_FIELDS, CLAIM_FIELDS, EVV_FIELDS, HISTORY_EXTRA, normalize_claims,
+from .normalize import (AUTH_FIELDS, CLAIM_FIELDS, EVV_FIELDS, HISTORY_EXTRA, canonical, normalize_claims,
                         normalize_reference_rows, read_csv_text)
 
 FIXABLE = ("auth_id", "modifier")  # fields for which the engine may propose a value
@@ -90,27 +91,113 @@ def claim_references(claim, ctx, visits_by_key):
     return dict(evv_visits=visits, authorizations=authorizations)
 
 
-def run_batch(records, dataset, rules, overrides=None):
+def _trusted_authorizations(authorizations):
+    """Conflicting IDs and invalid reference rows cannot justify automatic edits."""
+    grouped = defaultdict(list)
+    for auth in authorizations:
+        grouped[auth.get("auth_id")].append(auth)
+    trusted = []
+    for rows in grouped.values():
+        if any(r != rows[0] for r in rows):
+            continue
+        auth = rows[0]
+        try:
+            if any(not auth.get(f) or canonical(f, auth[f]) != auth[f] for f in AUTH_FIELDS):
+                continue
+            if auth["start_date"] > auth["end_date"]:
+                continue
+        except (ValueError, TypeError):
+            continue
+        trusted.append(auth)
+    return trusted
+
+
+def _fill_payers(records, ctx):
+    """Infer blank payers from coverage, then rerun validation/duplicate detection."""
+    for r in records:
+        r["automatic_fixes"] = []
+        c = r["clean"]
+        if c["payer"] or "payer" in r.get("edits", {}):
+            continue
+        if any(i["field"] in {"patient_id", "service_code", "date_of_service"} for i in r["issues"]):
+            continue
+        matches = [a for a in ctx.authorizations.values()
+                   if a["patient_id"] == c["patient_id"] and a["service_code"] == c["service_code"]
+                   and a["start_date"] <= c["date_of_service"] <= a["end_date"]]
+        if c["auth_id"]:
+            # A supplied reference must agree; do not infer around a conflicting ID.
+            matches = [a for a in matches if a["auth_id"] == c["auth_id"]]
+        payers = {a["payer_id"] for a in matches}
+        if len(payers) == 1:
+            payer = payers.pop()
+            r["automatic_fixes"].append(dict(field="payer", before="", after=payer,
+                reason="Authorization coverage identifies one payer for this patient, service and date",
+                source_ids=sorted(a["auth_id"] for a in matches)))
+            c["payer"] = payer
+    validated = normalize_claims(CLAIM_FIELDS, [r["clean"] for r in records])
+    for r, checked in zip(records, validated):
+        r.update(clean=checked["clean"], issues=checked["issues"], duplicate_of=checked["duplicate_of"])
+
+
+def _apply_supported_fixes(record, state, ctx, rules, pending, trusted):
+    """Apply engine-supported fields, retaining explicit edits and uncertain balances."""
+    claim = record["clean"]
+    result = check_claim(claim, state, ctx, rules)
+    # Modifier first: the final authorization decision uses the corrected claim.
+    for field in ("modifier", "auth_id"):
+        patch = result["proposed_changes"].get(field)
+        if not patch or field in record.get("edits", {}):
+            continue
+        if field == "auth_id" and patch["value"] not in trusted.authorizations:
+            continue
+        candidate = dict(claim, **{field: patch["value"]})
+        checked = check_claim(candidate, state, ctx, rules)
+        if checked.get("rule_error"):
+            continue
+        if field == "auth_id" and pending.assess(candidate, checked)["balance_uncertain"]:
+            continue
+        record["automatic_fixes"].append(dict(field=field, before=claim[field], after=patch["value"],
+            reason=patch["reason"].replace("; confirm before use", ""), source_ids=[patch["value"]] if field == "auth_id" else [],
+            rule_version=result["rule_version"]))
+        claim[field] = patch["value"]
+        record["issues"] = [i for i in record["issues"] if i["field"] != field]
+        result = checked
+    return result
+
+
+def run_batch(records, dataset, rules, overrides=None, *, autofix=True):
     """Check normalised records in submission order. Returns a list of result rows (input order).
 
     overrides: {claim_id: {status, denial_codes, note}} — user corrections. A user decision
     replaces the prediction, and the ledger follows the user's decision.
     """
     overrides = overrides or {}
+    records = copy.deepcopy(records)
     ctx = dataset.ctx
+    trusted = Context(_trusted_authorizations(dataset.authorizations), []) if autofix else None
+    if autofix:
+        _fill_payers(records, trusted)
+    else:
+        for r in records:
+            r["automatic_fixes"] = []
     visits_by_key = defaultdict(list)
     for visit in dataset.visits:
         visits_by_key[(visit["patient_id"], visit["service_code"], visit["clock_in"][:10])].append(visit)
-    valid = [r for r in records if not r["duplicate_of"] and not any(i["severity"] == "error" for i in r["issues"])]
+    def blocking(r):
+        return any(i["severity"] == "error" and (not autofix or i["field"] not in FIXABLE) for i in r["issues"])
+    valid = [r for r in records if not r["duplicate_of"] and not blocking(r)]
     pending = PendingReview(ctx)
     for r in records:  # rows with unresolved input are undecided: never assumed paid
-        if not r["duplicate_of"] and any(i["severity"] == "error" for i in r["issues"]):
+        if not r["duplicate_of"] and blocking(r):
             pending.add(r["clean"])
     state = dataset.base_state()
     outputs = {}
     for r in sorted(valid, key=lambda r: (r["clean"]["submitted_date"], r["line"])):
         claim = r["clean"]
-        base = check_claim(claim, state, ctx, rules)
+        base = _apply_supported_fixes(r, state, ctx, rules, pending, trusted) if autofix else check_claim(claim, state, ctx, rules)
+        if any(i["severity"] == "error" for i in r["issues"]):
+            pending.add(claim)
+            continue
         review = pending.assess(claim, base) if base["evidence"] else dict(status=base["status"], balance_uncertain=False)
         outputs[r["line"]] = (base, review)
         # Uncheckable claims are registered as submitted but never assumed paid.
@@ -123,6 +210,7 @@ def run_batch(records, dataset, rules, overrides=None):
         claim = r["clean"]
         errors = [i for i in r["issues"] if i["severity"] == "error"]
         row = dict(line=r["line"], claim_id=claim["claim_id"], raw=r["raw"], clean=claim, changes=r["changes"],
+                   automatic_fixes=r["automatic_fixes"],
                    issues=r["issues"], duplicate_of=r["duplicate_of"], proposed_changes={}, failures=[], warnings=[],
                    evidence={}, balance_uncertain=False, unresolved_prior_claim_ids=[], balance_range=None,
                    previous_claims_action="", rule_version=None)
@@ -173,10 +261,12 @@ def summarize(rows):
             codes[c] += 1
     return dict(total=len(rows), by_category=dict(cats), by_code=dict(sorted(codes.items())),
                 formatted_rows=sum(bool(r["changes"]) for r in rows),
+                autofixed_rows=sum(bool(r["automatic_fixes"]) for r in rows),
                 overridden=sum(bool(r["override"]) for r in rows))
 
 
 RESULT_COLUMNS = ["predicted_status", "predicted_denial_codes", "reasons", "suggested_actions", "proposed_changes",
+                  "automatic_fixes", "checked_claim",
                   "normalisation_changes", "user_edits", "input_issues", "warnings", "user_status", "user_denial_codes", "user_note"]
 
 
@@ -194,6 +284,7 @@ def export_csv(rows, original_fieldnames):
             suggested_actions=" | ".join([f["suggestion"] for f in r["failures"]] + ([r["previous_claims_action"]] if r["previous_claims_action"] else [])),
             proposed_changes=json.dumps({k: v["value"] for k, v in r["proposed_changes"].items()}) if r["proposed_changes"] else "",
             normalisation_changes="; ".join(f"{c['field']}: {c['before']!r}->{c['after']!r}" for c in r["changes"]),
+            automatic_fixes=json.dumps(r["automatic_fixes"]), checked_claim=json.dumps(r["clean"]),
             input_issues="; ".join(f"{i['field']}: {i['message']}" for i in r["issues"]),
             user_edits="; ".join(f"{k}={v!r}" for k, v in (r.get("edits") or {}).items()),
             warnings=" | ".join(r["warnings"]), user_status=ov.get("status", ""),

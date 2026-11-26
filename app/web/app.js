@@ -139,6 +139,7 @@ function renderDemoReport(report) {
     h("h2", {}, "DEMO - COMPARING WITH TRUE HISTORICAL RESULTS"),
     h("p", {}, `${report.from_date} to ${report.through_date} · ${report.status_and_code_set_correct} of ${report.claims} claims match · ${report.mismatches.length} mismatches`),
     h("p", {}, `${report.false_alarms} false alarms (predicted denied, recorded paid) · ${report.missed_denials} missed denials (predicted paid, recorded denied) · ${report.manual_review} need review`),
+    h("p", { class: "small muted" }, report.basis || ""),
     h("p", { class: "small muted" }, "A match requires the recorded status and, for denials, the recorded denial code. Documented mismatches still reduce accuracy."),
     report.unexplained_d99 ? h("p", {}, `${report.unexplained_d99} recorded D99 denials have no supplied denial rule or payer correspondence.`) : null,
     h("details", {}, h("summary", {}, `Mismatches (${report.mismatches.length})`), h("div", { class: "table-wrap" }, h("table", {},
@@ -158,11 +159,11 @@ function render() {
   $("results").hidden = false; $("export").hidden = false;
   const by = results.summary.by_category;
   const tiles = [["all", "All claims", results.summary.total], ["denied", "Likely denied", by.denied || 0], ["review", "Needs review", by.review || 0],
-    ["must_correct", "Must correct", by.must_correct || 0], ["formatted", "Auto-formatted", results.summary.formatted_rows], ["payable", "Likely paid", by.payable || 0]];
+    ["must_correct", "Must correct", by.must_correct || 0], ["formatted", "Auto-formatted", results.summary.formatted_rows], ["autofixed", "Auto-fixed", results.summary.autofixed_rows || 0], ["payable", "Likely paid", by.payable || 0]];
   $("tiles").replaceChildren(...tiles.map(([k, label, n]) =>
     h("button", { class: "tile" + (filter === k ? " on" : ""), onclick: () => { filter = k; render(); } }, h("b", {}, n), label)));
-  const rows = results.rows.filter((r) => filter === "all" || (filter === "formatted" ? r.changes.length : r.category === filter));
-  $("filters").replaceChildren(h("span", { class: "muted" }, `${rows.length} claims shown. Yellow cells: formatted or edited; hover for the uploaded value. Click a row for details.`),
+  const rows = results.rows.filter((r) => filter === "all" || (filter === "formatted" ? r.changes.length : filter === "autofixed" ? r.automatic_fixes?.length : r.category === filter));
+  $("filters").replaceChildren(h("span", { class: "muted" }, `${rows.length} claims shown. Yellow cells: formatted, auto-fixed or edited; hover for the uploaded value. Click a row for details.`),
     results.summary.by_code && Object.keys(results.summary.by_code).length ? h("span", { class: "muted" }, " Codes: " + Object.entries(results.summary.by_code).map(([c, n]) => `${c}×${n}`).join("  ")) : null);
   const cols = ["line", ...CLAIM_COLUMNS.map(([key]) => key)];
   const table = $("claims-table");
@@ -170,8 +171,9 @@ function render() {
     ...rows.slice(0, 1500).map((r) => {
       const changed = Object.fromEntries(r.changes.map((c) => [c.field, c.before]));
       const edited = r.edits || {};
+      const auto = Object.fromEntries((r.automatic_fixes || []).map((c) => [c.field, c]));
       return h("tr", { class: "click" + (r.line === selectedLine ? " sel" : ""), onclick: () => { selectedLine = r.line; render(); showDetail(r.line); } },
-        ...cols.map((c) => c === "line" ? h("td", {}, r.line) : h("td", { class: c in changed || c in edited ? "fixed" : "", title: c in edited ? `edited by you (uploaded: ${r.raw[c]})` : c in changed ? `was: ${changed[c]}` : null }, r.clean[c])),
+        ...cols.map((c) => c === "line" ? h("td", {}, r.line) : h("td", { class: c in changed || c in edited || c in auto ? "fixed" : "", title: c in edited ? `edited by you (uploaded: ${r.raw[c]})` : c in auto ? `Automatically fixed: ${auto[c].reason} (uploaded: ${r.raw[c]})` : c in changed ? `was: ${changed[c]}` : null }, r.clean[c])),
         h("td", {}, badge(r.override ? r.status : r.status === "check_previous_claims" || r.status === "manual_review" ? "review" : r.status, (r.override ? "You: " : "") + (r.category === "must_correct" ? "Must correct" : STATUS_LABEL[r.status] || r.status))),
         h("td", {}, codeChips(r.denial_codes)), h("td", { class: "reason" }, r.summary));
     }));
@@ -194,6 +196,9 @@ function showDetail(line, keepScroll) {
     h("div", {}, `Earlier unresolved claims: ${r.unresolved_prior_claim_ids.join(", ")}. Balance could be ${r.balance_range[0]}–${r.balance_range[1]} units; this claim bills ${r.clean.units}.`)));
   for (const w of r.warnings) kids.push(h("div", { class: "warning" }, w));
   if (r.changes.length) kids.push(h("p", { class: "small" }, h("b", {}, "Normalised automatically: "), r.changes.map((c) => `${c.field}: "${c.before}" → "${c.after}"`).join("; ")));
+  if (r.automatic_fixes?.length) kids.push(h("section", { class: "automatic-fixes" }, h("h3", {}, "Automatically fixed"),
+    ...r.automatic_fixes.map((c) => h("p", {}, h("strong", {}, c.field), `: ${c.before || "(blank)"} → ${c.after}. ${c.reason}`,
+      c.source_ids?.length ? ` · Source: ${c.source_ids.join(", ")}` : ""))));
   kids.push(claimReferencePanel(r));
   const pc = Object.entries(r.proposed_changes || {});
   if (pc.length) kids.push(h("div", {}, h("h3", {}, "Proposed fixes (need your confirmation)"), ...pc.map(([field, p]) =>
@@ -203,10 +208,10 @@ function showDetail(line, keepScroll) {
   const editable = ["payer", "patient_id", "service_code", "date_of_service", "submitted_date", "units", "auth_id", "modifier", "frequency_code", "original_claim_id"];
   const inputs = {};
   kids.push(h("h3", {}, "Correct claim fields"), h("div", { class: "row" }, ...editable.map((f) => {
-    inputs[f] = h("input", { size: f === "date_of_service" || f === "submitted_date" ? 11 : 9, value: r.edits && f in r.edits ? r.edits[f] : r.raw[f] });
+    inputs[f] = h("input", { size: f === "date_of_service" || f === "submitted_date" ? 11 : 9, value: r.edits && f in r.edits ? r.edits[f] : r.clean[f] });
     return h("label", {}, f, inputs[f]);
   }), h("button", { onclick: () => {
-    const fields = {}; editable.forEach((f) => { const cur = r.edits && f in r.edits ? r.edits[f] : r.raw[f]; if (inputs[f].value !== cur) fields[f] = inputs[f].value; });
+    const fields = {}; editable.forEach((f) => { const cur = r.edits && f in r.edits ? r.edits[f] : r.clean[f]; if (inputs[f].value !== cur) fields[f] = inputs[f].value; });
     applyEdit(r.line, fields);
   } }, "Save and re-check"), Object.keys(r.edits || {}).length ? h("button", { class: "secondary", onclick: () => guard(async () => { results = await api("POST", `/api/claims/line/${r.line}/revert`, {}); render(); }) }, "Undo my edits") : null));
   if (r.claim_id && r.category !== "duplicate_row") kids.push(overrideForm(r));

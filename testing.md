@@ -8,7 +8,7 @@ The app has three different kinds of checks:
    browser script. These test the code used by runtime and demo flows; the test
    runner itself is not invoked by ordinary user actions.
 
-The current inventory is **89 `unittest` methods in eight files**, plus the
+The current inventory is **101 `unittest` methods in nine files**, plus the
 standalone browser smoke script. The tests use fake AI transports; no live model
 call is needed. Verification of the regression-review update on **26 November
 2026** also exercised the browser workflow. HTTP/browser checks need permission
@@ -19,6 +19,7 @@ to open local sockets.
 | Check | Automatic trigger or on-demand command | Part of |
 |---|---|---|
 | CSV structure and field validation | Every claims upload and re-check after a field edit; reference loading also reports reference problems. | Runtime, both modes. |
+| Automatic field fixing | Every batch check/recheck; infer a blank payer from unique coverage, apply unique authorizations and rule-defined modifiers before updating the ledger. Preserve explicit edits and defer ambiguity/uncertainty. | Runtime, both modes. |
 | Deterministic claim checks and pending-balance assessment | Each valid, unique claim in a batch; re-run after relevant reference/rule changes, field edits and classifications. | Runtime, both modes. |
 | Markdown attachment validation | On file selection (extension) and Send (nonempty document); input remains available on failure. | Browser runtime. |
 | Proposal/schema, code and scenario checks | On AI proposal processing; candidate evaluation on draft creation, GET, edits, chat, added examples and explicit decisions. | Rules-updater runtime. |
@@ -127,7 +128,8 @@ before the uploaded batch's earliest submission.
 
 After prediction, a known-ID batch gets a historical comparison. Field edits,
 classification changes and rule acceptance re-check the batch and refresh that
-comparison. Unknown claim IDs suppress the report. This is not an automatic unit
+comparison. Scores use a separate pass over original submitted claims before automatic
+fixes, while the dashboard displays corrected rows. Unknown claim IDs suppress the report. This is not an automatic unit
 test execution; it is a live diagnostic using the current rules and inputs.
 
 The session tests pin these inspected results:
@@ -186,7 +188,8 @@ it exercises, rather than implying that the whole test method runs at runtime.
 | [test_http.py](app/tests/test_http.py) | 7 | Real HTTP upload, correction, export, acceptance, demo and unavailable-AI paths. |
 | [test_replay.py](app/tests/test_replay.py) | 8 | Demo state, withheld outcomes, live metrics, historical fixtures and exception strictness. |
 | [test_regression_review.py](app/tests/test_regression_review.py) | 8 | Execution gates, group approval, stale consent, full history review, replacement baselines and runtime regressions. |
-| **Total** | **89** | Browser script is additional. |
+| [test_autofix.py](app/tests/test_autofix.py) | 12 | Unique payer/auth/modifier corrections, ambiguity, audit/export, balances and user edits. |
+| **Total** | **101** | Browser script is additional. |
 
 ### test_rules_engine.py
 
@@ -257,7 +260,7 @@ Source: [test_pipeline.py](app/tests/test_pipeline.py). Exercises CSV/batch proc
 | `test_missing_column_rejected` | A missing standard claim column prevents ingestion. |
 | `test_blank_required_and_correction_without_original` | Missing required values and corrected claims without an original ID become Must correct. |
 | `test_identical_rows_collapse_conflicting_rows_flagged` | Identical normalized exports are repeated rows; reused IDs with differing values flag both conflicting claims. |
-| `test_missing_auth_is_a_denial_not_a_format_error` | A blank authorization stays checkable as D07 and can get a reviewed matching-authorization suggestion. |
+| `test_missing_auth_is_automatically_filled_when_unique` | A blank authorization is filled from unique coverage; the raw blank is retained. |
 
 
 **Ledger**
@@ -424,10 +427,30 @@ inside the app.
 | `test_runtime_regressions_run_again_for_claim_upload_and_edit` | Rechecks rerun saved cases and expose unexpected active-rule changes without hiding claim results. |
 
 
+### test_autofix.py
+
+These 12 on-demand tests exercise the automatic runtime pipeline without AI:
+
+| Method | Coverage |
+|---|---|
+| `test_missing_payer_from_supplied_authorization` | A matching authorization identifies payer with an auditable source. |
+| `test_missing_payer_and_auth_are_filled_together` | Chained inference fills both fields and rechecks the corrected claim. |
+| `test_ambiguous_payer_or_conflicting_reference_is_not_guessed` | Multiple payers, a conflicting reference or an unknown nonblank payer stay for review. |
+| `test_missing_invalid_and_wrong_authorizations_are_corrected` | Unique sufficient coverage replaces missing, malformed and incorrect references. |
+| `test_ambiguous_or_insufficient_authorization_is_not_filled` | Multiple matching authorizations and insufficient units prevent autofill. |
+| `test_modifiers_follow_payer_date_and_service_rules` | A malformed modifier is replaced using the accepted applicable rule. |
+| `test_autofilled_claims_consume_balance_in_submission_order` | Earlier corrected claims consume balance before later autofill decisions. |
+| `test_uncertain_pending_balance_prevents_auto_authorization` | Earlier unresolved claims retain an authorization suggestion for manual review. |
+| `test_explicit_user_edits_take_precedence` | Autofill cannot overwrite a deliberately edited field. |
+| `test_bad_or_conflicting_reference_data_cannot_justify_autofill` | Invalid and conflicting authorization records cannot supply an automatic value. |
+| `test_duplicate_detection_and_export_preserve_originals` | No duplicate billing or input mutation; export includes original and corrected fields and audit. |
+| `test_units_amount_dates_and_unknown_patient_are_not_invented` | Unsupported factual corrections remain unresolved. |
+
+
 ## Browser smoke coverage
 
 [app/tests/browser_rules_chat.py](app/tests/browser_rules_chat.py) is a standalone
-script, deliberately not named `test_*.py`. It is **not** one of the 89 discovered
+script, deliberately not named `test_*.py`. It is **not** one of the 101 discovered
 methods. It uses Firefox WebDriver through the standard library, a temporary app
 server/state directory and a fake novel-rule response.
 
@@ -520,7 +543,7 @@ python3 -m unittest discover -s experiment -p 'test_*.py'
 ```
 
 It covers the earlier cleaning/checking/pending-claim experiment and is **not**
-part of the app's 89-method command, web demo or runtime validation. Its full runner
+part of the app's 101-method command, web demo or runtime validation. Its full runner
 rebuilds experiment artifacts; it is not required to start the app. Consult
 [experiment/README.md](experiment/README.md) and
 [experiment_results.md](experiment_results.md) for that pipeline's setup and

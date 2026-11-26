@@ -116,10 +116,13 @@ class HistoricalReplay:
         known = json.loads(EXCEPTIONS_PATH.read_text()) if EXCEPTIONS_PATH.exists() else {}
         for pred in predictions:
             actual = labels[pred['claim_id']]
+            # Recorded outcomes belong to the original submission, before our fixes.
+            original = pred.get('original_prediction', pred)
             row = dict(claim=dict(pred['clean']), claim_id=pred['claim_id'], payer=pred['clean']['payer'],
                        date_of_service=pred['clean']['date_of_service'], actual_status=actual['status'],
                        actual_code=actual['denial_code'], remark=actual.get('remark', ''),
-                       status=pred['status'], codes=pred['denial_codes'])
+                       status=original['status'], codes=original['denial_codes'])
+            row['claim'] = dict(original['clean'])
             exception = known.get(row['claim_id'])
             row['known_exception'] = bool(exception and until in [exception.get('replay_period_end'), *exception.get('additional_replay_period_ends', [])]
                 and exception['actual_status'] == row['actual_status']
@@ -130,6 +133,7 @@ class HistoricalReplay:
             rows.append(row)
         mismatches = [r for r in rows if not matches(r)]
         report = dict(from_date=from_date, through_date=until, **accuracy(rows),
+            basis='Original submitted claims, before automatic fixes',
             mismatches=mismatches, unexplained_d99=sum(r['actual_status'] == 'denied' and r['actual_code'] == 'D99' for r in mismatches), known_exceptions=sum(r['known_exception'] for r in mismatches),
             unexpected_mismatches=sum(not r['known_exception'] for r in mismatches),
             passed=all(r['known_exception'] for r in mismatches))

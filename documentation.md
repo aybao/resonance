@@ -201,6 +201,43 @@ manual reference replacement/reload is blocked; advance the simulated date inste
 8. Attach relevant reference records, preserve the prediction separately from any
    classification override, and build the dashboard/export.
 
+### Automatic corrections
+
+`run_batch()` defaults to automatic fixing. It works on copies, retaining raw
+uploaded fields and normalisation changes. First it fills blank payers from valid
+coverage records matching patient, service and inclusive service dates. A supplied
+authorization ID must match; otherwise all matching coverage must identify one
+payer. Unknown nonblank payer names are not inferred. Identical references are
+collapsed; conflicting authorization IDs and invalid reference records cannot
+justify an automatic correction. Duplicate detection and input validation rerun
+after payer inference.
+
+The checker then processes claims by submission date/line number, applying accepted
+rule-defined modifiers and unique authorization suggestions before recording each
+decision. Invalid authorization/modifier values may be repaired when their
+replacement is uniquely supported; other input errors still block checking.
+Authorization autofill requires sufficient predicted balance, and is withheld if
+earlier unresolved claims could consume that balance. A user-edited field is never
+automatically overwritten. Remaining suggested fixes can still be accepted manually.
+No units, amounts, patient identities, service dates or submission dates are invented.
+
+The result includes `automatic_fixes` (field, before/after, explanation, reference
+IDs and applicable rule version) and the corrected `clean` claim. The **Auto-fixed**
+tile filters rows with these corrections. The row detail shows the audit separately
+from formatting and user edits. Every recheck recalculates autofill from the upload,
+current references and explicit edits; undoing user edits restores that behaviour.
+CSV source columns remain unchanged, with JSON `automatic_fixes` and `checked_claim`
+columns providing the audit and corrected values. Classification overrides remain
+separate from the checker prediction.
+
+`autofix=False` is available for diagnostics of original submissions. The web demo
+runs this second pass on the same label-free batch/context and attaches
+`original_prediction` to each corrected row. Its accuracy report and historical CLI
+replay compare original submission predictions with recorded outcomes; the dashboard
+continues to display corrected claims. The report labels this basis explicitly.
+Rule-update synthetic regression scenarios and historical impact likewise continue
+to test original inputs against the rules, without implicitly correcting them.
+
 ### Baseline payer rules
 
 | Rule | Northwind (`PY01`) | Harbor (`PY02`) | Summit (`PY03`) |
@@ -225,9 +262,11 @@ unless another definite failure already makes it denied.
 ### Reference records in the row detail
 
 The current UI can edit payer, patient, service, dates, units, authorization,
-modifier, frequency and original-claim reference. Structured proposed fixes are
-currently authorization references and modifiers; other corrections are entered
-manually. The edit API accepts standard claim fields, while export retains the
+modifier, frequency and original-claim reference. Authorization references and
+modifiers are applied automatically when uniquely
+supported and not explicitly user-edited; ambiguous cases remain suggestions. A
+blank payer can also be inferred from authorization coverage. Other corrections
+are entered manually. The edit API accepts standard claim fields, while export retains the
 original uploaded values.
 
 EVV records match patient, service and clock-in date, including unverified visits

@@ -72,14 +72,16 @@ class UploadToResults(HttpCase):
         self.assertEqual(by["C000001"]["category"], "payable")
         self.assertEqual(by["C000002"]["category"], "payable")
         self.assertEqual({c["field"] for c in by["C000002"]["changes"]}, {"payer", "date_of_service", "submitted_date"})
-        self.assertEqual(by["C000003"]["denial_codes"], ["D07"])
-        self.assertEqual(by["C000004"]["denial_codes"], ["D03"])
+        self.assertEqual(by["C000003"]["denial_codes"], [])
+        self.assertEqual(by["C000003"]["clean"]["auth_id"], "AUTH00001")
+        self.assertEqual(by["C000003"]["automatic_fixes"][0]["field"], "auth_id")
+        self.assertEqual(by["C000004"]["denial_codes"], ["D02", "D03"])
         self.assertEqual(by["C000005"]["category"], "must_correct")
-        self.assertEqual(by["C000006"]["denial_codes"], ["D05"])
-        self.assertEqual(res["summary"]["by_category"], {"payable": 2, "denied": 3, "must_correct": 1})
+        self.assertEqual(by["C000006"]["denial_codes"], ["D02", "D05"])
+        self.assertEqual(res["summary"]["by_category"], {"payable": 3, "denied": 2, "must_correct": 1})
 
-        # apply a proposed fix (user-initiated): C000003 gets the suggested authorization
-        proposed = by["C000003"]["proposed_changes"]["auth_id"]["value"]
+        # A user can explicitly retain or override an automatically filled value.
+        proposed = by["C000003"]["clean"]["auth_id"]
         code, res = self.api.call("POST", "/api/claims/line/4/edit", {"fields": {"auth_id": proposed}})
         by = {r["claim_id"]: r for r in res["rows"]}
         self.assertEqual(by["C000003"]["denial_codes"], [])

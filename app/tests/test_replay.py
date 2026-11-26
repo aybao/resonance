@@ -44,11 +44,12 @@ class HistoricalDemo(unittest.TestCase):
         from claimcheck.replay_demo import DEMO_DIR
         original = module.run_batch
         seen = []
-        def inspect(records, ds, rules, overrides):
+        def inspect(records, ds, rules, overrides, **kwargs):
             self.assertTrue(all(row['submitted_date'] < '2026-06-01' for row in ds.history))
             self.assertTrue(all('status' not in row['clean'] for row in records))
-            seen.extend(records)
-            return original(records, ds, rules, overrides)
+            if kwargs.get("autofix", True):
+                seen.extend(records)
+            return original(records, ds, rules, overrides, **kwargs)
         with patch.object(module, 'run_batch', inspect):
             result = self.session.advance_demo('2026-06-30')
             self.assertFalse(seen)
