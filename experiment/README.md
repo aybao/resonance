@@ -29,7 +29,7 @@ The runner rebuilds the chronological splits, standalone history-cleaning output
 formatting reports, prediction CSV, metrics, cleaned supporting artifacts and the separate
 unknown-outcome comparison.
 Rerunning replaces generated outputs; it leaves the supplied files unchanged.
-Tests are a separate command and currently comprise **24 passing tests**.
+Tests are a separate command and currently comprise **25 passing tests**.
 
 Default paths are anchored to the scripts, so both working directories produce
 the same files. Explicit path arguments are interpreted relative to your current
@@ -45,6 +45,7 @@ directory, as usual.
 | `check_formatting.py` | Reports problems safe cleaning cannot resolve, including invalid values, required fields, conflicting IDs and missing references; flags missing claim authorization numbers as business inputs |
 | `claim_checker.py` | Cleans and validates the splits and context, replays claims, generates predictions/proposed fixes, forecasts unknown outcomes into the provisional ledger, and calculates metrics |
 | `unknown_outcomes.py` | Compares ignoring, assuming payment and predicting unknown outcomes; tests external pending rows, random hidden historical outcomes and a 30-day backlog; writes separate metrics and predictions |
+| `test_regression_outputs.py` | Rebuilds the complete cohort from original data in a temporary directory and compares committed metrics and prediction CSVs; never updates the baseline automatically |
 | `test_unknown_outcomes.py` | Tests the new replay’s temporal state, label isolation, error handling and reproducible outputs |
 | `paths.py` | Supporting module: defines the supplied-data, experiment and artifact directories independently of the shell's working directory |
 | `test_check_formatting.py` | Tests canonicalization, rejected formats, conflicting records, missing inputs and cleaning idempotence |

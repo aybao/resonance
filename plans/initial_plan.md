@@ -71,3 +71,5 @@ Input: Authorisations, prior EVV.
 Output: Validation for shifts, or notifications to workers who are about to do too much overtime.
 
 This tool is proposed for agencies. The payer presumably must then check it also. It might be sensible to ask the payers to instead encode their rules in some regular format, then implement a shared deterministic system, to remove this guesswork. 
+
+Use results to update rules - eg, allow the user to input a csv of results and analyse this compared to what the current rules propse, to update the rules intelligently. It's unclear how useful this is, as surely a much simpler method would be for the payer to simply communicate the rules they are applying. 

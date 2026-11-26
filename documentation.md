@@ -517,6 +517,19 @@ than green. Unlabelled historical rows are predicted but excluded from outcome a
 Synthetic saved examples still run during rule-update evaluation and
 approval; the claims dashboard's runtime count now consists of historical claims.
 Developer test coverage for this path is in `app/tests/test_history_regression.py`.
+The runtime and demo share the same strict exception matcher and canonical file;
+the demo additionally enforces its permitted period end. Neither permits execution
+errors as exceptions. Rule-change impact includes pending historical forecast
+changes and requires historical-change approval for them, while excluding their
+unknown outcomes from agreement metrics. Saved synthetic expectations remain
+separate checks for rule-update approval.
+
+`experiment/test_regression_outputs.py` rebuilds the full experiment from original
+inputs in a temporary directory and compares all cohort metrics and prediction
+CSVs with the committed results. It excludes only destination paths from cleaning
+metadata. A changed result fails the test and requires inspection before updating
+the expected artifact; the verifier never rewrites committed baselines.
+
 
 ## Generated rule contract
 

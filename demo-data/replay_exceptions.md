@@ -39,7 +39,7 @@ same claim ID. Other cohorts or starting dates can therefore reveal unexpected
 mismatches and fail. The replay never writes or expands this file. Changes need
 an explicit review of the source record, ledger and expected outcome.
 
-The existing experiment used a different split and review setup. These counts
-must not be substituted for the results reported in `experiment_results.md`.
+The existing experiment used a different prediction horizon and provisional-history setup. These counts
+must not be substituted for the results reported in [the experiment report](../plans/experiment_results.md).
 This inspected dataset is suitable for regression checks and demonstration;
 future generalization claims require a new holdout and missing payer evidence.

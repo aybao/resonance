@@ -1,30 +1,14 @@
-# Historical replay exceptions
+# Historical regression exceptions
 
-`replay_exceptions.json` records 114 specific discrepancies inspected during
-implementation of the three-stage demo (June 30 start; July 31, August 31,
-January 31 period ends). These are limitations of this diagnostic, not corrected
-claims or evidence of accurate predictions. The demo always reports all of them
-as mismatches and includes them in the overall accuracy denominator.
+The canonical records are in
+[demo-data/replay_exceptions.json](../../demo-data/replay_exceptions.json), with
+[their evidence and cohort notes](../../demo-data/replay_exceptions.md).
+The obsolete app-local copy has been removed so runtime checks and the demo use
+the same inspected outcomes. There are 121 records; 120 apply to the full-history
+observed-prior replay. The remaining record describes a pending-batch state effect.
 
-- 101 rows have recorded D10/D99 denials referring to unavailable contracts,
-  amendments or unspecified correspondence. The supplied manuals do not define
-  their complete expected denial conditions.
-- 12 rows have recorded D02 denials not reproduced by the available authorization
-  balances and earlier recorded payments. They need payer balance/pending-claim
-  reconciliation; no authorization limit or claim value was changed to fit them.
-  Two also receive a definite D03 under the supplied filing rule.
-- C006764 is a known sequential false alarm: C003575's unexplained contract denial
-  is predicted paid, consuming nine units. This leaves 13 instead of 22 units for
-  C006764's 20-unit claim. It passes with observed prior outcomes, but this demo
-  deliberately predicts the complete batch without observing its labels.
-
-Each entry pins the claim ID, recorded status/code, predicted status/full code
-set, and replay period. A changed prediction is not automatically excused by the
-same claim ID. Other cohorts or starting dates can therefore reveal unexpected
-mismatches and fail. The replay never writes or expands this file. Changes need
-an explicit review of the source record, ledger and expected outcome.
-
-The existing experiment used a different split and review setup. These counts
-must not be substituted for the results reported in `experiment_results.md`.
-This inspected dataset is suitable for regression checks and demonstration;
-future generalization claims require a new holdout and missing payer evidence.
+Runtime checks pin actual status/code, predicted status/full code set and any
+recorded remark. Pending-batch demo checks additionally require the recorded
+period end. Neither accepts execution errors or automatically records exceptions.
+Unlabelled historical rows contribute provisional forecasts but are excluded from
+outcome agreement. Changed forecasts still appear during rule-update approval.

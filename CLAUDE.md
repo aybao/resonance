@@ -29,3 +29,6 @@ codes with evidence, keep unsupported business corrections subject to explicit u
 version rules by payer and effective service date. Validate rule updates with
 reviewed examples; AI-generated expectations and provisional predictions are not proof
 of accuracy. Never commit API keys.
+
+Commit after you implement each full feature with a descriptive message. If you encounter an undecided design decision or other issue, stop and flag it. 
+

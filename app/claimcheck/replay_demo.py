@@ -11,7 +11,7 @@ from datetime import date, timedelta
 from pathlib import Path
 import tempfile
 
-from .history import accuracy, matches
+from .history import accuracy, matches, exception_matches
 from .normalize import CLAIM_FIELDS
 from .pipeline import Dataset, load_sample
 from .rules import baseline_store, valid_date
@@ -121,14 +121,10 @@ class HistoricalReplay:
             row = dict(claim=dict(pred['clean']), claim_id=pred['claim_id'], payer=pred['clean']['payer'],
                        date_of_service=pred['clean']['date_of_service'], actual_status=actual['status'],
                        actual_code=actual['denial_code'], remark=actual.get('remark', ''),
-                       status=original['status'], codes=original['denial_codes'])
+                       status=original['status'], codes=original['denial_codes'], error=original.get('rule_error'))
             row['claim'] = dict(original['clean'])
             exception = known.get(row['claim_id'])
-            row['known_exception'] = bool(exception and until in [exception.get('replay_period_end'), *exception.get('additional_replay_period_ends', [])]
-                and exception['actual_status'] == row['actual_status']
-                and exception['actual_code'] == row['actual_code']
-                and exception['predicted_status'] == row['status']
-                and exception['predicted_codes'] == row['codes'])
+            row['known_exception'] = exception_matches(row, exception, until)
             row['exception_reason'] = exception['reason'] if row['known_exception'] else ''
             rows.append(row)
         mismatches = [r for r in rows if not matches(r)]

@@ -12,6 +12,28 @@ from tests.test_drafts import UPDATE, SAMPLE, base_store, fake_ai, approval, app
 
 
 class RegressionReview(unittest.TestCase):
+    def test_pending_historical_forecast_changes_require_history_approval(self):
+        from claimcheck.rules import baseline_store
+        from tests.test_code_rules import proposal
+        from tests.test_pipeline import dataset, claim_row
+        store = baseline_store()
+        ds = dataset([claim_row(dos='2026-09-01', sub='2026-09-02', units='5') +
+                      ['pending', '', '', 'Outcome not available']])
+        draft = new_draft()
+        chat(draft, store, ds, fake_ai(proposal()), 'Synthetic contract fixture')
+        evaluation = evaluate(draft, store, ds)
+        self.assertTrue(evaluation['can_activate'])
+        self.assertEqual(evaluation['impact']['changed_count'], 1)
+        self.assertEqual(evaluation['impact']['pending_changed'], 1)
+        self.assertEqual(evaluation['impact']['accuracy_after']['claims'], 0)
+        self.assertEqual(evaluation['impact']['now_correct'], 0)
+        self.assertEqual(evaluation['impact']['now_wrong'], 0)
+        with self.assertRaisesRegex(DraftError, 'historical'):
+            activate(draft, store, ds, review_token=evaluation['review']['token'], approve_synthetic=True)
+        version = activate(draft, store, ds, **approval(draft, store, ds))
+        self.assertEqual(version['review']['historical_changes'][0]['actual']['status'], 'pending')
+        self.assertEqual(ds.history[0]['status'], 'pending')
+
     def setUp(self):
         self.store, self.ds = base_store(), Dataset()
 

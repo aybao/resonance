@@ -192,7 +192,7 @@ forecasts on a fresh cohort with real outcome-availability timestamps.
 | `claim_checker_artifacts/*.cleaning.json` | Every changed cell, removed duplicate and unresolved invalid value |
 | `claim_checker_artifacts/validation.json` | Unresolved data-quality findings for both splits and their context |
 
-**Outcomes:** **24 tests pass**, covering rule boundaries, chronological state, duplicate handling, cleaning, provisional usage and independence from test labels; source files remain unchanged.
+**Outcomes:** **25 tests pass**, covering rule boundaries, chronological state, duplicate handling, cleaning, provisional usage and independence from test labels; source files remain unchanged.
 
 Tests cover 7/8-minute rounding, filing deadlines and bulletin dates, Harbor
 weekdays/weekends, midnight attribution, aggregation before rounding,
@@ -344,6 +344,11 @@ python3 -m unittest discover -s experiment -p 'test_*.py' -v
 all three policies, every mask/seed, the temporal backlog, input SHA-256 hashes and the
 protocol. [unknown_outcomes_predictions.csv](../experiment/unknown_outcomes_predictions.csv)
 contains per-target predictions for comparison A, including the two
-false-denial counterexamples. `claim_metrics.json` and `test_result.csv` now use the provisional prediction ledger. **24 experiment tests pass**, including eight dedicated tests for
+false-denial counterexamples. `claim_metrics.json` and `test_result.csv` now use the provisional prediction ledger. **25 experiment tests pass**, including eight dedicated tests for
 label isolation, temporal ordering, predicted usage, denial handling, duplicate
 exclusion, same-day sensitivity and reproducibility.
+
+The regression suite also rebuilds these results from the original pack in a
+temporary directory and checks the committed cohort metrics and prediction CSVs.
+Only cleaning destination paths are excluded from metadata comparison; all
+accuracy, error, provisional-history and per-claim predictions must reproduce.

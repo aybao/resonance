@@ -154,6 +154,8 @@ def main():
             assert js('return $("regression-report").querySelector("strong").classList.contains("ok") && $("regression-report").textContent.includes("claims checked")')
             js('renderRegressionChecks({total:0,matched:0,known_exceptions:0,failed:0,passed:null,failures:[],exceptions:[],accuracy:null})')
             assert js('return $("regression-report").querySelector("strong").classList.contains("muted") && !$("regression-report").querySelector(".ok")')
+            js('const claim=results.rows[0].clean; renderRegressionChecks({total:0,matched:0,known_exceptions:0,failed:0,passed:false,failures:[],exceptions:[],accuracy:null,pending:1,pending_errors:1,pending_predictions:[{claim,claim_id:claim.claim_id,payer:claim.payer,date_of_service:claim.date_of_service,actual_status:"pending",actual_code:"",status:"unable_to_check",codes:[],error:"Worker error"}]})')
+            assert js('return $("regression-report").querySelector("strong").classList.contains("bad") && $("regression-report").textContent.includes("blocked") && $("regression-report").textContent.includes("Outcome unknown")')
             js('renderRegressionChecks(results.regression_checks)')
             assert js('return !$("tiles").textContent.includes("Needs review") && !$("tiles").textContent.includes("Check earlier claims")')
             assert js('return results.rows.every(r=>!["manual_review","check_previous_claims"].includes(r.status) && !("balance_range" in r))')
