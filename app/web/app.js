@@ -122,6 +122,7 @@ $("claims-upload").addEventListener("drop", (e) => {
 $("use-sample-claims").addEventListener("click", () => guard(async () => { results = await api("POST", "/api/claims/sample"); selectedLine = null; filter = "all"; render(); }));
 async function refreshResults() {
   const r = await api("GET", "/api/results");
+  renderRegressionChecks(r.regression_checks);
   if (r.rows.length) { results = r; render(); }
   else { results = null; selectedLine = null; $("results").hidden = true; $("export").hidden = true; }
 }
@@ -149,6 +150,7 @@ function renderDemoReport(report) {
 }
 
 function render() {
+  renderRegressionChecks(results.regression_checks);
   if (Object.hasOwn(results, "demo_report")) {
     if (results.demo_report) renderDemoReport(results.demo_report);
     else $("demo-report").hidden = true;
@@ -364,7 +366,7 @@ function selectExample(example) {
   const box = $("example-context"); box.hidden = !example;
   box.replaceChildren(example ? [h("span", {}, "Commenting on: ", h("strong", {}, example.title)), h("button", { type: "button", class: "secondary", "aria-label": "Remove example from message", onclick: () => selectExample(null) }, "×")] : []);
   document.querySelectorAll(".example-select").forEach((b) => b.setAttribute("aria-pressed", String(!!example && b.dataset.exampleKey === example.key)));
-  if (example) $("rule-message").focus();
+  if (example) { document.querySelector("[data-tab=rules]").click(); $("rule-message").focus(); }
 }
 function outcome(status, codes) {
   return h("div", { class: "outcome" }, badge(status === "paid" ? "payable" : status, STATUS_LABEL[status] || status),
@@ -421,7 +423,7 @@ function showDraft(view) {
   // Previous turns remain readable, while decisions always apply to the latest revision.
   for (const t of threads.values()) for (const [index, node] of t.turns) {
     const old = t !== thread || index !== last;
-    node.querySelectorAll(".activation-row").forEach((el) => { el.hidden = old; });
+    node.querySelectorAll(".activation-row").forEach((el) => { el.hidden = old || d.status === "activated"; });
     node.querySelectorAll(".example-review").forEach((el) => { el.hidden = d.status === "activated"; });
   }
   $("rule-composer").hidden = false;
@@ -434,26 +436,57 @@ function updateOutput(view) {
   const output = h("div", { class: "update-output" }, ruleSummary(d));
   if (ev.checks) output.append(h("p", { class: "small muted" }, `${ev.checks.examples_run} scenarios executed · ${ev.checks.unchanged_controls} unchanged controls · ${ev.checks.saved_tests} saved tests checked`));
   for (const note of [...(view.notes || []), ...ev.problems]) output.append(h("p", { class: "warning" }, note));
+  const executionPassed = ev.execution?.status === "passed";
+  output.prepend(h("p", { class: executionPassed ? "ok execution-check" : "warning execution-check", role: "status" },
+    h("strong", {}, executionPassed ? "Execution checks passed" : "Execution checks blocked"),
+    executionPassed ? " · Code ran and returned valid results for the tested cases." : " · Resolve the errors before approval."));
+  if (!executionPassed) return output;
+  if (ev.review) output.append(h("p", { class: "review-summary" }, h("strong", {},
+    `Review required: ${ev.review.synthetic_count} synthetic changes · ${ev.review.regression_count} saved regressions · ${ev.review.historical_count} historical changes`)));
+
   if (((Object.keys(d.params).length || d.code) && !ev.problems.length) || examples.length) {
     output.append(h("h3", { class: "examples-heading" }, `${examples.length} affected example${examples.length === 1 ? "" : "s"}`),
       h("p", { class: "small muted" }, "Examples below show predictions changed by this proposal."));
     output.append(...examples.map((e) => exampleCard(d, e)));
     if (!examples.length) output.append(h("p", { class: "muted" }, "No example predictions changed."));
   }
+  if (ev.regressions.length) output.append(h("details", { class: "warning regression-changes" },
+    h("summary", {}, `${ev.regressions.length} previously accepted examples no longer match`),
+    ...ev.regressions.map((r) => regressionCard(r, `${d.id}-saved-${r.id}`))));
   if (ev.impact) {
     const i = ev.impact;
-    output.append(h("p", { class: "history-impact" }, h("strong", {}, `${i.changed_count} recorded claim outcome${i.changed_count === 1 ? "" : "s"} would change.`), ` ${i.now_correct} would match their recorded outcome; ${i.now_wrong} would stop matching.`));
-    if (i.examples.length) output.append(h("details", {}, h("summary", {}, `Changed historical claims (${i.examples.length} shown)`), ...i.examples.map((c) => {
-      const data = { key: `${d.id}-history-${c.claim_id}`, title: `Historical claim ${c.claim_id}`, ...c };
-      return h("div", { class: "example" }, h("div", { class: "example-content" }, h("strong", {}, c.claim_id), fullClaimRow(c.claim), h("span", { class: "small muted" }, ` · ${c.payer} · Service ${c.date_of_service}`), comparison(c.before.status, c.before.codes, c.after.status, c.after.codes), h("span", { class: "small muted" }, `Recorded outcome: ${c.actual.status}${c.actual.code ? " · " + c.actual.code : ""}`)),
-        h("div", { class: "rule-actions example-review" }, raiseIssueButton(data)));
-    })));
+    output.append(h("p", { class: "history-impact" }, h("strong", {}, `${i.changed_count} historical prediction${i.changed_count === 1 ? "" : "s"} would change.`), ` ${i.now_correct} would match their recorded outcome; ${i.now_wrong} would stop matching.`));
+    if (i.changed_count) output.append(h("p", { class: "warning" }, "Historical predictions usually stay unchanged for a future-dated rule. Check each payer and service date against the source; explain any retroactive changes before approving."),
+      h("details", { class: "historical-changes" }, h("summary", {}, `Review historical changes (${i.changed_count})`), ...i.examples.map((c) => {
+        const data = { key: `${d.id}-history-${c.claim_id}`, title: `Historical claim ${c.claim_id}`, ...c };
+        return h("div", { class: "example" }, h("div", { class: "example-content" }, h("strong", {}, c.claim_id),
+          h("p", {}, `${c.payer} · Service date: ${c.date_of_service}`), fullClaimRow(c.claim),
+          comparison(c.before.status, c.before.codes, c.after.status, c.after.codes), h("span", { class: "small muted" }, `Recorded outcome: ${c.actual.status}${c.actual.code ? " · " + c.actual.code : ""}`)),
+          h("div", { class: "rule-actions example-review" }, raiseIssueButton(data)));
+      })));
   }
-  const reason = h("input", { placeholder: "Reason / source for changing saved expectations", "aria-label": "Reason for changing saved expectations" });
-  if (ev.regressions.length) output.append(h("div", { class: "warning" }, h("strong", {}, `${ev.regressions.length} saved example checks would change`), ...ev.regressions.map((r) => h("p", {}, `${r.title}: ${r.expected_codes.join(", ") || "payable"} → ${r.actual.codes.join(", ") || "payable"}`)), reason));
+  const review = ev.review;
+  const synthetic = h("input", { type: "checkbox", class: "approve-synthetic" });
+  const history = h("input", { type: "checkbox", class: "approve-history" });
+  const needsSynthetic = !!review && !!(review.synthetic_count || review.regression_count);
+  const needsHistory = !!review?.historical_count;
+  const needsReason = needsHistory || ev.regressions.length > 0;
+  const reason = h("textarea", { rows: "2", placeholder: "Reason and source for changing earlier expectations or historical predictions", "aria-label": "Reason and source for changed expectations" });
+  const approvals = h("div", { class: "semantic-approval activation-row" }, h("h3", {}, "Approve the reviewed changes"),
+    needsSynthetic ? h("label", { class: "approval-option" }, synthetic, `I approve ${review.synthetic_count} changed synthetic examples and ${review.regression_count} changed saved expectations.`) : null,
+    needsHistory ? h("label", { class: "approval-option" }, history, `I approve ${review.historical_count} changed historical predictions after checking payer and service dates.`) : null,
+    needsReason ? reason : null);
+  output.append(approvals);
   const activate = h("button", { type: "button", disabled: !ev.can_activate, "data-blocked": String(!ev.can_activate), onclick: () => ruleTask(async () => {
-    await api("POST", `/api/drafts/${d.id}/activate`, { regression_reason: reason.value });
+    try {
+      await api("POST", `/api/drafts/${d.id}/activate`, { regression_reason: reason.value, review_token: review.token, approve_synthetic: synthetic.checked, approve_history: history.checked });
+    } catch (error) {
+      // Refresh comparisons and reset consent if data or accepted rules changed.
+      showDraft(await api("GET", `/api/drafts/${d.id}`));
+      throw error;
+    }
     d.status = "activated";
+    output.querySelectorAll(".activation-row").forEach((el) => { el.hidden = true; });
     output.querySelectorAll(".rule-actions").forEach((el) => { el.hidden = true; });
     document.querySelectorAll(".example-review").forEach((el) => { el.hidden = true; });
     output.append(h("p", { class: "activation-success", role: "status" }, "Rules accepted; loaded claims rechecked."));
@@ -461,9 +494,28 @@ function updateOutput(view) {
     selectExample(null);
     await loadRules(); await refreshResults();
     $("rules-status").textContent = "Rules saved; loaded claims rechecked.";
-  }, "Activating reviewed rules…") }, "Accept new rule");
+  }, "Activating reviewed rules…") }, needsHistory || ev.regressions.length ? "Approve changes and accept rule" : "Accept new rule");
+  const updateApproval = () => { activate.disabled = !ev.can_activate || (needsSynthetic && !synthetic.checked) || (needsHistory && !history.checked) || (needsReason && !reason.value.trim()); activate.dataset.blocked = String(activate.disabled); };
+  synthetic.addEventListener("change", updateApproval); history.addEventListener("change", updateApproval); reason.addEventListener("input", updateApproval); updateApproval();
   output.append(h("div", { class: "rule-actions activation-row" }, activate, h("span", { class: "small muted" }, ev.can_activate ? "Accepting saves the rules and rechecks loaded claims." : "Resolve the issues above before accepting.")));
   return output;
+}
+function regressionCard(r, key) {
+  return h("div", { class: "example" }, h("div", { class: "example-content" }, h("strong", {}, r.title),
+    fullClaimRow(r.full_claim || r.claim),
+    h("p", {}, `Saved expectation: ${r.expected_status || (r.expected_codes.length ? "denied" : "paid")} · ${r.expected_codes.join(", ") || "no denial codes"}`),
+    h("p", {}, `New result: ${r.actual.status} · ${r.actual.codes.join(", ") || "no denial codes"}`),
+    r.actual.error ? h("p", { class: "warning" }, r.actual.error) : null,
+    h("details", {}, h("summary", {}, "Supporting context"), h("pre", {}, JSON.stringify(r.context, null, 2)))),
+    h("div", { class: "rule-actions example-review" }, raiseIssueButton({ key, title: r.title, ...r })));
+}
+function renderRegressionChecks(report) {
+  const root = $("regression-report"); root.hidden = !report;
+  if (!report) return;
+  root.replaceChildren(h("strong", { class: report.failed ? "bad" : "ok" },
+    report.total ? `${report.passed}/${report.total} runtime regression checks passed` : "No saved regression examples yet"),
+    report.failed ? h("details", {}, h("summary", {}, `${report.failed} saved expectations no longer match`),
+      ...report.failures.map((r) => regressionCard(r, `runtime-${r.id}`))) : null);
 }
 function comparison(beforeStatus, beforeCodes, afterStatus, afterCodes) {
   return h("div", { class: "outcome-comparison" }, h("div", {}, h("span", { class: "outcome-label" }, "Before"), outcome(beforeStatus, beforeCodes)), h("span", { class: "change-arrow", "aria-hidden": "true" }, "→"), h("div", {}, h("span", { class: "outcome-label" }, "After update"), outcome(afterStatus, afterCodes)));

@@ -8,10 +8,11 @@ The app has three different kinds of checks:
    browser script. These test the code used by runtime and demo flows; the test
    runner itself is not invoked by ordinary user actions.
 
-The current inventory is **81 `unittest` methods in seven files**, plus the
-standalone browser smoke script. All 81 passed during this documentation update
-on **24 November 2026**. Browser and live-provider checks are separate from that
-81-test result. No live AI call was needed for the developer suite.
+The current inventory is **89 `unittest` methods in eight files**, plus the
+standalone browser smoke script. The tests use fake AI transports; no live model
+call is needed. Verification of the regression-review update on **26 November
+2026** also exercised the browser workflow. HTTP/browser checks need permission
+to open local sockets.
 
 ## When checks run
 
@@ -24,8 +25,10 @@ on **24 November 2026**. Browser and live-provider checks are separate from that
 | Actual accepted/candidate example execution | During each draft evaluation, including after each AI response. | Rules-updater runtime. |
 | Mechanical control cases | Refreshed with drafts and executed in evaluation; global-code controls cover all known payers at up to three example dates. | Rules-updater runtime. |
 | Saved-example regressions | Each draft evaluation against active, non-superseded saved examples. | Rules-updater runtime. |
+| Active-rule regression report | Every claims check/recheck: uploads, edits, relevant reference replacements and rule activation. Run active saved scenarios, report pass/fail and expandable failures separately from claims. | Claims runtime, both modes. |
 | Historical impact diagnostic | Each valid draft evaluation when recorded reference history exists. Uses observed earlier outcomes. | Rules-updater runtime; not the monthly demo score. |
-| Acceptance validation | Again when **Accept new rule** is clicked, before saving. Saved-check regressions require a reason/source. | Rules-updater runtime. |
+| Semantic approval | After execution/output checks succeed, approve changed synthetic cases as a group and historical changes separately. All historical rows are disclosed with payer/service dates. | Rules-updater runtime. |
+| Acceptance validation | On final acceptance, re-evaluate and compare the review fingerprint; reject missing/stale group approvals. Historical changes and saved regressions need a reason/source. | Rules-updater runtime. |
 | Worker execution/output limits | Every generated-code execution, including later ordinary claims. Failures become errors or review outcomes. | Runtime, both modes. |
 | Monthly upload comparison | After a demo batch is checked/re-checked, if all claim IDs are known to the demo source. | Web demo runtime. |
 | Fast-forward date validation | On demo advance. Updates references and clears the batch; it does not run claims/tests. | Web demo runtime. |
@@ -68,8 +71,7 @@ The suite uses temporary state and fake AI transports. HTTP tests start real
 localhost servers on automatically selected ports, so they need permission to
 open local sockets. Rule tests launch the bounded Python worker and rely on Unix
 resource facilities. A restricted execution environment can prevent these tests
-from running even when the application logic is unchanged. Runtime varies with
-CPU/process overhead; the documentation verification run took about 56 seconds.
+from running even when the application logic is unchanged. Runtime varies with CPU/process overhead.
 
 Standard assertions/uncaught exceptions make `unittest` exit nonzero on failure.
 `replay_history.py` exits nonzero for unexpected historical differences.
@@ -85,12 +87,21 @@ an example as changed; the UI hides unchanged cases. Generated expected codes
 are suggestions. A mismatch with an unconfirmed AI expectation does not prove the
 engine is wrong, and does not by itself prevent whole-rule acceptance.
 
-Acceptance needs no per-example approval. Changed actual outputs are saved as
+Acceptance needs group approval of changed synthetic examples and separate group
+approval of historical changes, with no per-example clicks. Changed actual outputs are saved as
 `accepted_with_rule` regression snapshots. Explicit API confirmations/corrections
 have `user_confirmed` provenance. Neither generated snapshots nor a user clicking
 accept are a statistical accuracy estimate. Clarification questions, invalid
 code/examples, execution failures and conflicts with explicit expectations block
-acceptance. Earlier saved-check changes require a recorded reason/source.
+acceptance. Earlier saved-check changes and historical prediction changes require a
+recorded reason/source. Approval is bound to the exact candidate, accepted baseline
+and comparison results; a revision or changed results requires fresh consent.
+
+Superseded saved cases remain in the audit trail and receive replacement baselines
+with approved status/code expectations, including cases not in the new proposal.
+Legacy saved cases without a status continue to compare code sets. The dashboard
+regression report checks active saved cases against accepted rules each time the
+claims batch is checked; it is independent of historical accuracy or demo labels.
 
 Mechanical controls exercise baseline filing boundaries, earlier dates, modifiers,
 daily limits and EVV rounding across known payers. Saved examples compare full
@@ -174,7 +185,8 @@ it exercises, rather than implying that the whole test method runs at runtime.
 | [test_global_updates.py](app/tests/test_global_updates.py) | 5 | Code-owned payer/date scope, combined updates, compatibility and revisions. |
 | [test_http.py](app/tests/test_http.py) | 7 | Real HTTP upload, correction, export, acceptance, demo and unavailable-AI paths. |
 | [test_replay.py](app/tests/test_replay.py) | 8 | Demo state, withheld outcomes, live metrics, historical fixtures and exception strictness. |
-| **Total** | **81** | Browser script is additional. |
+| [test_regression_review.py](app/tests/test_regression_review.py) | 8 | Execution gates, group approval, stale consent, full history review, replacement baselines and runtime regressions. |
+| **Total** | **89** | Browser script is additional. |
 
 ### test_rules_engine.py
 
@@ -394,10 +406,28 @@ Source: [test_replay.py](app/tests/test_replay.py). Exercises both the monthly w
 | `test_pristine_old_baseline_migrates_to_full_but_custom_rules_are_preserved` | Startup upgrades untouched base-only state to both bulletins but keeps a custom saved payer version. |
 
 
+### test_regression_review.py
+
+Source: [test_regression_review.py](app/tests/test_regression_review.py). These
+on-demand tests exercise production runtime checks; the test runner does not run
+inside the app.
+
+| Method | What it verifies |
+|---|---|
+| `test_execution_failure_never_offers_semantic_approval_or_mutates_rules` | Invalid output blocks approval and preserves accepted state. |
+| `test_changed_synthetic_examples_need_one_explicit_group_approval` | One explicit boolean approval covers changed synthetic examples; strings cannot substitute for consent. |
+| `test_history_requires_separate_approval_and_reason` | Synthetic consent alone cannot approve history; reason/source and historical approval are persisted. |
+| `test_historical_examples_are_not_truncated` | Every changed historical prediction is available, not just the former first 25; fixture changes respect service dates. |
+| `test_approval_is_invalidated_by_revision_or_baseline_changes` | Previously reviewed fingerprints cannot approve revised code or changed accepted rules. |
+| `test_new_history_invalidates_previous_approval` | Newly loaded comparison history requires renewed review. |
+| `test_saved_regressions_are_replaced_and_old_expectations_preserved` | Deliberate regressions retain old baselines/reasons and create passing replacements, including cases absent from the proposal. |
+| `test_runtime_regressions_run_again_for_claim_upload_and_edit` | Rechecks rerun saved cases and expose unexpected active-rule changes without hiding claim results. |
+
+
 ## Browser smoke coverage
 
 [app/tests/browser_rules_chat.py](app/tests/browser_rules_chat.py) is a standalone
-script, deliberately not named `test_*.py`. It is **not** one of the 81 discovered
+script, deliberately not named `test_*.py`. It is **not** one of the 89 discovered
 methods. It uses Firefox WebDriver through the standard library, a temporary app
 server/state directory and a fake novel-rule response.
 
@@ -490,7 +520,7 @@ python3 -m unittest discover -s experiment -p 'test_*.py'
 ```
 
 It covers the earlier cleaning/checking/pending-claim experiment and is **not**
-part of the app's 81-method command, web demo or runtime validation. Its full runner
+part of the app's 89-method command, web demo or runtime validation. Its full runner
 rebuilds experiment artifacts; it is not required to start the app. Consult
 [experiment/README.md](experiment/README.md) and
 [experiment_results.md](experiment_results.md) for that pipeline's setup and

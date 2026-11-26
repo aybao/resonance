@@ -36,7 +36,7 @@ def accuracy(rows):
                 manual_review=sum(r["status"] == "manual_review" for r in rows))
 
 
-def impact(dataset, old_rules, new_rules, limit=25):
+def impact(dataset, old_rules, new_rules, limit=None):
     """Historical claims whose predicted outcome differs between two rule sets."""
     a, b = replay(dataset, old_rules), replay(dataset, new_rules)
     changed = []

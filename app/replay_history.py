@@ -34,9 +34,22 @@ def accept_bulletin(session, payer, live=False, interactive=False):
             raise ValueError('Bulletin fixture result differs from the independent expected code set')
         if not live:
             decide(draft, ex['id'], 'set', codes=ex['actual']['codes'])
-    if live and input('Accept this rule update and its displayed examples? [y/N] ').lower() != 'y':
-        raise ValueError('Live proposal not accepted; raise an issue or revise it in the web chat')
-    return session.activate(draft['id'])
+    ev = session.draft_view(draft)['evaluation']
+    print(f"  {len(ev['regressions'])} saved expectations change; "
+          f"{ev['review']['historical_count']} historical predictions change")
+    if live:
+        for row in (ev['impact'] or {}).get('examples', []):
+            print(f"  Historical {row['claim_id']} / {row['payer']} / {row['date_of_service']}: {row['before']} -> {row['after']}")
+        for row in ev['regressions']:
+            print(f"  Saved {row['title']}: {row['expected_codes']} -> {row['actual']}")
+        if input('Approve this rule, synthetic examples and historical changes? [y/N] ').lower() != 'y':
+            raise ValueError('Live proposal not accepted; raise an issue or revise it in the web chat')
+    reason = 'Source-transcribed bulletin verified against independent fixture rules'
+    if live and (ev['regressions'] or ev['review']['historical_count']):
+        reason = input('Reason/source for changing saved expectations or historical predictions: ').strip()
+    return session.activate(draft['id'], reason, review_token=ev['review']['token'],
+                            approve_synthetic=True, approve_history=True)
+
 
 
 def run_replay(session, interactive=False, live=False):

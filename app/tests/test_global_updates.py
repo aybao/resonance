@@ -11,7 +11,7 @@ from claimcheck.drafts import new_draft, chat, evaluate, activate
 from claimcheck.examples import run_scenario, validate_scenario
 from claimcheck.pipeline import Dataset
 from claimcheck.rules import baseline_store, RuleStore
-from tests.test_drafts import fake_ai, UPDATE
+from tests.test_drafts import approved_activate, fake_ai, UPDATE
 from tests.test_code_rules import WHOLE_HOURS
 
 MULTI_CODE = (NORTHWIND_CODE.replace('def apply_rule(', 'def northwind(') + '\n' +
@@ -60,7 +60,7 @@ class GlobalCodeUpdates(unittest.TestCase):
         self.assertEqual(self.store.snapshot(), before)  # A proposal never changes accepted state.
         with tempfile.TemporaryDirectory() as tmp:
             self.store.path = Path(tmp) / 'rules.json'
-            update = activate(d, self.store, self.ds)
+            update = approved_activate(d, self.store, self.ds)
             store = RuleStore(self.store.path)
         self.assertEqual(len(store.updates), 1)
         self.assertEqual(update['code'], MULTI_CODE)
@@ -114,6 +114,6 @@ class GlobalCodeUpdates(unittest.TestCase):
         chat(d, self.store, self.ds, fake_ai(multi_proposal()), 'Both')
         chat(d, self.store, self.ds, fake_ai({**multi_proposal(), 'code': MULTI_CODE.replace('> 45', '> 60')}), 'Make Northwind 60 days')
         self.assertEqual(self.store.updates, [])
-        activate(d, self.store, self.ds)
+        approved_activate(d, self.store, self.ds)
         self.assertEqual(len(self.store.updates), 1)
         self.assertEqual(run_scenario(scenario('PY01', '2026-08-01', '2026-09-25'), self.store)['codes'], [])

@@ -130,8 +130,18 @@ def run_examples(examples, rules):
         out.append(dict(id=s.get("id"), title=s.get("title"), payer_id=s["claim"].get("payer", s.get("payer_id")), claim=s["claim"],
                         full_claim=build_world(s)[0], context=s.get("context", {}), expected_codes=exp, actual=actual,
                         confirmed=s.get("confirmed", False), basis=s.get("basis", ""), origin=s.get("origin", ""),
-                        passed=None if exp is None else sorted(exp) == sorted(actual["codes"])))
+                        expected_status=s.get("expected_status"),
+                        passed=None if exp is None else (not actual.get("error") and sorted(exp) == sorted(actual["codes"])
+                               and (not s.get("expected_status") or s["expected_status"] == actual["status"]))))
     return out
+
+
+def regression_report(rules):
+    """Run active saved expectations, independently of the uploaded claims batch."""
+    rows = run_examples([t for t in rules.acceptance if not t.get("superseded_by")], rules)
+    failures = [r for r in rows if r["passed"] is False or r["actual"].get("error")]
+    return dict(total=len(rows), passed=sum(r["passed"] is True and not r["actual"].get("error") for r in rows),
+                failed=len(failures), failures=failures)
 
 
 def deterministic_boundary_examples(payer_id, effective_from, params):

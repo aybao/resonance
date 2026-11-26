@@ -142,7 +142,7 @@ class RuleUpdateByDate(HttpCase):
                                         {"example_id": r["id"], "decision": "set", "codes": r["actual"]["codes"]})
             self.assertEqual(code, 200)
         self.assertTrue(draft["evaluation"]["can_activate"])
-        code, out = self.api.call("POST", f"/api/drafts/{did}/activate", {})
+        code, out = self.api.call("POST", f"/api/drafts/{did}/activate", {"review_token": draft["evaluation"]["review"]["token"], "approve_synthetic": True, "approve_history": True, "regression_reason": "Reviewed fixture source"})
         self.assertEqual(code, 200)
         self.assertEqual(out["version"]["code"], UPDATE["code"])
         # saved to disk as a versioned rule set
@@ -175,7 +175,7 @@ class CodeAndDemo(HttpCase):
         did = view['draft']['id']
         self.assertTrue(view['evaluation']['can_activate'])
         self.assertFalse(view['draft']['decisions'])
-        self.assertEqual(self.api.call('POST', f'/api/drafts/{did}/activate', {})[0], 200)
+        self.assertEqual(self.api.call('POST', f'/api/drafts/{did}/activate', {'review_token': view['evaluation']['review']['token'], 'approve_synthetic': True, 'approve_history': True, 'regression_reason': 'Reviewed test contract'})[0], 200)
         _, after = self.api.call('GET', '/api/results')
         self.assertEqual(after['rows'][0]['denial_codes'], ['D10'])
         _, exported = self.api.call('GET', '/api/export.csv', raw=True)

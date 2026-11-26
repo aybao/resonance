@@ -5,6 +5,7 @@ confirmed expectations retain their separate provenance; generated outputs are n
 """
 
 import copy
+import hashlib
 import json
 import re
 import uuid
@@ -156,6 +157,8 @@ def evaluate(draft, store, dataset):
             validate_code(draft["code"])
         except RuleCodeError as exc:
             problems.append(str(exc))
+        if not draft["examples"]:
+            problems.append("A code update needs executable examples before it can be approved")
     if draft.get("code") is None and draft.get("params"):
         if not draft.get("payer_id"):
             problems.append("Payer not set for legacy parameter draft")
@@ -163,13 +166,15 @@ def evaluate(draft, store, dataset):
             problems.append("Effective date not set for legacy parameter draft")
     if not draft["params"] and not draft.get("code") and not problems:
         problems.append("No rule changes in this draft")
-    ev = dict(problems=problems, examples=[], regressions=[], impact=None, can_activate=False, undecided=0)
+    ev = dict(problems=problems, examples=[], regressions=[], impact=None, can_activate=False, undecided=0,
+              execution=dict(status="blocked", errors=list(problems)), review=None)
     if problems:
         return ev
     try:
         cand = candidate_store(store, draft)
     except ValueError as exc:
         ev["problems"].append(str(exc))
+        ev["execution"]["errors"] = list(ev["problems"])
         return ev
     before = {r["id"]: r for r in run_examples(draft["examples"], store)}
     after = run_examples(draft["examples"], cand)
@@ -197,9 +202,19 @@ def evaluate(draft, store, dataset):
         errors += ev["impact"].get("errors", [])
     if errors:
         ev["problems"].extend(sorted(set(errors)))
+    ev["execution"] = dict(status="failed" if errors else "passed", errors=sorted(set(errors)))
     ev["can_activate"] = not (mismatched or errors)
     if mismatched:
         ev["problems"].append(f"{len(mismatched)} confirmed expectation(s) differ from the rule result; fix the rule or the expectation")
+    # Bind approval to the exact candidate, accepted baseline, data and evaluated results.
+    # Re-evaluation during activation rejects approval of an earlier revision/state.
+    if ev["can_activate"]:
+        synthetic_count = sum(r["changed"] for r in after)
+        historical_count = ev["impact"]["changed_count"] if ev["impact"] else 0
+        token = hashlib.sha256(json.dumps(dict(draft=draft, store=store.snapshot(), evaluation=ev),
+                                         sort_keys=True).encode()).hexdigest()
+        ev["review"] = dict(token=token, synthetic_count=synthetic_count,
+                            regression_count=len(ev["regressions"]), historical_count=historical_count)
     return ev
 
 
@@ -220,12 +235,21 @@ def decide(draft, example_id, decision, codes=None, note=""):
     draft["decisions"][example_id] = dict(decision=decision, codes=sorted(codes) if codes is not None else None, note=note)
 
 
-def activate(draft, store, dataset, regression_reason=""):
+def activate(draft, store, dataset, regression_reason="", *, review_token="", approve_synthetic=False, approve_history=False):
     ev = evaluate(draft, store, dataset)
     if ev["problems"] and not ev["can_activate"]:
         raise DraftError("; ".join(ev["problems"]) or "Draft not ready")
     if not ev["can_activate"]:
         raise DraftError("Draft is not ready for acceptance")
+    review = ev["review"]
+    if review_token != review["token"]:
+        raise DraftError("Review results changed or approval is missing; refresh the proposal and approve the latest results")
+    if (review["synthetic_count"] or review["regression_count"]) and approve_synthetic is not True:
+        raise DraftError("Approve the synthetic example changes before accepting")
+    if review["historical_count"] and approve_history is not True:
+        raise DraftError("Approve the historical prediction changes before accepting")
+    if review["historical_count"] and not regression_reason.strip():
+        raise DraftError("Give the reason/source for changing historical predictions; check payer and effective service dates")
     if ev["regressions"] and not regression_reason.strip():
         raise DraftError(f"{len(ev['regressions'])} saved example test(s) would change; "
                          "give the reason/source for changing earlier expectations")
@@ -235,6 +259,9 @@ def activate(draft, store, dataset, regression_reason=""):
     else:
         version = store.add_version(draft["payer_id"], draft["effective_from"], draft["params"], source=draft["source"],
                                     summary=draft["summary"], payer_name=draft.get("payer_name") or None, approved_at=_now())
+    version["review"] = dict(**review, approved_synthetic=approve_synthetic is True,
+                             approved_history=approve_history is True, reason=regression_reason.strip(),
+                             historical_changes=ev["impact"]["examples"] if ev["impact"] else [])
     if ev["regressions"]:
         # earlier expectations are superseded only with an explicit, recorded reason
         for t in ev["regressions"]:
@@ -242,6 +269,20 @@ def activate(draft, store, dataset, regression_reason=""):
                 if old["id"] == t["id"]:
                     old["superseded_by"] = f"update-{version['version']}" if global_update else version["version"]
                     old["superseded_reason"] = regression_reason.strip()
+                    # Preserve the case with its approved replacement expectation even
+                    # when it was not one of the current proposal's synthetic examples.
+                    replacement = copy.deepcopy(old)
+                    replacement.pop("superseded_by", None)
+                    replacement.pop("superseded_reason", None)
+                    replacement.update(id=f"replacement-{uuid.uuid4().hex[:8]}",
+                                       expected_codes=list(t["actual"]["codes"]),
+                                       expected_status=t["actual"]["status"], version=version["version"],
+                                       update_version=version["version"] if global_update else None,
+                                       basis="accepted_with_rule", source=draft["source"],
+                                       note=regression_reason.strip(), confirmed_at=_now())
+                    replacement["supersedes"] = old["id"]
+                    store.acceptance.append(replacement)
+                    break
     for r in ev["examples"]:
         d = r["decision"]
         basis = "user_confirmed"
@@ -260,6 +301,7 @@ def activate(draft, store, dataset, regression_reason=""):
             id=f"{'update' if global_update else draft['payer_id']}-v{version['version']}-{r['id']}-{uuid.uuid4().hex[:4]}",
             title=r["title"], payer_id=r["payer_id"], claim=r["claim"], context=r["context"],
             expected_codes=r["final_expected"], version=version["version"], update_version=version["version"] if global_update else None,
+            expected_status=r["actual"]["status"],
             effective_from=draft.get("effective_from"),
             source=draft["source"], basis=basis, note=d.get("note", ""), confirmed_at=_now(),
             ai_proposed=r.get("origin") == "ai"))

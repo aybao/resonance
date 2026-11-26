@@ -49,6 +49,16 @@ def fake_ai(proposal):
     return client
 
 
+def approval(draft, store, dataset):
+    """Explicitly approve the evaluated fixture; negative tests call activate directly."""
+    ev = evaluate(draft, store, dataset)
+    return dict(review_token=ev["review"]["token"], approve_synthetic=True, approve_history=True)
+
+
+def approved_activate(draft, store, dataset, regression_reason="Reviewed fixture source"):
+    return activate(draft, store, dataset, regression_reason, **approval(draft, store, dataset))
+
+
 class Workflow(unittest.TestCase):
     def setUp(self):
         self.store, self.ds = base_store(), Dataset()
@@ -109,7 +119,7 @@ class Workflow(unittest.TestCase):
         for r in ev["examples"]:
             decide(d, r["id"], "set", r["actual"]["codes"])
         before = self.store.resolve("PY01", "2026-08-01")["params"]["timely_filing_days"]
-        v = activate(d, self.store, self.ds)
+        v = approved_activate(d, self.store, self.ds)
         self.assertEqual(before, 30)
         self.assertEqual(v["code"], UPDATE["code"])
         self.assertEqual(self.store.updates[-1], v)
@@ -128,7 +138,7 @@ class Workflow(unittest.TestCase):
         self.assertEqual(ev["undecided"], len(changed))
         self.assertFalse(d["decisions"])
         self.assertTrue(evaluate(d, self.store, self.ds)["can_activate"])
-        activate(d, self.store, self.ds)
+        approved_activate(d, self.store, self.ds)
         self.assertEqual(len(self.store.acceptance), len(changed))
         self.assertTrue(all(t["basis"] == "accepted_with_rule" for t in self.store.acceptance))
         self.assertEqual([t["expected_codes"] for t in self.store.acceptance], [r["actual"]["codes"] for r in changed])
@@ -148,7 +158,7 @@ class Workflow(unittest.TestCase):
         d, _ = self.drafted()
         for r in evaluate(d, self.store, self.ds)["examples"]:
             decide(d, r["id"], "set", r["actual"]["codes"])
-        activate(d, self.store, self.ds)
+        approved_activate(d, self.store, self.ds)
         # a later change that flips the confirmed 50-day behaviour on the same effective date
         d2 = new_draft()
         chat(d2, self.store, self.ds, fake_ai({**UPDATE, "code": UPDATE["code"].replace("50", "30")}), "Restore 30 days")
@@ -158,7 +168,7 @@ class Workflow(unittest.TestCase):
             decide(d2, r["id"], "set", r["actual"]["codes"])
         with self.assertRaises(DraftError):
             activate(d2, self.store, self.ds)
-        activate(d2, self.store, self.ds, regression_reason="Payer corrected the document (ref 123)")
+        approved_activate(d2, self.store, self.ds, regression_reason="Payer corrected the document (ref 123)")
         self.assertTrue(any(t.get("superseded_reason") for t in self.store.acceptance))
 
     def test_unclear_examples_are_recorded_not_saved_as_tests(self):
@@ -171,7 +181,7 @@ class Workflow(unittest.TestCase):
                 decide(d, r["id"], "unclear", note="ask payer")
             else:
                 decide(d, r["id"], "set", r["actual"]["codes"])
-        v = activate(d, self.store, self.ds)
+        v = approved_activate(d, self.store, self.ds)
         self.assertEqual(len(v["open_questions"]), 1)
         self.assertEqual(len(self.store.acceptance), len(ev["examples"]) - 1)
 

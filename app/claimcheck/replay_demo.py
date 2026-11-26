@@ -46,6 +46,7 @@ class HistoricalReplay:
         session.claims_header, session.raw_rows, session.edits, session.overrides, session.rows = [], [], {}, {}, []
         session.drafts = {}
         session._accuracy = None
+        session.regression_checks = None
 
     def context_at(self, history_until, reference_until):
         ds = Dataset()
@@ -80,6 +81,7 @@ class HistoricalReplay:
         self.last_report = None
         self.session.claims_header, self.session.raw_rows = [], []
         self.session.edits, self.session.overrides, self.session.rows = {}, {}, []
+        self.session.regression_checks = None
         return None
 
     def compare(self, predictions):

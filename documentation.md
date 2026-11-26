@@ -393,19 +393,42 @@ are not counted as changed outcomes. **Raise issue** attaches a case to the comp
 it does not send a message or create a persisted issue ticket. A follow-up requests
 revision. The user can also select a rule heading or type a general request.
 
-A single **Accept new rule** is sufficient. Validation/execution errors, open
-clarification questions, missing code/rule changes or explicitly confirmed
-expectations conflicting with actual output prevent acceptance. Saved-test
-regressions require a recorded reason/source. An AI's unconfirmed expected codes
-are proposals and do not establish correctness or independently gate acceptance.
-The internal `undecided` count does not require individual approval clicks.
+Execution checks run before semantic approval is offered: syntax, bounded execution
+and output-format failures block acceptance. The UI reports success only for the
+cases actually executed, not every possible input. Open questions and explicit
+expectation conflicts also block acceptance. AI-proposed expected codes alone do
+not establish correctness.
+
+The user approves changed synthetic examples (including saved regressions) as one
+group and changed historical predictions as a separate group. All historical
+changes are available in the expandable list, including service dates and
+before/after predictions. Recorded payer outcomes remain unchanged. Historical
+changes and saved regressions require a reason/source. Future-dated rules usually
+leave earlier service untouched; arbitrary multi-payer code has no single effective
+date field, so scope is checked by executing cases and user review, not by guessing
+an effective date from Python source.
+
+A final acceptance request includes `review_token`, `approve_synthetic`,
+`approve_history` and `regression_reason`. The server re-evaluates and hashes the
+candidate, accepted store and results, rejecting missing/stale approval or missing
+group consent. The accepted version stores counts, the review fingerprint, reason
+and historical before/after changes. Approval is recorded once per update, never
+once per example.
 
 Acceptance saves changed example outputs as `accepted_with_rule` regression
-baselines. Explicit API confirmations/corrections are saved as `user_confirmed`;
-API cases marked unclear become open questions on the version rather than saved
-expected-output tests. Superseded tests keep their recorded reason and are
-excluded from subsequent active regression checks. Current claims are re-checked
-after accepting an update.
+baselines; explicit API confirmations remain `user_confirmed`. Saved expectations
+include status as well as codes (older baselines without status compare codes).
+Approved conflicting saved cases are superseded with a reason and retained, with
+replacement expectations saved even if absent from the new proposal's examples.
+Cases marked unclear remain open questions rather than saved tests.
+
+Every session `_recheck()` runs active saved examples against accepted rules and
+returns `regression_checks` in `/api/results`: total, passed, failed and failure
+details. Uploading claims, editing them, replacing reference data or accepting rules
+triggers this path. The claims dashboard shows the report separately from batch
+predictions and demo accuracy. Regression failures warn without concealing claim
+results. These are controlled saved scenarios, not a replay of the full historical
+dataset or the developer test suite. Demo mode isolates and restores this report.
 
 ## Generated rule contract
 
@@ -657,7 +680,7 @@ Host/Origin hostnames against localhost/127.0.0.1 and prevents serving files out
 | `POST /api/drafts/{id}/chat` | `{"message":"..."}`; one revision request. |
 | `POST /api/drafts/{id}/examples` | Add a validated scenario. |
 | `POST /api/drafts/{id}/decide` | `example_id`, `decision`, optional `codes`, `note`; decisions are confirm/set/unclear/clear. Retained for explicit API expectations; the UI exposes Raise issue instead. |
-| `POST /api/drafts/{id}/activate` | Optional `regression_reason`; validate and accept once, save rules/tests and re-check current claims. |
+| `POST /api/drafts/{id}/activate` | `review_token`, `approve_synthetic`, `approve_history`, `regression_reason`; revalidate the reviewed changes, save approval/rules/tests and recheck claims. |
 
 Creating a manual draft via POST does not ingest an `examples` array; add scenarios
 through `/examples` or use the JSON draft helper. Unlike AI code-proposal processing,

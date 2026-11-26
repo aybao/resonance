@@ -68,3 +68,8 @@ pre{background:#f3f5f9;padding:8px;border-radius:6px;overflow:auto;font-size:12p
 .full-claim-row{max-width:100%;margin:12px 0;border:1px solid var(--line);border-radius:8px;overflow-x:auto}.full-claim-row table{width:max-content;min-width:100%;font-size:12px}.full-claim-row th,.full-claim-row td{white-space:nowrap;padding:10px 12px;text-align:left}.example-content{min-width:0}#demo-report>details>.table-wrap>table>tr>td:first-child{max-width:480px}
 
 .demo-accuracy{font-size:24px;font-weight:700;margin:0 0 12px}.demo-investigation-status{margin:16px 0 0;padding-top:12px;border-top:1px solid var(--line)}
+
+.semantic-approval { margin-top: 1rem; padding: 1rem; border: 1px solid var(--line, #ccd3dd); border-radius: 8px; }
+.approval-option { display: flex; gap: .65rem; align-items: flex-start; margin: .8rem 0; }
+.approval-option input { width: auto; flex: 0 0 auto; margin-top: .25rem; }
+.semantic-approval textarea { width: 100%; box-sizing: border-box; }

@@ -1,6 +1,6 @@
 # Claim pre-check
 
-A local web app for home-care billing teams to check claims before submission.
+A prototype web app for home-care billing teams to check claims before submission.
 It combines deterministic claim checks with an AI assistant for creating and
 updating payer rules. This is a demonstration using synthetic data; a “Likely
 paid” result is not a payment guarantee.
@@ -80,10 +80,15 @@ have several codes. **Auto-formatted** is a filter, not a payment outcome.
 3. Use **Raise issue** on an example, click the rule heading, or type a follow-up
    request. You can attach more Markdown to a follow-up. Earlier replies remain
    in the conversation.
-4. Click **Accept new rule** once to activate the update. No individual example
-   approval is required. Validation errors or conflicts with saved expectations
-   must be resolved; changing an earlier saved expectation requires a reason/source.
-   Current claims are re-checked after acceptance.
+4. Check **Execution checks passed**, then approve the changed synthetic examples
+   as a group. Expand any saved regressions and historical prediction changes.
+   Historical changes require a separate group approval; changing history or saved
+   expectations also requires a reason/source. Check payer and service dates carefully.
+5. Click **Accept new rule** (or **Approve changes and accept rule**) once. No
+   individual example approval is required. Current claims are re-checked and
+   saved regression checks appear on the claims dashboard after every batch check.
+   Revising a proposal or changing its comparison results requires fresh approval.
+
 
 Accepted rules and example baselines persist in `app/state/rules.json` by default.
 Claims, edits, reference-data replacements and conversations are session-local.

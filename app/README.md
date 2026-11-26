@@ -80,11 +80,16 @@ versions and parameter-based manual drafts remain supported.
 
 After every response the app validates code and examples, executes before/after
 comparisons, runs saved tests, and reports historical impact. Acceptance rechecks
-the exact candidate. Invalid code/output, execution errors and conflicting
+the exact candidate and rejects stale review approval. Changed synthetic examples
+and changed historical predictions each need group approval. Historical changes
+and saved regressions require a recorded reason/source. All changed historical
+rows are available for review with payer and service dates. Invalid code/output, execution errors and conflicting
 confirmed expectations block acceptance. Single rule acceptance saves changed
 outputs as regression baselines with `accepted_with_rule` provenance, distinct
 from explicitly confirmed expectations. Unresolved payer questions remain
-explicit; AI-proposed expected results are not independent validation.
+explicit; AI-proposed expected results are not independent validation. Every
+claims recheck also runs active saved regression examples and reports the results
+on the claims dashboard.
 
 Rule code runs in a separate worker without API keys, imports, I/O or
 introspection, over JSON copies of the inputs. The supported Python subset has

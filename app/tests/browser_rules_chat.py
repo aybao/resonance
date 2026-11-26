@@ -128,6 +128,9 @@ def main():
             assert js('return [...document.querySelectorAll(".example-review")].every(row => !row.hidden)')
             assert js('return Object.keys(currentView.draft.decisions).length === 0')
             assert js('return currentView.evaluation.can_activate')
+            assert js('return currentView.evaluation.execution.status === "passed" && document.querySelectorAll(".execution-check").length === 2')
+            assert js('const ev=currentView.evaluation; const last=document.querySelectorAll(".update-output")[1]; return !ev.impact?.changed_count || last.querySelectorAll(".historical-changes .example").length === ev.impact.changed_count')
+
             assert js('return document.documentElement.scrollWidth <= window.innerWidth')
             if args.screenshots:
                 args.screenshots.mkdir(parents=True, exist_ok=True)
@@ -137,6 +140,8 @@ def main():
             assert js('return document.documentElement.scrollWidth <= window.innerWidth')
             if args.screenshots:
                 (args.screenshots / 'rules-mobile.png').write_bytes(base64.b64decode(wd('GET', f'/session/{sid}/screenshot')))
+            assert js('return [...document.querySelectorAll(".activation-row")].filter(e=>!e.hidden).at(-1).querySelector("button").disabled')
+            js('const box=[...document.querySelectorAll(".semantic-approval")].find(e=>!e.hidden); box.querySelectorAll("input[type=checkbox]").forEach(c=>{c.checked=true;c.dispatchEvent(new Event("change"))}); const reason=box.querySelector("textarea"); if(reason){reason.value="Reviewed test contract and service dates";reason.dispatchEvent(new Event("input"))}')
             js('[...document.querySelectorAll(".activation-row")].filter(e=>!e.hidden).at(-1).querySelector("button").click()')
             wait('return !ruleBusy && document.querySelector(".activation-success") !== null')
             assert js('return !$("rule-composer").hidden')

@@ -147,7 +147,10 @@ class Handler(BaseHTTPRequestHandler):
             if method == "POST" and action == "examples":
                 return self.send(200, s.add_example(did, self.json_body()))
             if method == "POST" and action == "activate":
-                return self.send(200, s.activate(did, str(self.json_body().get("regression_reason", ""))))
+                b = self.json_body()
+                return self.send(200, s.activate(did, str(b.get("regression_reason", "")),
+                                 review_token=b.get("review_token", ""),
+                                 approve_synthetic=b.get("approve_synthetic", False), approve_history=b.get("approve_history", False)))
         return self.send(404, {"error": "Not found"})
 
 

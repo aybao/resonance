@@ -5,7 +5,7 @@ from pathlib import Path
 
 from . import drafts as D
 from .ai import AIClient
-from .examples import validate_scenario
+from .examples import validate_scenario, regression_report
 from .history import accuracy, replay
 from .normalize import CLAIM_FIELDS, normalize_claims, read_csv_text
 from .pipeline import Dataset, export_csv, load_sample, run_batch, summarize
@@ -30,6 +30,7 @@ class Session:
         self.drafts = {}
         self.claims_header, self.raw_rows, self.edits, self.overrides, self.rows = [], [], {}, {}, []
         self._accuracy = None
+        self.regression_checks = None
         self.demo = None
         self._full_state = None
         if autoload:
@@ -45,7 +46,7 @@ class Session:
                 self.demo.close()
             else:
                 self._full_state = {k: getattr(self, k) for k in (
-                    "rules", "dataset", "claims_header", "raw_rows", "edits", "overrides", "rows", "drafts", "_accuracy", "ai")}
+                    "rules", "dataset", "claims_header", "raw_rows", "edits", "overrides", "rows", "drafts", "_accuracy", "ai", "regression_checks")}
             self.demo = HistoricalReplay(self, as_of)
             return self.status()
 
@@ -105,6 +106,7 @@ class Session:
 
     # claims -----------------------------------------------------------
     def _recheck(self):
+        self.regression_checks = regression_report(self.rules)
         if not self.raw_rows:
             self.rows = []
             if self.demo:
@@ -138,6 +140,7 @@ class Session:
 
     def results(self):
         return dict(summary=summarize(self.rows), rows=self.rows,
+                    regression_checks=self.regression_checks,
                     demo_report=self.demo.last_report if self.demo else None)
 
     def find(self, claim_id, line=None):
@@ -274,10 +277,10 @@ class Session:
             D.decide(d, payload.get("example_id"), payload.get("decision"), payload.get("codes"), payload.get("note", ""))
             return self.draft_view(d)
 
-    def activate(self, draft_id, reason=""):
+    def activate(self, draft_id, reason="", **approval):
         with self.lock:
             d = self.draft(draft_id)
-            version = D.activate(d, self.rules, self.dataset, reason)
+            version = D.activate(d, self.rules, self.dataset, reason, **approval)
             self._accuracy = None
             self._recheck()
             return dict(version=version, rules=self.rules_view())

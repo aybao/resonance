@@ -9,7 +9,7 @@ from claimcheck.drafts import chat, evaluate, decide, activate, new_draft, refre
 from claimcheck.examples import run_scenario
 from claimcheck.pipeline import Dataset
 from claimcheck.rules import baseline_store, full_store, RuleStore
-from tests.test_drafts import fake_ai
+from tests.test_drafts import approved_activate, fake_ai
 
 WHOLE_HOURS = '''def apply_rule(claim, context, failures):
     if claim['payer'] != 'PY03' or claim['date_of_service'] < '2026-09-01':
@@ -54,7 +54,7 @@ class ExecutableRules(unittest.TestCase):
         self.assertTrue(evaluate(d, self.store, self.ds)['can_activate'])
         with tempfile.TemporaryDirectory() as tmp:
             self.store.path = Path(tmp) / 'rules.json'
-            activate(d, self.store, self.ds)
+            approved_activate(d, self.store, self.ds)
             loaded = RuleStore(self.store.path)
         scenario = copy.deepcopy(proposal()['examples'][0])
         scenario['payer_id'] = 'PY03'
