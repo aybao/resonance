@@ -103,18 +103,21 @@ class RegressionReview(unittest.TestCase):
         self.assertTrue(any(t.get('supersedes') == saved['id'] for t in self.store.acceptance))
         self.assertEqual(regression_report(self.store)['failed'], 0)
 
-    def test_runtime_regressions_run_again_for_claim_upload_and_edit(self):
+    def test_runtime_historical_regressions_run_again_after_claim_edits(self):
         with tempfile.TemporaryDirectory() as tmp:
             session = Session(state_dir=Path(tmp))
-            session.rules = self.store
-            approved_activate(self.draft(), self.store, self.ds)
             first = session.load_sample_claims()['regression_checks']
-            self.assertGreater(first['total'], 0)
-            self.assertEqual(first['failed'], 0)
+            self.assertEqual(first['total'], len(session.dataset.history))
+            self.assertGreater(first['total'], 1000)
+            self.assertTrue(first['passed'])
+            self.assertGreater(first['known_exceptions'], 0)
             # Simulate an unexpected rule edit outside the approval workflow.
-            self.store.updates[-1]['code'] = UPDATE['code'].replace('50', '30')
+            for version in session.rules.payers['PY01']['versions']:
+                version['params']['timely_filing_days'] = 1
             session.edit_claim(session.rows[0]['line'], {})
             second = session.results()['regression_checks']
             self.assertGreater(second['failed'], 0)
+            self.assertFalse(second['passed'])
             self.assertTrue(second['failures'])
+            self.assertEqual(first['total'], second['total'])
             self.assertTrue(session.results()['rows'])

@@ -4,19 +4,57 @@ Used for (a) an accuracy readout on recorded outcomes and (b) showing which hist
 outcomes would change under a proposed rule version. Labels never enter the checker.
 """
 
+import json
+from pathlib import Path
+
 from .engine import State, check_claim
 from .normalize import CLAIM_FIELDS
+
+EXCEPTIONS_PATH = Path(__file__).resolve().parents[2] / "demo-data" / "replay_exceptions.json"
 
 
 def replay(dataset, rules):
     state, rows = State(), []
     for h in dataset.history:
-        r = check_claim(h, state, dataset.ctx, rules)
+        claim = {k: h.get(k, "") for k in CLAIM_FIELDS}
+        r = check_claim(claim, state, dataset.ctx, rules)
         rows.append(dict(claim={k: h.get(k, "") for k in CLAIM_FIELDS}, claim_id=h["claim_id"], payer=h["payer"], date_of_service=h["date_of_service"],
                          actual_status=h["status"], actual_code=h["denial_code"], remark=h.get("remark", ""),
                          status=r["status"], codes=r["denial_codes"], error=r.get("rule_error")))
         state.record(h, h["status"])
     return rows
+
+
+def regression_report(dataset, rules, exceptions_path=None):
+    """Check available original history; only pinned, inspected differences are allowed.
+
+    This uses observed earlier outcomes rather than a pending-batch ledger, so
+    exception cohort end dates do not apply. Actual and predicted outcomes, the
+    full predicted code set and any saved recorded remark must match exactly.
+    """
+    path = Path(exceptions_path) if exceptions_path is not None else EXCEPTIONS_PATH
+    known = json.loads(path.read_text()) if path.exists() else {}
+    rows = replay(dataset, rules)
+    failures, exceptions = [], []
+    matched = 0
+    for row in rows:
+        if not row.get("error") and matches(row):
+            matched += 1
+            continue
+        expected = known.get(row["claim_id"])
+        allowed = bool(expected and not row.get("error")
+                       and expected["actual_status"] == row["actual_status"]
+                       and expected["actual_code"] == row["actual_code"]
+                       and expected["predicted_status"] == row["status"]
+                       and sorted(expected["predicted_codes"]) == sorted(row["codes"])
+                       and ("recorded_remark" not in expected or expected["recorded_remark"] == row["remark"]))
+        row["exception_reason"] = expected["reason"] if allowed else ""
+        (exceptions if allowed else failures).append(row)
+    return dict(total=len(rows), matched=matched, known_exceptions=len(exceptions),
+                failed=len(failures), passed=not failures if rows else None,
+                failures=failures, exceptions=exceptions,
+                accuracy=matched / len(rows) if rows else None,
+                basis="Original historical claims using earlier recorded outcomes")
 
 
 def matches(row):

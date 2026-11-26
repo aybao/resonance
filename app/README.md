@@ -88,8 +88,10 @@ confirmed expectations block acceptance. Single rule acceptance saves changed
 outputs as regression baselines with `accepted_with_rule` provenance, distinct
 from explicitly confirmed expectations. Unresolved payer questions remain
 explicit; AI-proposed expected results are not independent validation. Every
-claims recheck also runs active saved regression examples and reports the results
-on the claims dashboard.
+claims recheck replays available historical claims and reports the results on the
+claims dashboard. It is green only if all outcomes match apart from exact recorded
+exceptions; unmatched differences are expandable. Recorded exceptions remain in
+the raw mismatch/accuracy counts. Synthetic examples remain in rule-update review.
 
 Rule code runs in a separate worker without API keys, imports, I/O or
 introspection, over JSON copies of the inputs. The supported Python subset has

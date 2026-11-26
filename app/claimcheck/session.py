@@ -5,8 +5,8 @@ from pathlib import Path
 
 from . import drafts as D
 from .ai import AIClient
-from .examples import validate_scenario, regression_report
-from .history import accuracy, replay
+from .examples import validate_scenario
+from .history import accuracy, replay, regression_report
 from .normalize import CLAIM_FIELDS, normalize_claims, read_csv_text
 from .pipeline import Dataset, export_csv, load_sample, run_batch, summarize
 from .rules import RuleStore, baseline_store, full_store, validate_params
@@ -106,8 +106,8 @@ class Session:
 
     # claims -----------------------------------------------------------
     def _recheck(self):
-        self.regression_checks = regression_report(self.rules)
         if not self.raw_rows:
+            self.regression_checks = regression_report(self.dataset, self.rules)
             self.rows = []
             if self.demo:
                 self.demo.last_report = None
@@ -132,6 +132,7 @@ class Session:
             dataset = copy.copy(self.dataset)
             cutoff = min(dates) if dates else self.demo.as_of
             dataset.history = [r for r in dataset.history if r['submitted_date'] < cutoff]
+        self.regression_checks = regression_report(dataset, self.rules)
         self.rows = run_batch(records, dataset, self.rules, self.overrides)
         if self.demo:
             original = run_batch(records, dataset, self.rules, self.overrides, autofix=False)

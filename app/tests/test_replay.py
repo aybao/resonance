@@ -63,6 +63,12 @@ class HistoricalDemo(unittest.TestCase):
             self.session.upload_claims(csv)
         self.assertEqual(len(seen), 361)
         self.assertEqual(self.session.demo.last_report['claims'], 361)
+        runtime = self.session.results()['regression_checks']
+        cutoff = min(r['clean']['submitted_date'] for r in self.session.rows)
+        eligible = [r for r in self.session.dataset.history if r['submitted_date'] < cutoff]
+        self.assertEqual(runtime['total'], len(eligible))
+        self.assertTrue(all(r['claim_id'] not in june_ids for r in runtime['failures'] + runtime['exceptions']))
+
         report = self.session.demo.last_report
         self.assertEqual(report['unexplained_d99'], 7)
         self.assertEqual(report['known_exceptions'], 7)

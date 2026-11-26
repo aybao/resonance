@@ -90,7 +90,9 @@ have several codes. **Auto-formatted** is a filter, not a payment outcome.
    changed history or saved expectations is optional. Check payer and service dates carefully.
 5. Click **Accept new rule** (or **Approve changes and accept rule**) once. No
    individual example approval is required. Current claims are re-checked and
-   saved regression checks appear on the claims dashboard after every batch check.
+   historical regression checks appear on the claims dashboard after every batch
+   check. Green means outcomes match apart from recorded exceptions; expand the
+   report to see those exceptions or any unexpected differences.
    Revising a proposal or changing its comparison results requires fresh approval.
 
 

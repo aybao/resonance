@@ -545,10 +545,26 @@ function regressionCard(r, key) {
 function renderRegressionChecks(report) {
   const root = $("regression-report"); root.hidden = !report;
   if (!report) return;
-  root.replaceChildren(h("strong", { class: report.failed ? "bad" : "ok" },
-    report.total ? `${report.passed}/${report.total} runtime regression checks passed` : "No saved regression examples yet"),
-    report.failed ? h("details", {}, h("summary", {}, `${report.failed} saved expectations no longer match`),
-      ...report.failures.map((r) => regressionCard(r, `runtime-${r.id}`))) : null);
+  root.replaceChildren(h("strong", { class: !report.total ? "muted" : report.passed ? "ok" : "bad" },
+    !report.total ? "No historical claims available for regression checks" : report.passed
+      ? `Historical regression checks passed · ${report.total.toLocaleString()} claims checked`
+      : `Historical regression checks: ${report.failed.toLocaleString()} unexpected differences · ${report.total.toLocaleString()} claims checked`),
+    report.total ? h("p", { class: "small" }, `${report.matched.toLocaleString()} match recorded outcomes · ${report.known_exceptions.toLocaleString()} recorded exceptions · ${report.failed.toLocaleString()} unexpected differences`) : null,
+    report.total ? h("p", { class: "small muted" }, `Replays original submissions against available history. Recorded exceptions remain mismatches in the ${(report.accuracy * 100).toFixed(2)}% outcome agreement.`) : null,
+    report.failed ? h("details", {}, h("summary", {}, `Unexpected differences (${report.failed})`),
+      ...report.failures.map((r) => historicalRegressionCard(r))) : null,
+    report.known_exceptions ? h("details", {}, h("summary", {}, `Recorded exceptions (${report.known_exceptions})`),
+      ...report.exceptions.map((r) => historicalRegressionCard(r))) : null);
+}
+function historicalRegressionCard(r) {
+  const data = { key: `history-regression-${r.claim_id}`, title: `Historical regression: ${r.claim_id}`, ...r };
+  return h("div", { class: "example" }, h("div", { class: "example-content" }, h("strong", {}, r.claim_id),
+    h("p", {}, `${r.payer} · Service ${r.date_of_service} · Submitted ${r.claim.submitted_date}`),
+    h("p", {}, `Recorded: ${r.actual_status === "paid" ? "Paid" : "Denied"}${r.actual_code ? " · " + r.actual_code : ""}`),
+    h("p", {}, `Predicted: ${STATUS_LABEL[r.status] || r.status}${r.codes.length ? " · " + r.codes.join(", ") : ""}`),
+    r.exception_reason ? h("p", {}, r.exception_reason) : null,
+    r.error ? h("p", { class: "warning" }, r.error) : null,
+    fullClaimRow(r.claim)), h("div", { class: "rule-actions" }, raiseIssueButton(data)));
 }
 function comparison(beforeStatus, beforeCodes, afterStatus, afterCodes) {
   return h("div", { class: "outcome-comparison" }, h("div", {}, h("span", { class: "outcome-label" }, "Before"), outcome(beforeStatus, beforeCodes)), h("span", { class: "change-arrow", "aria-hidden": "true" }, "→"), h("div", {}, h("span", { class: "outcome-label" }, "After update"), outcome(afterStatus, afterCodes)));

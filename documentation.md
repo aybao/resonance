@@ -489,13 +489,32 @@ Approved conflicting saved cases are superseded with a reason and retained, with
 replacement expectations saved even if absent from the new proposal's examples.
 Cases marked unclear remain open questions rather than saved tests.
 
-Every session `_recheck()` runs active saved examples against accepted rules and
-returns `regression_checks` in `/api/results`: total, passed, failed and failure
-details. Uploading claims, editing them, replacing reference data or accepting rules
-triggers this path. The claims dashboard shows the report separately from batch
-predictions and demo accuracy. Regression failures warn without concealing claim
-results. These are controlled saved scenarios, not a replay of the full historical
-dataset or the developer test suite. Demo mode isolates and restores this report.
+Every session `_recheck()` replays available original historical claims against
+accepted rules and returns `regression_checks` in `/api/results`: `total`,
+`matched`, `known_exceptions`, `failed`, boolean/nullable `passed`, raw `accuracy`,
+`failures` and `exceptions`. Uploading claims, edits, deletions, reference changes
+and accepting rules trigger this check. Each historical claim is checked before
+its own outcome enters the ledger; only earlier recorded outcomes supply balances.
+Autofixes and user classifications on the pending batch do not alter the historical
+comparison. Demo mode restricts history to the available period and excludes the
+pending batch's outcomes, including after reference data advances.
+
+The dashboard is green only when history is nonempty and every case either
+matches its recorded outcome or matches an existing inspected exception in
+`demo-data/replay_exceptions.json`. Recorded paid claims require a paid prediction
+without denial codes; recorded denials require a denied prediction containing the
+recorded code (the source records only one denial code). Exceptions pin claim ID,
+actual status/code, predicted status/full code set and any saved recorded remark.
+Execution errors cannot be waived. Exception cohort end dates remain specific to
+the separate pending-batch demo; runtime history uses an observed-prior ledger.
+No exception records are generated or expanded by this check.
+
+The UI displays matched, recorded-exception and unexpected-difference counts,
+with expandable original claims and **Raise issue**. Exceptions remain mismatches
+in the displayed outcome agreement percentage. Empty history is neutral rather
+than green. Synthetic saved examples still run during rule-update evaluation and
+approval; the claims dashboard's runtime count now consists of historical claims.
+Developer test coverage for this path is in `app/tests/test_history_regression.py`.
 
 ## Generated rule contract
 
