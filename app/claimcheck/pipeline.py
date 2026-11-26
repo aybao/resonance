@@ -191,6 +191,11 @@ def run_batch(records, dataset, rules, overrides=None, *, autofix=True):
         if not r["duplicate_of"] and blocking(r):
             pending.add(r["clean"])
     state = dataset.base_state()
+    submissions = defaultdict(list)
+    for historical in dataset.history:
+        submissions[State.duplicate_key(historical)].append(dict(
+            source="history", line=None, status=historical["status"],
+            claim={f: historical.get(f, "") for f in CLAIM_FIELDS}))
     outputs = {}
     for r in sorted(valid, key=lambda r: (r["clean"]["submitted_date"], r["line"])):
         claim = r["clean"]
@@ -198,6 +203,8 @@ def run_batch(records, dataset, rules, overrides=None, *, autofix=True):
         if any(i["severity"] == "error" for i in r["issues"]):
             pending.add(claim)
             continue
+        base["duplicate_submissions"] = (copy.deepcopy(submissions[State.duplicate_key(claim)])
+                                         if "D05" in base["denial_codes"] else [])
         review = pending.assess(claim, base) if base["evidence"] else dict(status=base["status"], balance_uncertain=False)
         outputs[r["line"]] = (base, review)
         # Uncheckable claims are registered as submitted but never assumed paid.
@@ -205,12 +212,15 @@ def run_batch(records, dataset, rules, overrides=None, *, autofix=True):
         if decision in ("check_previous_claims", "manual_review"):
             pending.add(claim)
         state.record(claim, "paid" if decision == "paid" else "other")
+        submissions[State.duplicate_key(claim)].append(dict(
+            source="batch", line=r["line"], status=decision, claim=dict(claim)))
     rows = []
     for r in records:
         claim = r["clean"]
         errors = [i for i in r["issues"] if i["severity"] == "error"]
         row = dict(line=r["line"], claim_id=claim["claim_id"], raw=r["raw"], clean=claim, changes=r["changes"],
                    automatic_fixes=r["automatic_fixes"],
+                   duplicate_submissions=[],
                    issues=r["issues"], duplicate_of=r["duplicate_of"], proposed_changes={}, failures=[], warnings=[],
                    evidence={}, balance_uncertain=False, unresolved_prior_claim_ids=[], balance_range=None,
                    previous_claims_action="", rule_version=None)

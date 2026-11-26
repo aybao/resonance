@@ -166,6 +166,35 @@ class Export(unittest.TestCase):
 
 
 class ClaimReferenceDetails(unittest.TestCase):
+    def test_duplicate_reference_links_to_earlier_processed_batch_line(self):
+        rows = run([claim_row(cid='C000202', sub='2026-07-06', units='1'),
+                    claim_row(cid='C000201', sub='2026-07-05', units='1')])
+        prior = rows[0]['duplicate_submissions']
+        self.assertIn('D05', rows[0]['denial_codes'])
+        self.assertEqual(len(prior), 1)
+        self.assertEqual((prior[0]['source'], prior[0]['line'], prior[0]['claim']['claim_id']),
+                         ('batch', 3, 'C000201'))
+        self.assertFalse(rows[1]['duplicate_submissions'])
+
+    def test_historical_duplicate_retains_actual_outcome_and_claim_details(self):
+        for status, code in [('paid', ''), ('denied', 'D01')]:
+            history = claim_row(cid='C000001', units='1') + [status, '1', code, 'Original outcome']
+            row = run([claim_row(units='1')], dataset([history]))[0]
+            prior = row['duplicate_submissions'][0]
+            self.assertEqual(prior['source'], 'history')
+            self.assertIsNone(prior['line'])
+            self.assertEqual(prior['status'], status)
+            self.assertEqual(prior['claim']['date_of_service'], '2026-07-01')
+            self.assertEqual(prior['claim']['submitted_date'], '2026-07-05')
+            self.assertEqual(prior['claim']['claim_id'], 'C000001')
+
+    def test_duplicate_references_distinguish_history_from_batch_with_same_id(self):
+        history = claim_row(cid='C000001', units='1') + ['paid', '1', '', '']
+        rows = run([claim_row(cid='C000001', units='1'), claim_row(cid='C000002', units='1')], dataset([history]))
+        prior = rows[1]['duplicate_submissions']
+        self.assertEqual([s['source'] for s in prior], ['history', 'batch'])
+        self.assertEqual([s['line'] for s in prior], [None, 2])
+
     def test_related_records_are_scoped_to_claim_and_balance_is_from_its_check(self):
         ds = dataset()
         rows = run([claim_row(cid='C000201', units='4'),

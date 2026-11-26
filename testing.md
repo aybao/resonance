@@ -8,7 +8,7 @@ The app has three different kinds of checks:
    browser script. These test the code used by runtime and demo flows; the test
    runner itself is not invoked by ordinary user actions.
 
-The current inventory is **101 `unittest` methods in nine files**, plus the
+The current inventory is **104 `unittest` methods in nine files**, plus the
 standalone browser smoke script. The tests use fake AI transports; no live model
 call is needed. Verification of the regression-review update on **26 November
 2026** also exercised the browser workflow. HTTP/browser checks need permission
@@ -181,7 +181,7 @@ it exercises, rather than implying that the whole test method runs at runtime.
 | Source file | Methods | Main coverage |
 |---|---:|---|
 | [test_rules_engine.py](app/tests/test_rules_engine.py) | 19 | Manual-rule units, boundaries, duplicates and legacy versions. |
-| [test_pipeline.py](app/tests/test_pipeline.py) | 20 | Input audit, sequential ledger, export and claim reference details. |
+| [test_pipeline.py](app/tests/test_pipeline.py) | 23 | Input audit, sequential ledger, export and claim reference details. |
 | [test_drafts.py](app/tests/test_drafts.py) | 12 | Proposal/review/acceptance lifecycle, provenance, persistence and AI client contract. |
 | [test_code_rules.py](app/tests/test_code_rules.py) | 10 | Novel code execution, isolation, errors, resource checks and label exclusion. |
 | [test_global_updates.py](app/tests/test_global_updates.py) | 5 | Code-owned payer/date scope, combined updates, compatibility and revisions. |
@@ -189,7 +189,7 @@ it exercises, rather than implying that the whole test method runs at runtime.
 | [test_replay.py](app/tests/test_replay.py) | 8 | Demo state, withheld outcomes, live metrics, historical fixtures and exception strictness. |
 | [test_regression_review.py](app/tests/test_regression_review.py) | 8 | Execution gates, group approval, stale consent, full history review, replacement baselines and runtime regressions. |
 | [test_autofix.py](app/tests/test_autofix.py) | 12 | Unique payer/auth/modifier corrections, ambiguity, audit/export, balances and user edits. |
-| **Total** | **101** | Browser script is additional. |
+| **Total** | **104** | Browser script is additional. |
 
 ### test_rules_engine.py
 
@@ -287,6 +287,9 @@ Source: [test_pipeline.py](app/tests/test_pipeline.py). Exercises CSV/batch proc
 
 | Test method | What it verifies |
 |---|---|
+| `test_duplicate_reference_links_to_earlier_processed_batch_line` | Batch duplicate references identify the earlier processing-order claim and exact line even when CSV order is reversed. |
+| `test_historical_duplicate_retains_actual_outcome_and_claim_details` | Historical duplicate metadata preserves paid/denied outcomes and complete earlier claim dates/fields. |
+| `test_duplicate_references_distinguish_history_from_batch_with_same_id` | History and batch occurrences with the same ID remain distinct, with only batch references receiving a line target. |
 | `test_related_records_are_scoped_to_claim_and_balance_is_from_its_check` | EVV and coverage match the claim; each row retains the authorization balance at its own check, not the final batch balance. |
 | `test_wrong_referenced_authorization_is_shown_with_mismatches_and_alternative` | A wrongly referenced authorization stays visible with payer/member/service mismatch labels and related correct coverage. |
 | `test_unverified_and_overnight_visits_remain_visible_on_clock_in_date` | An overnight unverified visit is visible only on its clock-in date and does not inflate verified minutes. |
@@ -450,7 +453,7 @@ These 12 on-demand tests exercise the automatic runtime pipeline without AI:
 ## Browser smoke coverage
 
 [app/tests/browser_rules_chat.py](app/tests/browser_rules_chat.py) is a standalone
-script, deliberately not named `test_*.py`. It is **not** one of the 101 discovered
+script, deliberately not named `test_*.py`. It is **not** one of the 104 discovered
 methods. It uses Firefox WebDriver through the standard library, a temporary app
 server/state directory and a fake novel-rule response.
 
@@ -543,7 +546,7 @@ python3 -m unittest discover -s experiment -p 'test_*.py'
 ```
 
 It covers the earlier cleaning/checking/pending-claim experiment and is **not**
-part of the app's 101-method command, web demo or runtime validation. Its full runner
+part of the app's 104-method command, web demo or runtime validation. Its full runner
 rebuilds experiment artifacts; it is not required to start the app. Consult
 [experiment/README.md](experiment/README.md) and
 [experiment_results.md](experiment_results.md) for that pipeline's setup and

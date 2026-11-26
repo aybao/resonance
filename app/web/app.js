@@ -190,7 +190,9 @@ function showDetail(line, keepScroll) {
   kids.push(h("h3", {}, "Complete claim row"), fullClaimRow(r.clean));
   for (const i of r.issues) kids.push(h("div", { class: i.severity === "error" ? "failure" : "warning" }, h("b", {}, i.field + ": "), i.message,
     i.severity === "error" ? h("div", { class: "muted small" }, "Edit this value below, then the batch is re-checked.") : null));
-  for (const f of r.failures) kids.push(h("div", { class: "failure" }, h("b", {}, f.code + " — " + f.meaning), h("div", {}, f.reason),
+  if (r.duplicate_of) kids.push(h("div", { class: "warning" }, "Repeated row: ", batchClaimLink(r.duplicate_of, `View the original claim on line ${r.duplicate_of}`)));
+  for (const f of r.failures) kids.push(h("div", { class: "failure" }, h("b", {}, f.code + " — " + f.meaning),
+    f.code === "D05" && r.duplicate_submissions?.length ? duplicateSubmissionDetails(r.duplicate_submissions) : h("div", {}, f.reason),
     h("div", { class: "muted" }, "Suggested action: " + f.suggestion), h("div", { class: "muted small" }, "Rule: " + f.rule)));
   if (r.status === "check_previous_claims") kids.push(h("div", { class: "warning" }, h("b", {}, "Authorization balance uncertain"), h("div", {}, r.previous_claims_action),
     h("div", {}, `Earlier unresolved claims: ${r.unresolved_prior_claim_ids.join(", ")}. Balance could be ${r.balance_range[0]}–${r.balance_range[1]} units; this claim bills ${r.clean.units}.`)));
@@ -218,6 +220,21 @@ function showDetail(line, keepScroll) {
   kids.push(h("details", {}, h("summary", {}, "Evidence"), h("pre", {}, JSON.stringify(r.evidence, null, 2))));
   d.replaceChildren(...kids);
   if (!keepScroll) d.scrollIntoView({ behavior: "smooth", block: "nearest" });
+}
+function batchClaimLink(line, label) {
+  return h("a", { href: "#detail", class: "duplicate-claim-link", "data-claim-line": line, onclick: (event) => {
+    event.preventDefault(); filter = "all"; selectedLine = line; render(); showDetail(line);
+  } }, label);
+}
+function duplicateSubmissionDetails(submissions) {
+  return h("div", { class: "duplicate-submissions" }, ...submissions.map((s) => {
+    if (s.source === "batch") return h("p", {}, "Earlier submission exists: ", batchClaimLink(s.line, s.claim.claim_id));
+    const outcome = s.status === "paid" ? "and accepted" : "(previously denied)";
+    return h("div", { class: "historical-duplicate" },
+      h("p", {}, `Duplicate claim already submitted ${outcome}: `, h("strong", {}, s.claim.claim_id)),
+      h("p", { class: "small" }, `Service date: ${s.claim.date_of_service} · Submitted: ${s.claim.submitted_date} · Payer: ${s.claim.payer} · Patient: ${s.claim.patient_id} · ${s.claim.service_code} · ${s.claim.units} units`),
+      h("details", {}, h("summary", {}, "Earlier claim details"), fullClaimRow(s.claim)));
+  }));
 }
 function claimReferencePanel(r) {
   const refs = r.reference_data || { evv_visits: [], authorizations: [] };

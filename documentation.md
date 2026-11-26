@@ -201,6 +201,21 @@ manual reference replacement/reload is blocked; advance the simulated date inste
 8. Attach relevant reference records, preserve the prediction separately from any
    classification override, and build the dashboard/export.
 
+### Duplicate submission details
+
+D05 results include `duplicate_submissions` in processing order, identifying each
+prior submission as `batch` (with its exact uploaded line) or `history` (with its
+recorded outcome), plus the complete claim fields. This metadata is captured
+before the current claim enters the ledger. Historical and batch occurrences
+remain distinct even if they share an ID.
+
+In a duplicate warning, a batch claim ID is a link that selects its row, clears
+filters and opens its details. Repeated export rows also link to their original
+row. A historical duplicate shows service/submission dates, payer, patient,
+service and units, with expandable complete details. Paid history is described
+as submitted and accepted; denied history is explicitly described as previously
+denied. Both still establish a prior submission under the existing duplicate rule.
+
 ### Automatic corrections
 
 `run_batch()` defaults to automatic fixing. It works on copies, retaining raw

@@ -165,6 +165,13 @@ def main():
                 js('document.querySelector(".claim-references").scrollIntoView({block:"start"})')
                 (args.screenshots / 'claim-desktop.png').write_bytes(base64.b64decode(wd('GET', f'/session/{sid}/screenshot')))
                 wd('POST', f'/session/{sid}/window/rect', {'width': 390, 'height': 844})
+            # Real duplicate warnings link to the exact earlier batch line even under a filter.
+            js('const source=results.rows.find(r=>r.clean.payer && !r.issues.length).clean; const head=CLAIM_COLUMNS.map(c=>c[0]); const rows=[{...source,claim_id:"C999991"},{...source,claim_id:"C999992"}]; const csv=[head.join(","),...rows.map(r=>head.map(k=>r[k]).join(","))].join("\\n"); uploadClaimsFile(new File([csv],"duplicates.csv"))')
+            wait('return results?.rows.length === 2 && results.rows[1].claim_id === "C999992"')
+            js('filter="denied"; selectedLine=3; render(); showDetail(3); [...document.querySelectorAll(".duplicate-claim-link")].find(a=>a.dataset.claimLine==="2").click()')
+            assert js('return selectedLine === 2 && filter === "all" && $("detail").textContent.includes("Claim C999991")')
+            # Historical text uses the recorded outcome; rejected history is never called accepted.
+            assert js('const claim=results.rows[0].clean; const paid=duplicateSubmissionDetails([{source:"history",status:"paid",claim}]); const denied=duplicateSubmissionDetails([{source:"history",status:"denied",claim}]); return paid.textContent.includes("already submitted and accepted") && paid.textContent.includes(claim.date_of_service) && denied.textContent.includes("previously denied") && !denied.textContent.includes("and accepted") && !paid.querySelector("a")')
             assert js('return document.documentElement.scrollWidth <= window.innerWidth')
             js('[...$("mode-tools").querySelectorAll("button")].find(b=>b.textContent.includes("Start historical")).click()')
             wait('return $("mode-tools").textContent.includes("Historical demo")')
