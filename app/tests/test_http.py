@@ -65,6 +65,48 @@ FIXTURE = [
 
 
 class UploadToResults(HttpCase):
+    def test_delete_rechecks_balances_and_preserves_remaining_edits_and_overrides(self):
+        claims = [claim_row(cid='C000201', units='8'),
+                  claim_row(cid='C000202', dos='2026-07-02', sub='2026-07-06', units='4'),
+                  claim_row(cid='C000203', dos='2026-07-03', sub='2026-07-07', units='1')]
+        _, before = self.api.call('POST', '/api/claims', csv_text(claims))
+        self.assertIn('D02', before['rows'][1]['denial_codes'])
+        self.api.call('POST', '/api/claims/line/4/edit', {'fields': {'billed_amount': '12.00'}})
+        self.api.call('POST', '/api/claims/C000203/override', {'status': 'manual_review', 'note': 'Keep for review'})
+        code, after = self.api.call('DELETE', '/api/claims/line/2')
+        self.assertEqual(code, 200)
+        self.assertEqual([r['claim_id'] for r in after['rows']], ['C000202', 'C000203'])
+        self.assertEqual(after['rows'][0]['status'], 'paid')
+        self.assertEqual(after['rows'][1]['line'], 3)
+        self.assertEqual(after['rows'][1]['edits'], {'billed_amount': '12.00'})
+        self.assertEqual(after['rows'][1]['override']['note'], 'Keep for review')
+        self.assertIsNotNone(after['regression_checks'])
+        _, output = self.api.call('GET', '/api/export.csv', raw=True)
+        self.assertEqual([r['claim_id'] for r in csv.DictReader(io.StringIO(output))], ['C000202', 'C000203'])
+        self.assertEqual(self.session.status()['claims_loaded'], 2)
+
+    def test_delete_exact_row_rechecks_duplicates_and_cleans_unused_overrides(self):
+        source = claim_row(cid='C000201', units='1')
+        self.api.call('POST', '/api/claims', csv_text([source, source]))
+        self.api.call('POST', '/api/claims/C000201/override', {'status': 'denied', 'denial_codes': ['D99']})
+        _, remaining = self.api.call('DELETE', '/api/claims/line/2')
+        self.assertEqual(len(remaining['rows']), 1)
+        self.assertIsNone(remaining['rows'][0]['duplicate_of'])
+        self.assertEqual(remaining['rows'][0]['override']['denial_codes'], ['D99'])
+        code, empty = self.api.call('DELETE', '/api/claims/line/2')
+        self.assertEqual(code, 200)
+        self.assertEqual(empty['rows'], [])
+        self.assertEqual(empty['summary']['total'], 0)
+        self.assertNotIn('C000201', self.session.overrides)
+        self.assertEqual(self.api.call('DELETE', '/api/claims/line/2')[0], 404)
+
+    def test_delete_earlier_submission_removes_batch_duplicate_warning(self):
+        self.api.call('POST', '/api/claims', csv_text([claim_row(cid='C000201', units='1'),
+                                                    claim_row(cid='C000202', units='1')]))
+        _, result = self.api.call('DELETE', '/api/claims/line/2')
+        self.assertNotIn('D05', result['rows'][0]['denial_codes'])
+        self.assertEqual(result['rows'][0]['duplicate_submissions'], [])
+
     def test_full_flow(self):
         code, res = self.api.call("POST", "/api/claims", csv_text(FIXTURE))
         self.assertEqual(code, 200)

@@ -170,3 +170,9 @@ highlights them, exposes sources/reasons and provides an **Auto-fixed** filter.
 CSV source columns stay unchanged; `automatic_fixes` holds the audit and
 `checked_claim` holds the complete corrected row. In demo mode corrected rows are
 shown, while accuracy compares the original submitted claims with payer outcomes.
+
+Open a claim and choose **Delete row** to remove that row from the current batch
+and results download. Remaining rows are rechecked, including authorization
+balances and duplicate links. Their edits and classifications are retained;
+current batch line numbers shift after deletion. Uploaded source files and
+historical reference data are not changed.

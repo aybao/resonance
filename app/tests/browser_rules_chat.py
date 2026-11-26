@@ -173,6 +173,12 @@ def main():
             assert js('return selectedLine === 2 && filter === "all" && $("detail").textContent.includes("Claim C999991")')
             # Historical text uses the recorded outcome; rejected history is never called accepted.
             assert js('const claim=results.rows[0].clean; const paid=duplicateSubmissionDetails([{source:"history",status:"paid",claim}]); const denied=duplicateSubmissionDetails([{source:"history",status:"denied",claim}]); return paid.textContent.includes("already submitted and accepted") && paid.textContent.includes(claim.date_of_service) && denied.textContent.includes("previously denied") && !denied.textContent.includes("and accepted") && !paid.querySelector("a")')
+            js('$("detail").querySelector(".delete-claim").click()')
+            wait('return results.rows.length === 1 && results.rows[0].claim_id === "C999992" && $("detail").hidden')
+            assert js('return !results.rows[0].duplicate_submissions.some(s=>s.source === "batch")')
+            js('$("claims-table").querySelector("tr.click").click(); $("detail").querySelector(".delete-claim").click()')
+            wait('return results.rows.length === 0 && $("detail").hidden')
+            assert js('return $("claims-table").querySelectorAll("tr.click").length === 0 && results.summary.total === 0')
             assert js('return document.documentElement.scrollWidth <= window.innerWidth')
             js('[...$("mode-tools").querySelectorAll("button")].find(b=>b.textContent.includes("Start historical")).click()')
             wait('return $("mode-tools").textContent.includes("Historical demo")')

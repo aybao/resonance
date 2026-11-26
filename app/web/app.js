@@ -185,6 +185,7 @@ function showDetail(line, keepScroll) {
   const r = results.rows.find((x) => x.line === line); if (!r) return;
   const d = $("detail"); d.hidden = false;
   const kids = [h("h2", {}, `Claim ${r.claim_id || "(no ID)"} — line ${r.line}`),
+    h("button", { type: "button", class: "secondary delete-claim", onclick: (event) => deleteClaim(r.line, event.currentTarget) }, "Delete row"),
     h("p", {}, badge(r.status === "paid" ? "payable" : r.status, STATUS_LABEL[r.status] || r.status), " ", codeChips(r.denial_codes),
       r.override ? h("span", { class: "muted" }, ` (your classification; rules predicted ${STATUS_LABEL[r.predicted_status] || r.predicted_status} ${r.predicted_codes.join(", ")})`) : null)];
   kids.push(h("h3", {}, "Complete claim row"), fullClaimRow(r.clean));
@@ -263,6 +264,16 @@ function claimReferencePanel(r) {
   return h("div", { class: "claim-references" }, evv, auth);
 }
 function applyEdit(line, fields) { if (!Object.keys(fields).length) return; guard(async () => { results = await api("POST", `/api/claims/line/${line}/edit`, { fields }); render(); }); }
+async function deleteClaim(line, button) {
+  button.disabled = true;
+  try {
+    await guard(async () => {
+      results = await api("DELETE", `/api/claims/line/${line}`);
+      selectedLine = null; filter = "all"; $("detail").hidden = true;
+      render(); await loadStatus();
+    });
+  } finally { button.disabled = false; }
+}
 
 function overrideForm(r) {
   const ov = r.override;

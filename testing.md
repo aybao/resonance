@@ -8,7 +8,7 @@ The app has three different kinds of checks:
    browser script. These test the code used by runtime and demo flows; the test
    runner itself is not invoked by ordinary user actions.
 
-The current inventory is **104 `unittest` methods in nine files**, plus the
+The current inventory is **107 `unittest` methods in nine files**, plus the
 standalone browser smoke script. The tests use fake AI transports; no live model
 call is needed. Verification of the regression-review update on **26 November
 2026** also exercised the browser workflow. HTTP/browser checks need permission
@@ -185,11 +185,11 @@ it exercises, rather than implying that the whole test method runs at runtime.
 | [test_drafts.py](app/tests/test_drafts.py) | 12 | Proposal/review/acceptance lifecycle, provenance, persistence and AI client contract. |
 | [test_code_rules.py](app/tests/test_code_rules.py) | 10 | Novel code execution, isolation, errors, resource checks and label exclusion. |
 | [test_global_updates.py](app/tests/test_global_updates.py) | 5 | Code-owned payer/date scope, combined updates, compatibility and revisions. |
-| [test_http.py](app/tests/test_http.py) | 7 | Real HTTP upload, correction, export, acceptance, demo and unavailable-AI paths. |
+| [test_http.py](app/tests/test_http.py) | 10 | Real HTTP upload, correction, export, acceptance, demo and unavailable-AI paths. |
 | [test_replay.py](app/tests/test_replay.py) | 8 | Demo state, withheld outcomes, live metrics, historical fixtures and exception strictness. |
 | [test_regression_review.py](app/tests/test_regression_review.py) | 8 | Execution gates, group approval, stale consent, full history review, replacement baselines and runtime regressions. |
 | [test_autofix.py](app/tests/test_autofix.py) | 12 | Unique payer/auth/modifier corrections, ambiguity, audit/export, balances and user edits. |
-| **Total** | **104** | Browser script is additional. |
+| **Total** | **107** | Browser script is additional. |
 
 ### test_rules_engine.py
 
@@ -367,6 +367,9 @@ Source: [test_http.py](app/tests/test_http.py). Exercises endpoints through real
 
 | Test method | What it verifies |
 |---|---|
+| `test_delete_rechecks_balances_and_preserves_remaining_edits_and_overrides` | Removing a row frees authorization balance, remaps remaining edits, preserves classifications and excludes the deleted row from export. |
+| `test_delete_exact_row_rechecks_duplicates_and_cleans_unused_overrides` | Removes one repeated row at a time, keeps shared overrides until the last occurrence is removed, supports empty batches and returns 404 for missing rows. |
+| `test_delete_earlier_submission_removes_batch_duplicate_warning` | Deleting the earlier batch submission removes its D05 warning and navigation reference from the remaining claim. |
 | `test_full_flow` | Real HTTP upload returns expected categories, normalizations and duplicates; applying a fix/override changes later ledger results and CSV audit fields remain correct. |
 | `test_bad_inputs_are_rejected_cleanly` | Missing columns/unknown lines/path traversal fail cleanly and status output does not disclose the key. |
 
@@ -453,7 +456,7 @@ These 12 on-demand tests exercise the automatic runtime pipeline without AI:
 ## Browser smoke coverage
 
 [app/tests/browser_rules_chat.py](app/tests/browser_rules_chat.py) is a standalone
-script, deliberately not named `test_*.py`. It is **not** one of the 104 discovered
+script, deliberately not named `test_*.py`. It is **not** one of the 107 discovered
 methods. It uses Firefox WebDriver through the standard library, a temporary app
 server/state directory and a fake novel-rule response.
 
@@ -546,7 +549,7 @@ python3 -m unittest discover -s experiment -p 'test_*.py'
 ```
 
 It covers the earlier cleaning/checking/pending-claim experiment and is **not**
-part of the app's 104-method command, web demo or runtime validation. Its full runner
+part of the app's 107-method command, web demo or runtime validation. Its full runner
 rebuilds experiment artifacts; it is not required to start the app. Consult
 [experiment/README.md](experiment/README.md) and
 [experiment_results.md](experiment_results.md) for that pipeline's setup and

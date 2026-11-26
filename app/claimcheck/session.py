@@ -169,6 +169,18 @@ class Session:
             self._recheck()
             return self.results()
 
+    def delete_claim(self, line):
+        """Remove one uploaded row, retaining the remaining rows' edits and overrides."""
+        with self.lock:
+            deleted = self.find(None, line)
+            self.raw_rows.pop(line - 2)
+            self.edits = {(old_line - 1 if old_line > line else old_line): fields for old_line, fields in self.edits.items()
+                          if old_line != line}
+            if not any(r["line"] != line and r["claim_id"] == deleted["claim_id"] for r in self.rows):
+                self.overrides.pop(deleted["claim_id"], None)
+            self._recheck()
+            return self.results()
+
     def set_override(self, claim_id, status, codes, note):
         with self.lock:
             row = self.find(claim_id)

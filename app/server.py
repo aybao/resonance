@@ -122,6 +122,8 @@ class Handler(BaseHTTPRequestHandler):
             return self.send(200, s.edit_claim(int(g.group(1)), self.json_body().get("fields", {})))
         if method == "POST" and (g := m(r"/api/claims/line/(\d+)/revert")):
             return self.send(200, s.revert_edits(int(g.group(1))))
+        if method == "DELETE" and (g := m(r"/api/claims/line/(\d+)")):
+            return self.send(200, s.delete_claim(int(g.group(1))))
         if method in ("POST", "DELETE") and (g := m(r"/api/claims/(C\d{6})/override")):
             b = self.json_body() if method == "POST" else {}
             return self.send(200, s.set_override(g.group(1), b.get("status"), b.get("denial_codes"), b.get("note")))

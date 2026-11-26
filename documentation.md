@@ -201,6 +201,19 @@ manual reference replacement/reload is blocked; advance the simulated date inste
 8. Attach relevant reference records, preserve the prediction separately from any
    classification override, and build the dashboard/export.
 
+### Removing a batch row
+
+The claim detail provides **Delete row**, backed by
+`DELETE /api/claims/line/{line}`. The session removes exactly that row from its
+in-memory upload, remaps later line-based edits, removes unused claim overrides,
+and rechecks the remaining batch. An override shared by another row with the
+same claim ID is retained. Authorization balances, duplicate references, runtime
+regressions and the demo report are recalculated. Deleted rows are excluded from
+the export, while source files and historical reference data remain unchanged.
+Line numbers refer to the current batch and shift after removal. Deleting the
+last row produces an empty batch. Unknown lines return 404. The UI disables the
+delete button during the request to prevent repeated clicks deleting another row.
+
 ### Duplicate submission details
 
 D05 results include `duplicate_submissions` in processing order, identifying each
@@ -716,6 +729,7 @@ Host/Origin hostnames against localhost/127.0.0.1 and prevents serving files out
 | `POST /api/claims/sample` | Load `app/sample_data/claims_to_check.csv`; hidden in the demo UI. |
 | `GET /api/results` | Current summary, rows and optional demo report. |
 | `GET /api/export.csv` | CSV attachment named `claim_check_results.csv`. |
+| `DELETE /api/claims/line/{line}` | Remove one current-batch row, preserve remaining edits/classifications and recheck; unknown line returns 404. |
 | `POST /api/claims/line/{line}/edit` | `{"fields":{"modifier":"U3"}}`; save field edits and re-check. |
 | `POST /api/claims/line/{line}/revert` | Clear that row's field edits and re-check. |
 | `POST /api/claims/{claim_id}/override` | `status`, `denial_codes`, `note`; statuses are paid/denied/manual_review. Denied needs at least one code. |
