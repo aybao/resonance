@@ -155,6 +155,8 @@ def main():
             js('renderRegressionChecks({total:0,matched:0,known_exceptions:0,failed:0,passed:null,failures:[],exceptions:[],accuracy:null})')
             assert js('return $("regression-report").querySelector("strong").classList.contains("muted") && !$("regression-report").querySelector(".ok")')
             js('renderRegressionChecks(results.regression_checks)')
+            assert js('return !$("tiles").textContent.includes("Needs review") && !$("tiles").textContent.includes("Check earlier claims")')
+            assert js('return results.rows.every(r=>!["manual_review","check_previous_claims"].includes(r.status) && !("balance_range" in r))')
             assert js('return results.summary.autofixed_rows > 0')
             js('[...$("tiles").querySelectorAll("button")].find(b=>b.textContent.includes("Auto-fixed")).click()')
             assert js('return $("claims-table").querySelectorAll("tr.click").length === results.summary.autofixed_rows')

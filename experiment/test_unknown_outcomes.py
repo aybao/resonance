@@ -67,16 +67,6 @@ class UnknownOutcomeTests(unittest.TestCase):
         self.assertEqual(first[target['claim_id']]['status'], 'denied')
         self.assertEqual(original[0]['units'], prior['units'])
 
-    def test_review_is_an_abstention_not_a_successful_denial(self):
-        prior, target, auths, visits = fixture()
-        results, _ = simulate([], [target], Checker(auths, visits), auths, {}, 'range_review', [prior])
-        self.assertEqual(results[target['claim_id']]['decision'], 'check_previous_claims')
-        scores = evaluate(results, {target['claim_id']: {'status': 'denied', 'denial_code': 'D02'}})
-        self.assertEqual(scores['reviews'], 1)
-        self.assertEqual(scores['code_matches'], 0)
-        self.assertEqual(scores['correct_automatic'], 0)
-        self.assertEqual(scores['payable_denials'], 0)
-
     def test_external_duplicate_ids_are_not_counted_twice(self):
         prior, target, auths, visits = fixture()
         result, unknown = simulate([], [target], Checker(auths, visits), auths, {}, 'predict', [prior, prior, target])

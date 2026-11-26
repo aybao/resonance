@@ -2,9 +2,9 @@
 
 This document describes the implemented app in `app/`, including its historical
 web demo and command-line tools. [README.md](README.md) is the short user guide;
-[testing.md](testing.md) documents test coverage and execution timing. The
+[the test sources](app/tests/) cover the executable checks; the [design](plans/design.md#testing) documents their timing. The
 exploratory code in `experiment/` has its own [README](experiment/README.md) and
-[results](experiment_results.md); its metrics are not interchangeable with the app's.
+[results](plans/experiment_results.md); its metrics are not interchangeable with the app's.
 
 ## Contents
 
@@ -39,8 +39,7 @@ flowchart TD
     Refs[Authorizations, EVV and earlier claims] --> Ledger[Historical ledger]
     Normalize --> Check[Baseline checks and accepted code updates]
     Ledger --> Check
-    Check --> Review[Pending-balance assessment]
-    Review --> Results[Results, evidence and reference records]
+    Check --> Results[Predictions, projected usage and reference records]
     Results --> Edits[User corrections or classifications]
     Edits --> Check
     Results --> Export[CSV export]
@@ -67,7 +66,7 @@ flowchart TD
 | `app/claimcheck/session.py` | Shared state, uploads, re-checks, edits, overrides, draft actions and demo switching. |
 | `app/claimcheck/normalize.py` | CSV structure, canonical values, input issues, repeated/conflicting claim IDs. |
 | `app/claimcheck/pipeline.py` | Reference datasets, ordered batch execution, reference-record attachment, summaries and export. |
-| `app/claimcheck/engine.py` | Baseline payer checks, ledger, pending-balance logic and invocation of accepted code. |
+| `app/claimcheck/engine.py` | Baseline payer checks, provisional ledger and invocation of accepted code. |
 | `app/claimcheck/rules.py` | Baseline/manual/bulletin parameters, legacy dated versions, global code updates and JSON persistence. |
 | `app/claimcheck/examples.py` | Scenario validation, synthetic reference worlds, execution and mechanical boundary cases. |
 | `app/claimcheck/drafts.py` | AI context, proposal application, comparisons, saved-example regressions and acceptance. |
@@ -79,7 +78,7 @@ flowchart TD
 | `app/claimcheck/demo_fixtures.py` | Source-transcribed Northwind/Harbor proposals used by repeatable replay tests. |
 | `app/web/index.html`, `app.js`, `style.css` | Claims dashboard, details, chat, attachments, acceptance and demo controls. |
 | `app/check_claims.py`, `check_examples.py`, `replay_history.py` | On-demand command-line entry points. |
-| `app/tests/` | Developer and browser checks; see [testing.md](testing.md). |
+| `app/tests/` | Developer and browser checks; see [the test sources](app/tests/). |
 
 ## Configuration and startup
 
@@ -166,7 +165,9 @@ EVV visit IDs are `V` plus six digits; caregiver IDs are `CG` plus four digits.
 Visit timestamps use `YYYY-MM-DD HH:MM`. Verification states are `verified`,
 `rejected` and `manual_edit_pending`. Only `verified` time supports billing.
 Authorization units are positive integers. Recorded history statuses are `paid`
-or `denied`; other statuses are excluded from the loaded outcome history.
+or `denied` for settled outcomes. `pending` denotes an unknown outcome; blank,
+`unknown`, `unresolved` and `submitted` normalize to `pending`. Pending historical
+claims are forecast chronologically without changing their recorded status.
 
 Reference loading canonicalizes supported fields, deduplicates identical cleaned
 records and sorts history by submission date. Problems are reported in Reference
@@ -192,12 +193,14 @@ manual reference replacement/reload is blocked; advance the simulated date inste
 5. Select the legacy baseline parameters by payer and service date, then perform
    the checks below. Apply any legacy version-specific code, followed by global
    accepted code updates in acceptance order.
-6. Assess exposure to earlier unresolved batch claims. A claim that fits only if
-   those earlier claims are unpaid becomes `check_previous_claims`; definite
-   baseline denials are retained by pending-review logic.
-7. Record the current decision for subsequent rows. Paid decisions consume units;
-   undecided rows do not assume payment and can widen later balance uncertainty.
-   User classifications determine the subsequent ledger when supplied.
+6. Predict historical claims whose outcomes are pending using the same checker.
+   Confirmed paid history consumes recorded units; predicted paid history and
+   earlier payable batch rows reserve provisional units. Denied predictions
+   consume no units, while prior submissions still establish duplicate history.
+7. Update the ledger for subsequent rows and record which usage is provisional.
+   User paid/denied classifications affect projected usage without becoming
+   confirmed payer outcomes. Invalid inputs and unavailable rules produce an
+   explicit inability to check rather than an invented payment prediction.
 8. Attach relevant reference records, preserve the prediction separately from any
    classification override, and build the dashboard/export.
 
@@ -244,8 +247,7 @@ The checker then processes claims by submission date/line number, applying accep
 rule-defined modifiers and unique authorization suggestions before recording each
 decision. Invalid authorization/modifier values may be repaired when their
 replacement is uniquely supported; other input errors still block checking.
-Authorization autofill requires sufficient predicted balance, and is withheld if
-earlier unresolved claims could consume that balance. A user-edited field is never
+Authorization autofill requires sufficient predicted balance, using the projected ledger. A user-edited field is never
 automatically overwritten. Remaining suggested fixes can still be accepted manually.
 No units, amounts, patient identities, service dates or submission dates are invented.
 
@@ -284,8 +286,8 @@ for billed units produces D09. Exact filing limits and exact balances pass;
 one day or one unit over fails.
 
 A corrected claim is exempt from the ordinary duplicate rule. If its original
-reference is missing from the ledger or identifies another claim, it needs review
-unless another definite failure already makes it denied.
+reference is missing from the ledger or identifies another claim, it cannot be
+checked until the reference is corrected, unless another failure already makes it denied.
 
 ### Reference records in the row detail
 
@@ -305,7 +307,8 @@ Authorizations include the referenced record even when it belongs to the wrong
 payer/patient/service, plus related records for the claim's payer/patient/service.
 Coverage mismatches are identified. The referenced valid authorization's displayed
 remaining units come from the ledger when that row was checked, not the batch's
-final balance. Earlier unresolved claims can make the displayed range conditional.
+final balance. The panel separately identifies predicted usage included in that
+projected balance. Confirmed outcomes and provisional forecasts remain distinct.
 
 ## Denial codes
 
@@ -321,7 +324,7 @@ final balance. Earlier unresolved claims can make the displayed range conditiona
 | D08 | Authorization invalid for payer, patient, service or service date. |
 | D09 | Billed units exceed EVV-supported time. |
 | D10 | Payer contract-specific denial. |
-| D99 | Other denial / referred for manual review in the supplied code list. |
+| D99 | Other payer denial. |
 
 The baseline cannot determine unavailable contract terms or unexplained D99
 conditions. Summit whole-hour billing is suggested by historical remarks but the
@@ -330,8 +333,7 @@ the full-app baseline. Tests containing a whole-hour rule use an explicitly
 synthetic test contract. A future accepted update may implement such a rule when
 the user supplies evidence.
 
-D99 is a code label, not the `manual_review` status: returning it as a rule
-failure produces a denied result like other failure codes.
+Returning D99 as a rule failure produces a denied result like other failure codes.
 
 Rule-code output can use a `D` followed by two digits with its own meaning/reason;
 the supplied CSV input/reference vocabulary remains fixed. All returned failures
@@ -345,9 +347,8 @@ are reported, sorted by code, rather than selecting one primary denial.
 |---|---|---|
 | `paid` | `payable` | No implemented violation detected: “Likely paid.” |
 | `denied` | `denied` | One or more rule failures: “Likely denied.” |
-| `manual_review` | `review` | Missing rules, invalid correction reference, execution failure or other unresolved decision. |
-| `check_previous_claims` | `review` | Earlier unresolved claims could alter the authorization decision. |
-| `manual_review` with input errors | `must_correct` | Fix the input before checking. |
+| `unable_to_check` | `unable_to_check` | Missing rules, invalid correction reference or execution failure; correct the cause before checking. |
+| `unable_to_check` with input errors | `must_correct` | Fix the input before checking. |
 | `duplicate_row` | `duplicate_row` | Repeated exported row; not processed twice. |
 
 The All claims count includes returned repeated rows. Auto-formatted counts rows
@@ -373,7 +374,7 @@ demo or when a comparison is unavailable). Important row fields are:
 | Explanations | `failures` (`code,meaning,reason,suggestion,rule`), `warnings`, `proposed_changes`, `rule_version`. |
 | Evidence | Verified minutes/visit IDs, baseline supported units and filing limit, filing days, remaining authorization, paid daily units, earlier submissions. |
 | Supporting records | `reference_data.evv_visits`, including duration; `reference_data.authorizations`, including referenced flag and mismatch issues. |
-| Uncertainty | `balance_uncertain`, `unresolved_prior_claim_ids`, `balance_range`, `previous_claims_action`. |
+| Projected usage | Evidence includes `authorization_predicted_usage` and `authorization_provisional_claim_ids`; these identify forecasts included in the remaining units. |
 
 Evidence includes baseline computations; generated transforms can alter failure
 conditions without changing those baseline evidence fields. Read the final
@@ -492,9 +493,9 @@ Cases marked unclear remain open questions rather than saved tests.
 Every session `_recheck()` replays available original historical claims against
 accepted rules and returns `regression_checks` in `/api/results`: `total`,
 `matched`, `known_exceptions`, `failed`, boolean/nullable `passed`, raw `accuracy`,
-`failures` and `exceptions`. Uploading claims, edits, deletions, reference changes
+`failures`, `exceptions`, `pending`, `pending_predictions` and `pending_errors`. Uploading claims, edits, deletions, reference changes
 and accepting rules trigger this check. Each historical claim is checked before
-its own outcome enters the ledger; only earlier recorded outcomes supply balances.
+its own outcome enters the ledger; earlier recorded outcomes and forecasts for pending history supply projected balances.
 Autofixes and user classifications on the pending batch do not alter the historical
 comparison. Demo mode restricts history to the available period and excludes the
 pending batch's outcomes, including after reference data advances.
@@ -512,7 +513,8 @@ No exception records are generated or expanded by this check.
 The UI displays matched, recorded-exception and unexpected-difference counts,
 with expandable original claims and **Raise issue**. Exceptions remain mismatches
 in the displayed outcome agreement percentage. Empty history is neutral rather
-than green. Synthetic saved examples still run during rule-update evaluation and
+than green. Unlabelled historical rows are predicted but excluded from outcome agreement.
+Synthetic saved examples still run during rule-update evaluation and
 approval; the claims dashboard's runtime count now consists of historical claims.
 Developer test coverage for this path is in `app/tests/test_history_regression.py`.
 
@@ -596,7 +598,7 @@ methods are listed in the [skill](app/skills/payer-rule-updater/SKILL.md).
 
 The reusable worker/cache and host lock serialize code execution. Its environment
 contains only the explicitly supplied encoding setting, rather than the server's
-API key. A failed approved rule returns a claim requiring manual review instead
+API key. A failed approved rule returns `unable_to_check` instead
 of treating execution failure as success. The worker is killed/recreated for
 transport/time-limit failures and closed at process exit.
 
@@ -713,8 +715,7 @@ compare complete expected sets.
 
 Agreement uses all evaluated rows in the denominator. Missed denials count
 recorded denials predicted paid; false alarms count recorded paid claims predicted
-denied. Review predictions are reported separately and are not automatically
-counted as correct denials. Reports also show unexplained D99 mismatches.
+denied. Uncheckable claims are reported separately and do not count as correct denials. Reports also show unexplained D99 mismatches.
 
 `demo-data/replay_exceptions.json` currently has 121 explicit diagnostic exception
 entries. A mismatch is documented only if claim ID, recorded status/code, predicted
@@ -751,7 +752,7 @@ Host/Origin hostnames against localhost/127.0.0.1 and prevents serving files out
 | `DELETE /api/claims/line/{line}` | Remove one current-batch row, preserve remaining edits/classifications and recheck; unknown line returns 404. |
 | `POST /api/claims/line/{line}/edit` | `{"fields":{"modifier":"U3"}}`; save field edits and re-check. |
 | `POST /api/claims/line/{line}/revert` | Clear that row's field edits and re-check. |
-| `POST /api/claims/{claim_id}/override` | `status`, `denial_codes`, `note`; statuses are paid/denied/manual_review. Denied needs at least one code. |
+| `POST /api/claims/{claim_id}/override` | `status`, `denial_codes`, `note`; statuses are paid/denied. Denied needs at least one code. |
 | `DELETE /api/claims/{claim_id}/override` | Remove classification override and re-check. |
 | `GET /api/accuracy` | Cached observed-prior agreement report for current reference history. Not a visible dashboard action. |
 
@@ -854,7 +855,7 @@ is the repeatable automated path; it never silently replaces a failed live call.
 | No improvement after a bulletin | Check service dates, the loaded submission period, and whether the proposal was accepted. Northwind first changes the supplied September monthly results. |
 | Source/file error during chat | The frontend keeps the pending input on failure. Remove an empty attachment or revise and resend. |
 | Acceptance blocked | Read validation errors, clarifying questions, explicit expectation conflicts or saved-check regressions. Explicit approval is needed for intentional changes to saved expectations; a reason/source is optional. |
-| New rule fails on a later claim | It is sent to manual review; prior example success did not prove all branches. |
+| New rule fails on a later claim | It returns Unable to check with the execution error; prior examples did not prove all branches. |
 | Balances do not explain a recorded D02 | Opening balances, missing transactions/pending submissions or synthetic inconsistencies may need reconciliation. Do not change documented care to fit a label. |
 | D10/D99 remains unexplained | Obtain the contract or correspondence; the app does not invent missing payer requirements. |
 | Edits/chat disappear | Only accepted rules/example baselines persist. Claims and reference replacements are in-memory; rendered chat also depends on browser state. |
@@ -866,4 +867,4 @@ render cap, one shared in-memory session, no transactional database/rollback
 service, and reference validation that does not fully block malformed replacement
 data. Runtime checks exercise examples and available history, not all possible
 future claims. Automated tests use fake AI transport and do not establish live
-provider/model behaviour. See [testing.md](testing.md) for exact implemented coverage.
+provider/model behaviour. See [the test sources](app/tests/) for exact implemented coverage.

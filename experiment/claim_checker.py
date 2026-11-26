@@ -15,7 +15,6 @@ from pathlib import Path
 
 from check_formatting import CLAIM_FIELDS, audit, canonical
 from clean_data import clean_file
-from pending_claims import PendingAuthorizationReview
 from paths import DATA_DIR, EXPERIMENT_DIR, ARTIFACTS_DIR
 
 
@@ -99,25 +98,25 @@ class Checker:
             failures.append(dict(code=code, reason=reason, suggestion=action, source=SOURCES[code]))
 
         if formatting_errors:
-            return dict(status="manual_review", denial_codes=[], remark="Input cannot be checked reliably",
+            return dict(status="unable_to_check", denial_codes=[], remark="Input cannot be checked reliably",
                         failures=[], warnings=list(formatting_errors), proposed_changes={}, evidence={})
         try:
             dos = date.fromisoformat(claim["date_of_service"])
             submitted = date.fromisoformat(claim["submitted_date"])
             units = int(claim["units"])
         except (ValueError, KeyError):
-            return dict(status="manual_review", denial_codes=[], remark="Missing or invalid date/units",
+            return dict(status="unable_to_check", denial_codes=[], remark="Missing or invalid date/units",
                         failures=[], warnings=["Resolve dates and units; no payer code can be inferred"], proposed_changes={}, evidence={})
         payer = claim["payer"]
         if payer not in {"PY01", "PY02", "PY03"}:
-            return dict(status="manual_review", denial_codes=[], remark="Unsupported payer",
+            return dict(status="unable_to_check", denial_codes=[], remark="Unsupported payer",
                         failures=[], warnings=["Obtain the payer's rules"], proposed_changes={}, evidence={})
         if payer == "PY03":
             warnings.append("Summit agency contract requirements are not supplied; D10 cannot be determined")
         duplicate_ids = state.submissions[State.duplicate_key(claim)]
         if claim["frequency_code"] == "1" and duplicate_ids:
             fail("D05", f"Earlier submission exists: {duplicate_ids[0]}",
-                 "Reconcile the earlier claim. If correcting it, review frequency 7 and the original claim reference; do not submit another new claim.")
+                 "Reconcile the earlier claim. If correcting it, check frequency 7 and the original claim reference; do not submit another new claim.")
         if claim["frequency_code"] == "7":
             original = state.by_id.get(claim["original_claim_id"])
             if original is None or State.duplicate_key(original) != State.duplicate_key(claim):
@@ -141,14 +140,14 @@ class Checker:
         if valid_auth:
             remaining = int(auth["units_authorized"]) - state.auth_used[auth["auth_id"]]
             if units > remaining:
-                fail("D02", f"Billed {units} units; authorization has {remaining} remaining",
+                fail("D02", f"Billed {units} units; authorization has {remaining} projected units remaining",
                      "Reconcile prior payments and authorization balance; request additional authorization if appropriate. Do not reduce documented care automatically.")
 
         filing_limit = (45 if dos >= date(2026, 8, 1) else 30) if payer == "PY01" else (60 if payer == "PY03" else None)
         filing_days = (submitted - dos).days
         if filing_limit is not None and filing_days > filing_limit:
             fail("D03", f"Submitted {filing_days} days after service; limit is {filing_limit}",
-                 "Review any payer exception or appeal route. Do not change the actual submission or service date.")
+                 "Check any payer exception or appeal route. Do not change the actual submission or service date.")
         if payer == "PY02" and claim["service_code"] == "T1019":
             expected = "U3" if dos >= date(2026, 9, 1) and dos.weekday() >= 5 else "U2"
             if claim["modifier"] != expected:
@@ -164,18 +163,18 @@ class Checker:
                  "Locate the visit or resolve verification with the coordinator/aggregator; do not mark a visit verified automatically.")
         elif units > evv_units:
             fail("D09", f"Billed {units} units; {minutes:g} verified minutes support {evv_units}",
-                 f"Reconcile billed care with EVV. At most {evv_units} units are supported by the current records; changing units and amount requires review.")
+                 f"Reconcile billed care with EVV. At most {evv_units} units are supported by the current records; confirm documented care before changing units or amounts.")
         daily_before = state.daily_paid[State.daily_key(claim)]
         if payer == "PY02" and daily_before + units > 32:
-            fail("D06", f"Paid daily total {daily_before} plus {units} billed units exceeds 32",
-                 "Review all services paid for this member and date; confirm any exception with the payer.")
+            fail("D06", f"Projected daily usage {daily_before} plus {units} billed units exceeds 32",
+                 "Check all services paid for this member and date; confirm any exception with the payer.")
 
         # Alphabetical order is solely for reproducible serialization, not priority.
         failures.sort(key=lambda f: f["code"])
         # Known denials remain predictions even when there are additional warnings.
-        status = "denied" if failures else ("manual_review" if any(w.startswith("Correction reference") for w in warnings) else "paid")
+        status = "denied" if failures else ("unable_to_check" if any(w.startswith("Correction reference") for w in warnings) else "paid")
         return dict(status=status, denial_codes=sorted({f["code"] for f in failures}),
-                    remark=" | ".join(f["reason"] for f in failures) if failures else ("No documented rule violation detected" if status == "paid" else "Correction requires review"),
+                    remark=" | ".join(f["reason"] for f in failures) if failures else ("No documented rule violation detected" if status == "paid" else "Original claim reference is missing or does not match"),
                     failures=failures, warnings=warnings,
                     proposed_changes={field: dict(value=value, reason=reason) for field, value, reason in patches},
                     evidence=dict(verified_minutes=minutes, evv_supported_units=evv_units,
@@ -212,7 +211,7 @@ def score(rows):
                 additional_unconfirmed_codes=sum(len(set(json.loads(r["predicted_denial_codes"])) - {r["actual_denial_code"]}) for r in denied),
                 missed_denials=sum(r["predicted_status"] == "paid" for r in denied),
                 false_alarms=sum(r["predicted_status"] == "denied" for r in paid),
-                manual_review=sum(r["predicted_status"] == "manual_review" for r in rows),
+                unable_to_check=sum(r["predicted_status"] == "unable_to_check" for r in rows),
                 error_categories=dict(Counter(r["error_category"] for r in labelled if r["error_category"])),
                 confusion=dict(Counter(f"{r['actual_denial_code'] or r['actual_status']} -> {r['predicted_denial_codes']} ({r['predicted_status']})" for r in labelled)))
 
@@ -220,7 +219,7 @@ def score(rows):
 def error_category(actual, result, diagnostic):
     if outcome_matches(actual["status"], actual["denial_code"], result["status"], result["denial_codes"]):
         return ""
-    if result["status"] == "manual_review":
+    if result["status"] == "unable_to_check":
         return "unresolved_input"
     if actual["denial_code"] in {"D10", "D99"}:
         return "contract_or_unspecified_denial"
@@ -261,16 +260,10 @@ def run(data_dir, artifacts, output, metrics_path, splits_dir=None):
     if prior and test and prior[-1]["submitted_date"] >= test[0]["submitted_date"]:
         raise ValueError("Prior history must precede test history strictly")
     checker = Checker(load_csv(clean_paths["authorizations.csv"]), load_csv(clean_paths["evv_visits.csv"]))
-    pending_review = PendingAuthorizationReview(
-        load_csv(clean_paths["claims_to_check.csv"]),
-        load_csv(clean_paths["authorizations.csv"]),
-        {r["claim_id"] for r in prior + test},
-    )
     predicted_state, observed_state = State(), State()
-    for row in prior:
-        predicted_state.record(claim_input(row), row["status"])
-        observed_state.record(claim_input(row), row["status"])
-
+    known_ids = {r["claim_id"] for r in prior + test}
+    pending = [claim_input(r) for r in load_csv(clean_paths["claims_to_check.csv"]) if r["claim_id"] not in known_ids]
+    pending_forecasts = []
     # Resolve line-based quality errors before sorting, without using labels.
     unsorted_test = load_csv(clean_paths["sorted_test_data.csv"])
     errors_by_id = defaultdict(list)
@@ -278,13 +271,24 @@ def run(data_dir, artifacts, output, metrics_path, splits_dir=None):
         if item["severity"] == "error" and item["file"] == "sorted_test_data.csv" and item["line"] >= 2:
             errors_by_id[unsorted_test[item["line"] - 2]["claim_id"]].append(item["message"])
     results = []
-    for row in test:
+    events = [(r["submitted_date"], 0, i, "known", r) for i, r in enumerate(prior)]
+    events += [(r["submitted_date"], 1, i, "pending", r) for i, r in enumerate(pending)]
+    events += [(r["submitted_date"], 2, i, "target", r) for i, r in enumerate(test)]
+    for _, _, _, kind, row in sorted(events, key=lambda event: event[:3]):
         claim = claim_input(row)
+        if kind == "known":
+            predicted_state.record(claim, row["status"])
+            observed_state.record(claim, row["status"])
+            continue
+        if kind == "pending":
+            forecast = checker.check(claim, predicted_state)
+            observed_forecast = checker.check(claim, observed_state)
+            pending_forecasts.append(dict(claim_id=claim["claim_id"], status=forecast["status"], codes=forecast["denial_codes"]))
+            predicted_state.record(claim, forecast["status"])
+            observed_state.record(claim, observed_forecast["status"])
+            continue
         result = checker.check(claim, predicted_state, errors_by_id[claim["claim_id"]])
         diagnostic = checker.check(claim, observed_state, errors_by_id[claim["claim_id"]])
-        # Decision layer only: don't assume unresolved claims were paid or change
-        # the baseline replay's ledger. Assessment does not receive test outcomes.
-        review = pending_review.assess(claim, result)
         # Both forecasts are made before the current label is read for scoring.
         actual = dict(status=row.get("status", ""), denial_code=row.get("denial_code", ""), remark=row.get("remark", ""))
         proposed = dict(claim)
@@ -295,14 +299,13 @@ def run(data_dir, artifacts, output, metrics_path, splits_dir=None):
                       suggested_actions=" | ".join(f["suggestion"] for f in result["failures"]),
                       proposed_changes=json.dumps(result["proposed_changes"]), proposed_claim=json.dumps(proposed),
                       fixed_auth_id=proposed["auth_id"], fixed_modifier=proposed["modifier"],
-                      proposal_requires_review=bool(result["proposed_changes"]), evidence=json.dumps(result["evidence"]),
+                      proposal_requires_confirmation=bool(result["proposed_changes"]), evidence=json.dumps(result["evidence"]),
                       observed_prior_status=diagnostic["status"], observed_prior_denial_codes=json.dumps(diagnostic["denial_codes"]),
                       actual_status=actual["status"], actual_denial_code=actual["denial_code"], actual_remark=actual["remark"],
                       actual_paid_amount=row.get("paid_amount", ""),
                       status_correct=actual["status"] == result["status"],
                       code_correct=outcome_matches(actual["status"], actual["denial_code"], result["status"], result["denial_codes"]),
                       error_category=error_category(actual, result, diagnostic))
-        record.update({key: json.dumps(value) if isinstance(value, list) else value for key, value in review.items()})
         results.append(record)
         # Uncheckable claims are registered as submitted but never assumed paid.
         if claim.get("units", "").isdigit():
@@ -323,7 +326,7 @@ def run(data_dir, artifacts, output, metrics_path, splits_dir=None):
     if expanded:
         output.parent.mkdir(parents=True, exist_ok=True)
         with output.open("w", newline="", encoding="utf-8") as handle:
-            writer = csv.DictWriter(handle, fieldnames=list(expanded[0]))
+            writer = csv.DictWriter(handle, fieldnames=list(expanded[0]), lineterminator="\n")
             writer.writeheader()
             writer.writerows(expanded)
     diagnostic_rows = [dict(r, predicted_status=r["observed_prior_status"], predicted_denial_codes=r["observed_prior_denial_codes"]) for r in results]
@@ -331,26 +334,10 @@ def run(data_dir, artifacts, output, metrics_path, splits_dir=None):
     # Error categories are a main-replay analysis; don't present them as if
     # independently diagnosed for the observed-prior experiment.
     diagnostic_score.pop("error_categories")
-    reviewed = [r for r in results if r["decision"] == "check_previous_claims"]
-    resolved = [r for r in results if r["decision"] in {"paid", "denied"}]
-    review_metrics = dict(
-        reviewed=len(reviewed), review_rate=len(reviewed) / len(results) if results else None,
-        reviewed_actual_denied=sum(r["actual_status"] == "denied" for r in reviewed),
-        reviewed_actual_paid=sum(r["actual_status"] == "paid" for r in reviewed),
-        reviewed_actual_codes=dict(Counter(r["actual_denial_code"] or "paid" for r in reviewed)),
-        balance_uncertainty_flags=sum(r["authorization_balance_uncertain"] for r in results),
-        remaining_payable_missed_denials=sum(r["decision"] == "paid" and r["actual_status"] == "denied" for r in results),
-        false_definite_denials=sum(r["decision"] == "denied" and r["actual_status"] == "paid" for r in results),
-        automatic_decisions=len(resolved),
-        automatic_decision_coverage=len(resolved) / len(results) if results else None,
-        correct_automatic_code_matches=sum(r["code_correct"] for r in resolved),
-        automatic_code_match_rate=sum(r["code_correct"] for r in resolved) / len(resolved) if resolved else None,
-        correct_automatic_code_matches_all_claims=sum(r["code_correct"] for r in resolved) / len(results) if results else None,
-        note="Review is an abstention, not a correctly predicted denial. Main metrics remain baseline forecasts; decision is the operational gate.",
-    )
-    metrics = dict(evaluation="Denied: recorded code is in predicted set. Paid: predicted paid with an empty set. Manual review never counts as a match.",
+    metrics = dict(evaluation="Denied: recorded code is in predicted set. Paid: predicted paid with an empty set. Uncheckable claims never count as matches.",
                    main=score(results), observed_prior_diagnostic=diagnostic_score,
-                   pending_claims_review=review_metrics,
+                   provisional_history=dict(claims=len(pending_forecasts), forecasts=pending_forecasts,
+                                            counts=dict(Counter(r["status"] for r in pending_forecasts))),
                    by_payer={payer: score([r for r in results if r["payer"] == payer]) for payer in ("PY01", "PY02", "PY03")},
                    by_actual_code={code or "paid": score([r for r in results if r["actual_denial_code"] == code]) for code in sorted({r["actual_denial_code"] for r in results})},
                    output_rows=len(expanded), unique_test_rows=len(results),

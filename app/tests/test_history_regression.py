@@ -79,7 +79,7 @@ class HistoricalRegression(unittest.TestCase):
 
     def test_execution_error_cannot_be_accepted_as_a_recorded_exception(self):
         ds, expected = self.fixture()
-        expected['C000101'].update(predicted_status='manual_review', predicted_codes=[])
+        expected['C000101'].update(predicted_status='unable_to_check', predicted_codes=[])
         rules = baseline_store()
         rules.add_update('def apply_rule(claim, context, failures):\n    return 42')
         result = self.report(ds, expected, rules)
@@ -98,6 +98,22 @@ class HistoricalRegression(unittest.TestCase):
         self.assertTrue(result['passed'])
         self.assertEqual(result['matched'], 1)
         self.assertEqual(ds.history[0]['auth_id'], '')
+
+    def test_pending_history_is_forecast_but_excluded_from_outcome_agreement(self):
+        ds, _ = self.fixture()
+        ds.history[0]['status'], ds.history[0]['denial_code'] = 'pending', ''
+        result = self.report(ds, {})
+        self.assertEqual(result['total'], 0)
+        self.assertEqual(result['pending'], 1)
+        self.assertIsNone(result['passed'])
+        self.assertEqual(result['pending_predictions'][0]['status'], 'paid')
+        self.assertEqual(ds.history[0]['status'], 'pending')
+        rules = baseline_store()
+        rules.add_update('def apply_rule(claim, context, failures):\n    return 42')
+        failed = self.report(ds, {}, rules)
+        self.assertEqual(failed['pending_errors'], 1)
+        self.assertFalse(failed['passed'])
+
 
     def test_current_labels_do_not_enter_checking_or_exempt_failed_rules(self):
         from claimcheck import history

@@ -2,7 +2,7 @@
 
 Scripts and generated outputs are in `experiment/`; the original assignment data
 remains in `Resonance - graduate preparation data/`. See
-[the experiment README](experiment/README.md) for file descriptions and run options.
+[the experiment README](../experiment/README.md) for file descriptions and run options.
 
 ## 1. Clean and validate the data
 
@@ -41,7 +41,7 @@ remains in `Resonance - graduate preparation data/`. See
 
 - No other unresolved formatting errors were found under the implemented checks.
 - All **780 authorization records** and **5,076 EVV records** passed without formatting repairs.
-- Rows are deduplicated only when every field matches after canonicalization; different claim IDs remain separate, and conflicting versions of an ID require review.
+- Rows are deduplicated only when every field matches after canonicalization; different claim IDs remain separate, and conflicting versions of an ID require correction.
 
 **Implemented as a result:** Separate cleaned copies and audit trails; a checker for unresolved issues; missing business information stays available for denial checks rather than being filled automatically.
 
@@ -88,7 +88,10 @@ Claims exceeding a balance or daily maximum are denied in full.
 
 **Purpose:** Test future claims using only information available from earlier submissions.
 
-**Applied:** Split by submission date at **1 October 2026**, initialize balances from earlier actual payments, then update test balances using predicted outcomes; select bulletin versions by service date.
+**Applied:** Split by submission date at **1 October 2026**. Interleave the 546
+unlabelled claims with earlier settled history and target claims. Use actual
+earlier payments where available, forecast unknown outcomes, and update later
+target balances with predicted outcomes. Select bulletins by service date.
 
 The replay maintains three pieces of state:
 
@@ -102,7 +105,10 @@ Predictions use only the claim input columns; `status`, `denial_code`,
 `paid_amount` and `remark` are excluded. In the diagnostic replay, each actual
 outcome updates state only after that claim has been predicted.
 
-**Outcomes:** All **1,090 unique test claims** received predictions; a separate replay using observed prior payments produced the same status and code sets.
+**Outcomes:** All **1,090 unique test claims** received predictions. The
+provisional replay matches **1,061** recorded status/code outcomes; the separate
+diagnostic using observed earlier target outcomes matches **1,062**. Their one-case
+difference demonstrates sensitivity to predicted state.
 
 **Implemented as a result:** Exclude actual outcomes and remarks from prediction inputs; process export duplicates once; preserve all **1,097 original test rows** in the output.
 
@@ -119,28 +125,26 @@ payment and verification-acceptance timestamps are absent.
 
 | Outcome | Result |
 |---|---:|
-| Correct paid/denied status | **1,057 / 1,090 (96.97%)** |
-| Correct status and matching code set | **1,051 / 1,090 (96.42%)** |
-| Reported denial code detected | **348 / 387 (89.92%)** |
-| Recorded denials identified as denied, regardless of code | **354 / 387 (91.47%)** |
-| Missed denials | **33 / 387 (8.53%)** |
-| False alarms on paid claims | **0 / 703** |
+| Correct paid/denied status | **1,065 / 1,090 (97.71%)** |
+| Correct status and recorded denial code | **1,061 / 1,090 (97.34%)** |
+| Reported denial code detected | **360 / 387 (93.02%)** |
+| Recorded denials identified as denied | **364 / 387 (94.06%)** |
+| Missed denials | **23 / 387 (5.94%)** |
+| False alarms on paid claims | **2 / 703 (0.28%)** |
 | Always-predict-paid baseline | **64.50%** status accuracy |
 
-| Payer | Unique claims | Correct status | Correct status and code set |
+| Payer | Unique claims | Correct status | Correct status and recorded code |
 |---|---:|---:|---:|
-| Northwind | 398 | 389 (97.74%) | 387 (97.24%) |
-| Harbor | 404 | 393 (97.28%) | 393 (97.28%) |
-| Summit | 288 | 275 (95.49%) | 271 (94.10%) |
+| Northwind | 398 | 393 (98.74%) | 393 (98.74%) |
+| Harbor | 404 | 396 (98.02%) | 396 (98.02%) |
+| Summit | 288 | 276 (95.83%) | 272 (94.44%) |
 
-Metrics exclude export duplicates and include **703 paid claims** and **387
-denials**. Manual-review predictions do not count as matches; there were none
-on this test split. Remarks explain the detected rules and are not scored
-against the payer's exact wording.
-
-**Edge cases:** **57 claims** have multiple failures; set matching accepts **37 cases** previously penalized for selecting a different primary code.
-
-**Implemented as a result:** Store `predicted_denial_codes` as a set serialized as a JSON array, such as `["D01", "D03"]`; `code_correct` uses membership. The **70 additional codes** beyond reported denial reasons remain unconfirmed by the single-code labels.
+Metrics exclude repeated export rows. There are **703 recorded paid claims** and
+**387 recorded denials**. Invalid inputs cannot be scored as successful predictions;
+none of these test inputs prevented checking. Remarks are explanatory evidence,
+not targets for exact wording. **62 claims** have multiple failures, and the
+**73 additional predicted codes** beyond the recorded single denial reason remain
+unconfirmed by the available labels.
 
 ## 5. Understand remaining errors and propose fixes
 
@@ -148,21 +152,19 @@ against the payer's exact wording.
 
 | Remaining mismatch | Count | Response |
 |---|---:|---|
-| Contract-specific D10 | 10 | Flag missing Summit contracts; obtain amendments before implementing their scope and dates |
-| Unspecified/manual-review D99 | 17 | Obtain payer correspondence; do not invent a rule |
-| Authorization-balance D02 | 12 | Investigate opening balances, missing transactions and processing order |
+| Contract-specific D10 | 10 | Obtain the missing contract before implementing scope/dates |
+| Unspecified D99 | 17 | Obtain payer correspondence; do not invent a condition |
+| Recorded paid claims predicted D02 | 2 | Preserve projected-versus-confirmed usage and inspect reconciliation evidence |
 
-Of the ten D10 cases, six were predicted paid and four failed another rule.
-Of the twelve unexplained D02 cases, ten were predicted paid and two failed
-late-filing checks. All seventeen D99 cases were predicted paid. Missing
-transactions, opening balances or inconsistent synthetic labels are possible
-explanations for the D02 discrepancies, not confirmed causes.
+Six D10 cases and all seventeen D99 cases remain predicted paid; four D10 cases
+are denied for another documented failure. The **29 status/code mismatches** also
+include two false D02 predictions, **C012372** and **C012381**. Unknown-outcome
+forecasts resolve the twelve formerly unexplained D02 code mismatches: for example,
+C011708 bills seven units against six projected units and now matches its D02 label.
+The provisional ledger improves aggregate agreement while retaining these two
+false-denial counterexamples as explicit limitations.
 
-**Example:** C011708 bills **7 units** with **24 reconstructed units remaining**, but history reports D02; observed-prior replay does not explain the discrepancy.
-
-**Outcomes:** **39 code-set mismatches** remain; the **33 missed denials** comprise 17 D99, six D10 and ten D02 cases.
-
-**Implemented as a result:** Propose corrections on **54 claims**: **42 authorization references** with a unique matching record and sufficient predicted balance, plus **12 Harbor modifiers**. Proposals require review and may resolve only part of a claim's failures; they have not been validated through resubmission.
+**Implemented as a result:** Propose corrections on **54 claims**: **42 authorization references** with a unique matching record and sufficient predicted balance, plus **12 Harbor modifiers**. Proposals require correction and may resolve only part of a claim's failures; they have not been validated through resubmission.
 
 | Proposed fix | Claims | Evidence required |
 |---|---:|---|
@@ -174,7 +176,8 @@ The original cleaned input stays in the ordinary claim columns; `proposed_claim`
 Predictions describe the claim **before** those edits. Units, billed amounts,
 dates and EVV verification status are not changed to force a pass.
 
-**Next:** Obtain missing contracts and balance evidence, then evaluate improvements on a fresh holdout because this split has now been inspected.
+**Next:** Obtain missing contracts and balance evidence, then validate provisional
+forecasts on a fresh cohort with real outcome-availability timestamps.
 
 ## 6. Demonstrate and verify
 
@@ -189,7 +192,7 @@ dates and EVV verification status are not changed to force a pass.
 | `claim_checker_artifacts/*.cleaning.json` | Every changed cell, removed duplicate and unresolved invalid value |
 | `claim_checker_artifacts/validation.json` | Unresolved data-quality findings for both splits and their context |
 
-**Outcomes:** **22 tests pass**, covering rule boundaries, chronological state, duplicate handling, cleaning, pending-claim review and independence from test labels; source files remain unchanged.
+**Outcomes:** **24 tests pass**, covering rule boundaries, chronological state, duplicate handling, cleaning, provisional usage and independence from test labels; source files remain unchanged.
 
 Tests cover 7/8-minute rounding, filing deadlines and bulletin dates, Harbor
 weekdays/weekends, midnight attribution, aggregation before rounding,
@@ -205,123 +208,31 @@ python3 experiment/run_experiment.py
 python3 -m unittest discover -s experiment -p 'test_*.py' -v
 ```
 
-## 7. Earlier claims with unknown outcomes
-
-**Purpose:** Identify claims that appear payable only because earlier unresolved
-claims have not been included in authorization usage.
-
-**Issue:** `claims_to_check.csv` contains claims with submission dates earlier
-than some test claims, but no outcomes; ignoring them can overstate remaining
-authorization units, while assuming they were paid can create false denials.
-
-**Changed logic:** Retain the existing prediction as a baseline and add an
-operational decision of `check_previous_claims` when an otherwise payable claim
-would exceed its authorization if relevant earlier unresolved claims were paid.
-Show the earlier claim IDs and the balance with and without their units; keep
-D02 as a possible code rather than a confirmed denial. Existing definite
-denials retain their decision, with any additional balance uncertainty noted.
-
-**Implementation:** `pending_claims.py` runs inside `claim_checker.py` after
-the ordinary checks and before the current actual outcome is read:
-
-1. Clean and validate all **546 pending claims**; this fixes **328 cells** and
-   removes no duplicates. Keep the original file unchanged.
-2. Find distinct pending claims with a strictly earlier submission date and
-   the same authorization, payer, patient and service; require authorization
-   coverage of the pending claim's service date. Exclude IDs already represented
-   in historical/test records to avoid double counting.
-3. Let **R** be the baseline remaining balance and **U** the earlier pending
-   units. Compare this claim's units with the range **max(0, R − U) to R**.
-4. If the claim fits R but not the lower balance, flag uncertainty; change a
-   baseline `paid` decision to `check_previous_claims`, keeping baseline codes
-   separate from `potential_denial_codes = ["D02"]`.
-
-`test_result.csv` now includes `decision`, `authorization_balance_uncertain`,
-the two balances, unresolved claim IDs/units, potential codes and the suggested
-verification action. This is a review step, not an assertion that scheduled
-claims were submitted or paid. The baseline forecast ledger stays unchanged:
-referring a claim for review does not establish that it will remain unpaid.
-
-**Evaluation:** Counts below use the same **1,090 unique test claims** and are
-exploratory because their errors had already been inspected.
-
-| Measure | Baseline | With previous-claim review |
-|---|---:|---:|
-| Claims sent to this additional review | 0 | **14 (1.28%)** |
-| Recorded denials still marked payable | 33 | **23** |
-| Previously missed D02 cases sent to review | 0 / 10 | **10 / 10** |
-| Recorded paid claims unnecessarily sent to review | 0 | **4 / 703 (0.57%)** |
-| False definite denials on paid claims | 0 | **0** |
-| Claims receiving an automatic paid/denied decision | 1,090 (100%) | **1,076 (98.72%)** |
-| Matching status/code set among automatic decisions | 1,051 / 1,090 (96.42%) | **1,047 / 1,076 (97.30%)** |
-
-Ten of the fourteen reviewed claims were actual D02 denials (**71.43%**).
-The step intercepts **30.30% of the 33 missed denials**, leaving seventeen D99
-and six D10 cases still marked payable. Another six already-denied claims carry
-balance-uncertainty flags but keep their definite denial decision.
-
-Review is **not** counted as a correct prediction: automatic correct code-set
-matches across *all* claims become **1,047 / 1,090 (96.06%)**, with fourteen
-abstentions. The original baseline prediction accuracy remains 96.42%; the
-benefit is fewer risky claims proceeding without review, not a demonstrated
-increase in unconditional prediction accuracy. Metrics are stored separately
-under `pending_claims_review` in `claim_metrics.json`.
-
-| Example | Units billed | Balance if no pending claims paid | Balance if all paid | Outcome |
-|---|---:|---:|---:|---|
-| C011708 | 7 | 24 | 6 | Actual D02; now review |
-| C012372 | 8 | 14 | 6 | Actually paid; extra review |
-| C005201 | 20 | 32 | 0 | Actual D02; now review |
-
-**Edge cases and limits:** Same-day pending claims are excluded because ordering
-is unknown; later claims cannot affect an earlier assessment. Pending claims
-may themselves fail checks or compete for the same balance, so summing their
-units deliberately gives a conservative exposure estimate. The range is
-conditional on the baseline's earlier test predictions, not a verified payer
-balance or a complete simulation of every possible outcome. This change covers
-authorization exposure only, not pending effects on duplicate or daily-limit
-checks. It does not implement any inferred Summit rule.
-
-**Validation:** Six new tests cover the balance threshold, exact-fit allowance,
-same-day/future exclusion, duplicate and known-ID exclusion, authorization
-matching, and retention of definite denials. The integration test confirms
-baseline predictions and review decisions remain independent of test labels.
-
-**Original recommendation (updated by section 8):** Keep this as an explicit review warning with claim IDs and
-the balance range; verify submission/payment status or the payer's current
-balance before allowing the claim to proceed. The observed trade-off—ten
-intercepted denials for four extra paid-claim reviews—is promising, but should
-be checked on a fresh holdout before adoption. Do not automatically deny these
-claims or report review referrals as prediction successes.
-
-
-## 8. Use provisional predictions for earlier unknown outcomes
+## 7. Use provisional predictions for earlier unknown outcomes
 
 **Updated recommendation:** For the prototype, use the existing deterministic
 checker to predict earlier submitted claims whose results are unknown, and use
 those predictions in a **provisional ledger**. Predicted paid claims reserve
 units; predicted denied claims remain submissions but do not consume units.
 Keep their real outcome marked unknown, and expose when a later decision depends
-on predicted usage. This is a reasonable simpler default than the broad
-range-based review gate proposed in section 7. It is not evidence that predictions
+on predicted usage. The app and experiment now use this approach. It is not evidence that predictions
 are confirmed payments, or that every resulting denial is correct.
 
 A complete uncertainty model would need reliable submission, adjudication,
 payment, correction and reconciliation events, including their timing. Those
-are missing from the supplied data. The current balance-range calculation is computationally simple. The difficulty
-is assigning realistic meaning to those bounds when submission and resolution
-events are missing, and extending them across corrections and dependencies.
-Predicting unknown results supplies one auditable working estimate. The experiment
+are missing from the supplied data. Submission and resolution events are missing, making exact lifecycle reconstruction
+impractical. Predicting unknown results supplies one auditable working estimate. The experiment
 below tests that alternative rather than assuming it works.
-The app has not been changed by this experiment.
+The app uses this policy for historical pending outcomes and earlier batch predictions.
 
 ### Method and safeguards
 
 `experiment/unknown_outcomes.py` reuses the existing `Checker` without changing
-rules, thresholds, source claims, authorization limits or the original results.
+rules, thresholds, source claims or authorization limits.
 All methods use the same **2,740 earlier claims**, **1,090 unique later test
 claims**, authorizations and EVV. The original **1 October 2026** split is retained.
-The observed-earlier-history control reproduces **1,051/1,090 (96.42%)** matches.
+The observed-earlier-history control, excluding the external pending file,
+reproduces **1,051/1,090 (96.42%)** matches.
 
 The simulator accepts claim fields and explicitly visible earlier statuses only.
 Hidden outcomes, all target outcomes, denial codes and remarks are separated from
@@ -331,9 +242,8 @@ remain available for duplicate checks. No proposed business corrections are
 applied. A match uses the same criterion as the original experiment: paid with no
 failures, or denied with the recorded single code present in the predicted set.
 
-Four policies are compared: ignore unknown payment usage; assume all unknown
-claims paid; predict them with the existing checker; and the previous balance-range
-review gate. Review is an abstention and is never credited as a correct denial.
+Three policies are compared: ignore unknown payment usage; assume all unknown
+claims paid; and predict them with the existing checker.
 
 ### A. Revisit the 546 genuinely unlabelled claims
 
@@ -343,15 +253,13 @@ unknown claim from the state available before it. The prediction policy forecast
 outcomes are absent. The measurable question is whether including those forecasts
 improves predictions for the **1,090 later labelled claims**.
 
-| Measure | Ignore pending (original baseline) | Assume all paid | Predict unknown outcomes | Previous range review |
-|---|---:|---:|---:|---:|
-| Correct automatic status/code matches, out of all 1,090 | 1,051 (96.42%) | 1,060 (97.25%) | **1,061 (97.34%)** | 1,047 (96.06%) |
-| Automatic decisions | 1,090 | 1,090 | **1,090** | 1,076 |
-| Claims sent to review | 0 | 0 | **0** | 14 |
-| Recorded denials still marked payable | 33 | 23 | **23** | 23 |
-| False denials on recorded paid claims | 0 | 3 | **2** | 0 |
-| Recorded D02 codes detected | 15 / 27 | 27 / 27 | **27 / 27** | 15 / 27 (plus 10 referrals) |
-| Recorded paid claims sent to review | 0 | 0 | **0** | 4 |
+| Measure | Ignore pending control | Assume all paid | Predict unknown outcomes |
+|---|---:|---:|---:|
+| Correct status/code matches | 1,051 (96.42%) | 1,060 (97.25%) | **1,061 (97.34%)** |
+| Paid/denied predictions | 1,090 | 1,090 | **1,090** |
+| Recorded denials still marked payable | 33 | 23 | **23** |
+| False denials on recorded paid claims | 0 | 3 | **2** |
+| Recorded D02 codes detected | 15 / 27 | 27 / 27 | **27 / 27** |
 
 The prediction policy changes **17** forecasts: **12** gain the recorded denial
 code, **2** lose a previously correct match, and **3** remain correct with an
@@ -362,16 +270,13 @@ over ignoring the unknown claims. Status-only accuracy becomes **1,065/1,090
 (97.71%)**, compared with 96.97% originally.
 
 The counterexamples matter: **C012372** and **C012381** were recorded paid but
-become D02 under the predicted ledger. The previous range gate would send both
-to review. Thus prediction reduces review workload and improves aggregate
-agreement, while the review approach retains the stronger zero-false-denial
-result on this dataset. Its 97.30% agreement among automatically decided cases
-uses a smaller denominator than the prediction policy's 97.34%; those percentages
-must not be presented as an equal-coverage safety comparison.
+become D02 under the predicted ledger. Predicted reservations must therefore
+remain visibly distinct from confirmed payer usage. The improved aggregate
+agreement does not establish that every individual denial is correct.
 
 These external rows may be planned rather than submitted. Including them in the
 prediction/all-paid policies assumes they were submitted on their listed dates;
-the old ignore/range policies do not make that assumption. The observed forecast
+the ignore control does not make that assumption. The observed forecast
 changes here are D02 changes. Predicting payment does not establish submission.
 Pending rows are processed before same-day targets by default; processing them
 after same-day targets gives the **same 1,061 matches and two false denials**.
@@ -405,26 +310,22 @@ dates, not outcome labels. Predicting the backlog reproduces **all downstream
 status/code forecasts** of the observed-history control: **1,051/1,090 (96.42%)**
 with **zero false denials**. Ignoring the backlog yields **1,044 (95.78%)**
 matches; assuming it all paid yields **1,047 (96.06%)**, with four false denials.
-The range gate sends eight claims to review, including three recorded paid claims.
 The backlog's own forecasts match **805/834** recorded status/code outcomes.
 
 ### Interpretation and next step
 
-The results support replacing the *default prototype recommendation* in section 7
-with predicted outcomes for genuinely submitted, unresolved claims. The simpler
-method preserves most downstream agreement even when many prior outcomes are
-hidden, and the external-pending comparison improves agreement while avoiding
-14 broad review referrals. Preserve confirmed versus predicted usage separately;
-reconcile the provisional entries when actual payer outcomes arrive. Keep existing
-manual review for missing/invalid evidence, and explain dependencies on provisional
-balances rather than claiming payment certainty.
+The prototype uses predicted outcomes for submitted, unresolved claims. The
+method preserves most downstream agreement when prior outcomes are hidden.
+Preserve confirmed versus predicted usage separately and reconcile provisional
+entries when actual payer outcomes arrive. Missing/invalid inputs and rule
+execution failures return Unable to check rather than fabricated payment results.
 
 This remains exploratory evidence on an already-inspected synthetic dataset.
 Random masks and a 30-day backlog are simulations: actual unresolved claims may
 be concentrated among difficult contracts, delayed adjudications or appeals.
 Submission and adjudication timestamps are unavailable, and snapshot EVV is
 assumed available during replay. The two false denials in comparison A prevent a
-claim that this is universally safer than review. Validate on a fresh cohort with
+claim that predicted outcomes are payment certainty. Validate on a fresh cohort with
 real pending-outcome timing before treating the recommendation as production policy.
 
 **Reproduce and inspect:**
@@ -439,11 +340,10 @@ python3 experiment/run_experiment.py --output-dir /tmp/claims-unknown-outcomes
 python3 -m unittest discover -s experiment -p 'test_*.py' -v
 ```
 
-[unknown_outcomes_metrics.json](experiment/unknown_outcomes_metrics.json) records
-all policies, every mask/seed, the temporal backlog, input SHA-256 hashes and the
-protocol. [unknown_outcomes_predictions.csv](experiment/unknown_outcomes_predictions.csv)
-contains per-target predictions and decisions for comparison A, including the two
-false-denial counterexamples. Original `claim_metrics.json` and `test_result.csv`
-remain unchanged. **31 experiment tests pass**, including nine new tests for
+[unknown_outcomes_metrics.json](../experiment/unknown_outcomes_metrics.json) records
+all three policies, every mask/seed, the temporal backlog, input SHA-256 hashes and the
+protocol. [unknown_outcomes_predictions.csv](../experiment/unknown_outcomes_predictions.csv)
+contains per-target predictions for comparison A, including the two
+false-denial counterexamples. `claim_metrics.json` and `test_result.csv` now use the provisional prediction ledger. **24 experiment tests pass**, including eight dedicated tests for
 label isolation, temporal ordering, predicted usage, denial handling, duplicate
-exclusion, honest review scoring, same-day sensitivity and reproducibility.
+exclusion, same-day sensitivity and reproducibility.

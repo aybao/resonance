@@ -34,8 +34,8 @@ not been verified; automated/browser tests use an injected test transport.
 
 ## Use
 
-- **Check claims:** upload a CSV or use sample claims. Review normalization,
-  every denial code and its evidence, uncertain balances and proposed business
+- **Check claims:** upload a CSV or use sample claims. Inspect normalization,
+  every denial code and its evidence, projected balances and proposed business
   corrections. Edit fields or classifications, re-check, and export the original
   columns with results and an audit trail. Clicking a claim also shows its matching
   EVV visits (including verification state) and referenced/related authorization
@@ -96,7 +96,7 @@ the raw mismatch/accuracy counts. Synthetic examples remain in rule-update revie
 Rule code runs in a separate worker without API keys, imports, I/O or
 introspection, over JSON copies of the inputs. The supported Python subset has
 memory, instruction and wall-time limits. Approved code that fails on a later
-claim sends it to review instead of treating it as payable. This is a local,
+claim returns Unable to check with the execution error. This is a local,
 single-user demo, not a production hostile-code execution service.
 
 ## On-demand checks and demos
@@ -139,7 +139,7 @@ exception remains in the reported accuracy and mismatch list. The replay cannot
 silently whitelist new failures. Different cutoffs can expose unexpected
 mismatches. This is an inspected regression dataset, not a new holdout.
 
-See [the testing schedule](../design.md#testing) for which checks run after a
+See [the testing schedule](../plans/design.md#testing) for which checks run after a
 response, at acceptance, during development, before demos or on demand. The full
 developer suite and historical demo do not run on every message or CSV upload.
 
@@ -156,7 +156,7 @@ rules can use the available fields/context, but missing contracts or unexplained
 D99 denials still require evidence. Only full-app rules and acceptance tests
 persist; conversations and claim batches are session-local. The original
 experiment used a different split/state setup; its metrics are documented
-separately in [experiment_results.md](../experiment_results.md).
+separately in [experiment_results.md](../plans/experiment_results.md).
 
 ## Automatic claim fixes
 
@@ -164,8 +164,8 @@ The checker automatically fills a blank payer when valid authorization records
 identify one payer for that patient, service and date; a supplied authorization
 reference must agree. It also applies uniquely matching authorization references
 with sufficient balance and modifiers dictated by accepted rules. Explicit user
-edits take precedence. Ambiguous/conflicting reference records, insufficient or
-uncertain balances, units, amounts and service/submission dates remain for review.
+edits take precedence. Ambiguous/conflicting references and insufficient projected capacity are reported.
+Changes to units, amounts or service/submission dates require an explicit edit.
 
 Fixes run in submission order before the ledger records each claim. The dashboard
 highlights them, exposes sources/reasons and provides an **Auto-fixed** filter.
@@ -178,3 +178,9 @@ and results download. Remaining rows are rechecked, including authorization
 balances and duplicate links. Their edits and classifications are retained;
 current batch line numbers shift after deletion. Uploaded source files and
 historical reference data are not changed.
+
+Historical rows with a pending or blank outcome use the existing checker to
+forecast usage. Predicted paid claims reserve units in the projected ledger;
+settled outcomes remain unchanged. The claim detail identifies predicted usage
+separately. Valid claims receive paid/denied predictions; invalid inputs, missing
+rules and execution errors return Unable to check or Must correct.

@@ -9,7 +9,7 @@ The app can:
 
 - Normalize claims CSVs and flag missing or invalid values.
 - Return all detected denial codes, reasons and suggested corrections.
-- Show relevant EVV visits, authorizations and uncertain authorization balances.
+- Show relevant EVV visits, authorizations and projected authorization balances.
 - Re-check user edits and classification overrides, then export the results.
 - Propose rule code in chat, show actual before/after examples, and activate it
   only after the user accepts the update.
@@ -46,7 +46,7 @@ Never put a real key in source files or documentation.
 2. Use the dashboard tiles to filter results. Yellow cells identify formatting
    changes or user edits; hover to see the uploaded value. Formatting changes are
    automatic. Uniquely supported payer, authorization and modifier values are
-   filled automatically; ambiguous matches and uncertain balances need review.
+   filled automatically using the projected balance; ambiguous values need an explicit edit.
    Use **Auto-fixed** to filter corrected rows and inspect each change’s source.
 3. Click a row to see every failure, suggested actions, matching EVV visits and
    authorization records. Check the visit verification state and the authorization
@@ -62,8 +62,7 @@ Never put a real key in source files or documentation.
 |---|---|
 | **Likely paid** | No implemented rule violation was found with the available data. |
 | **Likely denied** | At least one implemented rule failed; read all returned codes. |
-| **Needs review** | The app cannot confidently classify the claim, for example because rules are unavailable or code could not execute. |
-| **Check earlier claims** | Earlier unresolved submissions could leave insufficient authorization units. Reconcile them before submission. |
+| **Unable to check** | Fix missing inputs, unavailable rules or execution errors before a payment prediction can be calculated. |
 | **Must correct** | Input errors prevent checking, such as invalid dates or conflicting claim IDs. |
 | **Repeated row** | Another row represents the same normalized claim; it is not processed twice. |
 
@@ -134,10 +133,8 @@ July or August's loaded predictions. See [the demo walkthrough](demo-data/README
 
 - [documentation.md](documentation.md): architecture, data formats, rule execution,
   persistence, API, commands and limitations.
-- [testing.md](testing.md): every implemented app test, automatic runtime checks,
-  browser checks, historical replay and when each runs.
-- [design.md](design.md): design rationale and original experiment results.
-- [experiment_results.md](experiment_results.md): the separate exploratory experiment.
+- [design.md](plans/design.md): design rationale and original experiment results.
+- [experiment_results.md](plans/experiment_results.md): the separate exploratory experiment.
 
 Run the app's developer tests from the repository root:
 

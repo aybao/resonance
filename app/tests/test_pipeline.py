@@ -122,19 +122,50 @@ class Ledger(unittest.TestCase):
         c = claim_row(cid="C000303", dos="2026-07-03", sub="2026-07-07", units="3")
         self.assertEqual(run([a, c])[1]["denial_codes"], ["D02"])        # definite denial retained
 
-    def test_undecided_earlier_claims_trigger_review_only_if_they_could_change_the_decision(self):
+    def test_uncheckable_input_is_distinct_from_payable_and_denied_results(self):
         # a correction whose original is unknown cannot be decided: never assumed paid
         undecided = claim_row(cid="C000310", dos="2026-07-01", sub="2026-07-05", units="8", freq="7", orig="C000099")
         fits_anyway = claim_row(cid="C000311", dos="2026-07-02", sub="2026-07-06", units="2")
         needs_check = claim_row(cid="C000312", dos="2026-07-03", sub="2026-07-06", units="3", mod="")
         rows = run([undecided, fits_anyway, needs_check])
-        self.assertEqual(rows[0]["status"], "manual_review")
-        self.assertEqual(rows[1]["status"], "paid")                      # 10 - 8 = 2 even if undecided claim pays
-        self.assertEqual(rows[2]["status"], "check_previous_claims")    # fits only if C000310 is not paid
-        self.assertEqual(rows[2]["unresolved_prior_claim_ids"], ["C000310"])
+        self.assertEqual(rows[0]["status"], "unable_to_check")
+        self.assertEqual(rows[1]["status"], "paid")                      # uncheckable rows do not invent paid units
+        self.assertEqual(rows[2]["status"], "paid")    # no range-based claim result
+        self.assertNotIn("balance_range", rows[2])
         later = claim_row(cid="C000313", dos="2026-07-04", sub="2026-07-01", units="1")
-        # submitted before the undecided claim (and before its own DOS is invalid): must be corrected, not reviewed
+        # submitted before the undecided claim (and before its own DOS is invalid): must be corrected
         self.assertEqual(run([undecided, later])[1]["category"], "must_correct")
+
+    def test_unknown_historical_outcomes_use_provisional_predictions(self):
+        for status in ('pending', 'unknown', ''):
+            with self.subTest(status=status):
+                history = self.hist('C000001', status, units='8')
+                ds = dataset([history])
+                row = run([claim_row(units='4', dos='2026-07-02', sub='2026-07-06')], ds)[0]
+                self.assertEqual(ds.history[0]['status'], 'pending')
+                self.assertEqual(row['denial_codes'], ['D02'])
+                self.assertEqual(row['evidence']['authorization_predicted_usage'], 8)
+                self.assertEqual(row['evidence']['authorization_provisional_claim_ids'], ['C000001'])
+                self.assertNotIn('balance_range', row)
+
+    def test_pending_predicted_denial_does_not_consume_capacity(self):
+        ds = dataset([self.hist('C000001', 'pending', units='13')])
+        row = run([claim_row(units='4', dos='2026-07-02', sub='2026-07-06')], ds)[0]
+        self.assertEqual(row['status'], 'paid')
+        self.assertEqual(row['evidence']['authorization_remaining'], 10)
+        duplicate = run([claim_row(units='1')], ds)[0]
+        self.assertIn('D05', duplicate['denial_codes'])
+
+    def test_same_day_unknown_history_and_final_outcomes_update_projected_usage(self):
+        pending = self.hist('C000001', 'pending', units='8', sub='2026-07-05')
+        ds = dataset([pending])
+        target = claim_row(units='4', dos='2026-07-02', sub='2026-07-05')
+        self.assertEqual(run([target], ds)[0]['denial_codes'], ['D02'])
+        settled = list(pending)
+        settled[-4], settled[-2] = 'denied', 'D01'
+        from claimcheck.normalize import HISTORY_EXTRA
+        ds.load_text('history', csv_text([settled], CLAIM_FIELDS + HISTORY_EXTRA))
+        self.assertEqual(run([target], ds)[0]['status'], 'paid')
 
     def test_user_override_changes_ledger(self):
         rows = [claim_row(cid="C000401", dos="2026-07-01", sub="2026-07-05", units="8"),

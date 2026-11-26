@@ -188,8 +188,8 @@ class Session:
             if status in (None, ""):
                 self.overrides.pop(claim_id, None)
             else:
-                if status not in ("paid", "denied", "manual_review"):
-                    raise ValueError("status must be paid, denied or manual_review")
+                if status not in ("paid", "denied"):
+                    raise ValueError("status must be paid or denied")
                 codes = codes or []
                 if status == "denied" and not codes:
                     raise ValueError("A denied classification needs at least one denial code")

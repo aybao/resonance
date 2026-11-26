@@ -16,8 +16,8 @@ function h(tag, attrs, ...kids) {
 const _replaceChildren = Element.prototype.replaceChildren;
 Element.prototype.replaceChildren = function (...kids) { _replaceChildren.apply(this, kids.flat(Infinity).filter((k) => k != null && k !== false)); };
 const CODES = ["D01","D02","D03","D04","D05","D06","D07","D08","D09","D10","D99"];
-const LABEL = { payable: "Likely paid", denied: "Likely denied", review: "Needs review", must_correct: "Must correct", duplicate_row: "Repeated row" };
-const STATUS_LABEL = { paid: "Likely paid", denied: "Likely denied", manual_review: "Needs review", check_previous_claims: "Check earlier claims", duplicate_row: "Repeated row" };
+const LABEL = { payable: "Likely paid", denied: "Likely denied", unable_to_check: "Unable to check", must_correct: "Must correct", duplicate_row: "Repeated row" };
+const STATUS_LABEL = { paid: "Likely paid", denied: "Likely denied", unable_to_check: "Unable to check", duplicate_row: "Repeated row" };
 
 const CLAIM_COLUMNS = [
   ["claim_id", "Claim ID"], ["agency_id", "Agency ID"], ["payer", "Payer"],
@@ -68,7 +68,7 @@ async function loadStatus() {
     const nextMonthEnd = new Date(Date.UTC(current.getUTCFullYear(), current.getUTCMonth() + 2, 0)).toISOString().slice(0, 10);
     const nextDate = s.demo.as_of < "2026-06-30" ? "2026-06-30" : nextMonthEnd;
     const date = h("input", { type: "date", value: nextDate > s.demo.end ? s.demo.end : nextDate, min: s.demo.as_of, "aria-label": "Advance demo through date" });
-    mode.replaceChildren(badge("review", `Historical demo · Today’s date (simulated): ${s.demo.as_of}`), h("label", {}, "Fast forward to", date),
+    mode.replaceChildren(badge("warning", `Historical demo · Today’s date (simulated): ${s.demo.as_of}`), h("label", {}, "Fast forward to", date),
       h("button", { class: "secondary", onclick: () => guard(async () => {
         await api("POST", "/api/demo/advance", { date: date.value });
         await refreshResults(); await loadStatus(); await loadRules(); $("demo-report").hidden = true;
@@ -138,7 +138,7 @@ function renderDemoReport(report) {
     h("p", { class: "demo-accuracy" }, `ACCURACY: ${(report.accuracy * 100).toFixed(2)}%.`),
     h("h2", {}, "DEMO - COMPARING WITH TRUE HISTORICAL RESULTS"),
     h("p", {}, `${report.from_date} to ${report.through_date} · ${report.status_and_code_set_correct} of ${report.claims} claims match · ${report.mismatches.length} mismatches`),
-    h("p", {}, `${report.false_alarms} false alarms (predicted denied, recorded paid) · ${report.missed_denials} missed denials (predicted paid, recorded denied) · ${report.manual_review} need review`),
+    h("p", {}, `${report.false_alarms} false alarms (predicted denied, recorded paid) · ${report.missed_denials} missed denials (predicted paid, recorded denied) · ${report.unable_to_check} unable to check`),
     h("p", { class: "small muted" }, report.basis || ""),
     h("p", { class: "small muted" }, "A match requires the recorded status and, for denials, the recorded denial code. Documented mismatches still reduce accuracy."),
     report.unexplained_d99 ? h("p", {}, `${report.unexplained_d99} recorded D99 denials have no supplied denial rule or payer correspondence.`) : null,
@@ -158,7 +158,7 @@ function render() {
   }
   $("results").hidden = false; $("export").hidden = false;
   const by = results.summary.by_category;
-  const tiles = [["all", "All claims", results.summary.total], ["denied", "Likely denied", by.denied || 0], ["review", "Needs review", by.review || 0],
+  const tiles = [["all", "All claims", results.summary.total], ["denied", "Likely denied", by.denied || 0], ["unable_to_check", "Unable to check", by.unable_to_check || 0],
     ["must_correct", "Must correct", by.must_correct || 0], ["formatted", "Auto-formatted", results.summary.formatted_rows], ["autofixed", "Auto-fixed", results.summary.autofixed_rows || 0], ["payable", "Likely paid", by.payable || 0]];
   $("tiles").replaceChildren(...tiles.map(([k, label, n]) =>
     h("button", { class: "tile" + (filter === k ? " on" : ""), onclick: () => { filter = k; render(); } }, h("b", {}, n), label)));
@@ -174,7 +174,7 @@ function render() {
       const auto = Object.fromEntries((r.automatic_fixes || []).map((c) => [c.field, c]));
       return h("tr", { class: "click" + (r.line === selectedLine ? " sel" : ""), onclick: () => { selectedLine = r.line; render(); showDetail(r.line); } },
         ...cols.map((c) => c === "line" ? h("td", {}, r.line) : h("td", { class: c in changed || c in edited || c in auto ? "fixed" : "", title: c in edited ? `edited by you (uploaded: ${r.raw[c]})` : c in auto ? `Automatically fixed: ${auto[c].reason} (uploaded: ${r.raw[c]})` : c in changed ? `was: ${changed[c]}` : null }, r.clean[c])),
-        h("td", {}, badge(r.override ? r.status : r.status === "check_previous_claims" || r.status === "manual_review" ? "review" : r.status, (r.override ? "You: " : "") + (r.category === "must_correct" ? "Must correct" : STATUS_LABEL[r.status] || r.status))),
+        h("td", {}, badge(r.status, (r.override ? "You: " : "") + (r.category === "must_correct" ? "Must correct" : STATUS_LABEL[r.status] || r.status))),
         h("td", {}, codeChips(r.denial_codes)), h("td", { class: "reason" }, r.summary));
     }));
   if (rows.length > 1500) table.append(h("tr", {}, h("td", { colspan: cols.length + 3 }, "Showing first 1500 rows; use filters or the CSV download.")));
@@ -195,8 +195,6 @@ function showDetail(line, keepScroll) {
   for (const f of r.failures) kids.push(h("div", { class: "failure" }, h("b", {}, f.code + " — " + f.meaning),
     f.code === "D05" && r.duplicate_submissions?.length ? duplicateSubmissionDetails(r.duplicate_submissions) : h("div", {}, f.reason),
     h("div", { class: "muted" }, "Suggested action: " + f.suggestion), h("div", { class: "muted small" }, "Rule: " + f.rule)));
-  if (r.status === "check_previous_claims") kids.push(h("div", { class: "warning" }, h("b", {}, "Authorization balance uncertain"), h("div", {}, r.previous_claims_action),
-    h("div", {}, `Earlier unresolved claims: ${r.unresolved_prior_claim_ids.join(", ")}. Balance could be ${r.balance_range[0]}–${r.balance_range[1]} units; this claim bills ${r.clean.units}.`)));
   for (const w of r.warnings) kids.push(h("div", { class: "warning" }, w));
   if (r.changes.length) kids.push(h("p", { class: "small" }, h("b", {}, "Normalised automatically: "), r.changes.map((c) => `${c.field}: "${c.before}" → "${c.after}"`).join("; ")));
   if (r.automatic_fixes?.length) kids.push(h("section", { class: "automatic-fixes" }, h("h3", {}, "Automatically fixed"),
@@ -230,7 +228,7 @@ function batchClaimLink(line, label) {
 function duplicateSubmissionDetails(submissions) {
   return h("div", { class: "duplicate-submissions" }, ...submissions.map((s) => {
     if (s.source === "batch") return h("p", {}, "Earlier submission exists: ", batchClaimLink(s.line, s.claim.claim_id));
-    const outcome = s.status === "paid" ? "and accepted" : "(previously denied)";
+    const outcome = s.status === "paid" ? "and accepted" : s.status === "denied" ? "(previously denied)" : "(outcome pending)";
     return h("div", { class: "historical-duplicate" },
       h("p", {}, `Duplicate claim already submitted ${outcome}: `, h("strong", {}, s.claim.claim_id)),
       h("p", { class: "small" }, `Service date: ${s.claim.date_of_service} · Submitted: ${s.claim.submitted_date} · Payer: ${s.claim.payer} · Patient: ${s.claim.patient_id} · ${s.claim.service_code} · ${s.claim.units} units`),
@@ -248,19 +246,19 @@ function claimReferencePanel(r) {
     visits.length ? h("div", { class: "table-wrap" }, h("table", {},
       h("tr", {}, ...["Visit", "Caregiver", "Clock in", "Clock out", "Minutes", "Verification"].map((name) => h("th", {}, name))),
       ...visits.map((v) => h("tr", {}, h("td", {}, v.visit_id), h("td", {}, v.caregiver_id), h("td", {}, v.clock_in), h("td", {}, v.clock_out), h("td", {}, v.duration_minutes),
-        h("td", {}, badge(v.verification_status === "verified" ? "payable" : "review", v.verification_status.replaceAll("_", " "))))))) : h("p", { class: "muted" }, "No EVV visits found for this patient, service and date."),
+        h("td", {}, badge(v.verification_status === "verified" ? "payable" : "warning", v.verification_status.replaceAll("_", " "))))))) : h("p", { class: "muted" }, "No EVV visits found for this patient, service and date."),
     visits.some((v) => v.verification_status !== "verified") ? h("p", { class: "small muted" }, "Only verified visits count toward billable time.") : null);
   const auth = h("section", { class: "reference-panel" }, h("h3", {}, "Authorization"),
     h("p", { class: "reference-summary" }, "Claim reference: ", h("strong", {}, r.clean.auth_id || "Missing")),
     r.clean.auth_id && !refs.authorizations.some((a) => a.referenced) ? h("p", { class: "warning" }, "The authorization referenced by this claim was not found.") : null,
     !refs.authorizations.length ? h("p", { class: "muted" }, "No related authorization found for this payer, patient and service.") : null,
     ...refs.authorizations.map((a) => h("article", { class: "authorization-record" },
-      h("div", { class: "example-title" }, h("strong", {}, a.auth_id), badge(a.issues.length ? "review" : "payable", a.referenced ? "Referenced by claim" : "Related coverage")),
+      h("div", { class: "example-title" }, h("strong", {}, a.auth_id), badge(a.issues.length ? "warning" : "payable", a.referenced ? "Referenced by claim" : "Related coverage")),
       h("dl", { class: "reference-facts" }, fact("Payer", a.payer_id), fact("Patient", a.patient_id), fact("Service", a.service_code), fact("Coverage", `${a.start_date} to ${a.end_date}`), fact("Authorized units", a.units_authorized),
-        a.referenced && !a.issues.length ? fact("Remaining before this claim", r.evidence.authorization_remaining) : null,
-        a.referenced && !a.issues.length && r.evidence.authorization_remaining != null ? fact("Used in current ledger", Number(a.units_authorized) - r.evidence.authorization_remaining) : null),
-      a.issues.length ? h("p", { class: "warning" }, a.issues.join(" · ")) : null)),
-    r.balance_uncertain ? h("p", { class: "warning" }, `Earlier unresolved claims could leave ${r.balance_range[0]}–${r.balance_range[1]} units available.`) : null);
+        a.referenced && !a.issues.length ? fact("Projected remaining before this claim", r.evidence.authorization_remaining) : null,
+        a.referenced && !a.issues.length && r.evidence.authorization_remaining != null ? fact("Used in current ledger", Number(a.units_authorized) - r.evidence.authorization_remaining) : null,
+        a.referenced && !a.issues.length ? fact("Predicted usage included", r.evidence.authorization_predicted_usage || 0) : null),
+      a.issues.length ? h("p", { class: "warning" }, a.issues.join(" · ")) : null)));
   return h("div", { class: "claim-references" }, evv, auth);
 }
 function applyEdit(line, fields) { if (!Object.keys(fields).length) return; guard(async () => { results = await api("POST", `/api/claims/line/${line}/edit`, { fields }); render(); }); }
@@ -277,7 +275,7 @@ async function deleteClaim(line, button) {
 
 function overrideForm(r) {
   const ov = r.override;
-  const sel = h("select", {}, ...[["", "No override (use rules)"], ["paid", "Treat as paid"], ["denied", "Treat as denied"], ["manual_review", "Needs review"]].map(([v, t]) => h("option", { value: v, selected: (ov ? ov.status : "") === v }, t)));
+  const sel = h("select", {}, ...[["", "No override (use rules)"], ["paid", "Treat as paid"], ["denied", "Treat as denied"]].map(([v, t]) => h("option", { value: v, selected: (ov ? ov.status : "") === v }, t)));
   const boxes = CODES.map((c) => h("label", { style: "display:inline-block;margin-right:8px" }, h("input", { type: "checkbox", value: c, style: "display:inline", checked: ov && ov.denial_codes.includes(c) }), " " + c));
   const note = h("input", { size: 40, placeholder: "Reason / source (kept in the export)", value: ov ? ov.note : "" });
   return h("div", {}, h("h3", {}, "Your classification"), h("p", { class: "muted small" }, "Your classification sets this claim’s outcome and affects later authorization balances."),
@@ -292,7 +290,7 @@ function overrideForm(r) {
 // ---------- rules: one conversation ----------
 let activeRules = null, currentView = null, selectedExample = null, ruleBusy = false, ruleAttachment = null;
 const threads = new Map();
-const DENIAL_MEANING = { D01: "No verified EVV visit", D02: "Authorization units exceeded", D03: "Filing deadline exceeded", D04: "Missing or invalid modifier", D05: "Duplicate claim", D06: "Daily maximum exceeded", D07: "Authorization missing", D08: "Invalid authorization", D09: "Verified time exceeded", D10: "Contract requirement", D99: "Manual review" };
+const DENIAL_MEANING = { D01: "No verified EVV visit", D02: "Authorization units exceeded", D03: "Filing deadline exceeded", D04: "Missing or invalid modifier", D05: "Duplicate claim", D06: "Daily maximum exceeded", D07: "Authorization missing", D08: "Invalid authorization", D09: "Verified time exceeded", D10: "Contract requirement", D99: "Other payer denial" };
 async function loadRules() { return guard(async () => { activeRules = await api("GET", "/api/rules"); }); }
 
 // A small, safe Markdown renderer: document/model text is always added as text nodes.
@@ -415,14 +413,14 @@ function ruleValue(value) {
 }
 function ruleSummary(d) {
   if (d.code != null || !d.payer_id) return h("section", { class: "rule-summary" },
-    h("div", { class: "rule-summary-heading" }, h("button", { type: "button", class: "rule-title-button", onclick: () => selectExample({ key: `${d.id}-rule`, title: d.summary || "Proposed rule update", code: d.code, source: d.source }) }, d.summary || "Proposed rule update", h("span", { class: "small muted" }, " · Click to comment")), badge("review", "Draft")),
+    h("div", { class: "rule-summary-heading" }, h("button", { type: "button", class: "rule-title-button", onclick: () => selectExample({ key: `${d.id}-rule`, title: d.summary || "Proposed rule update", code: d.code, source: d.source }) }, d.summary || "Proposed rule update", h("span", { class: "small muted" }, " · Click to comment")), badge("warning", "Draft")),
     h("p", { class: "muted" }, d.code ? "Review the proposed code, source passage and changed examples before accepting." : "Reply below to clarify the proposed update."),
     d.code ? h("details", {}, h("summary", {}, "Proposed rule code"), h("pre", {}, d.code)) : null,
     d.source ? h("details", { class: "source-detail" }, h("summary", {}, "Source passage"), h("blockquote", {}, d.source)) : null);
   const versions = activeRules?.payers[d.payer_id]?.versions || [];
   const prior = versions.filter((v) => v.effective_from <= d.effective_from).at(-1);
   const changes = Object.entries(d.params).filter(([key, value]) => JSON.stringify(prior?.params[key]) !== JSON.stringify(value));
-  return h("section", { class: "rule-summary" }, h("div", { class: "rule-summary-heading" }, h("button", { type: "button", class: "rule-title-button", onclick: () => selectExample({ key: `${d.id}-rule`, title: d.summary || "Proposed rule update", payer_id: d.payer_id, effective_from: d.effective_from, params: d.params, code: d.code, source: d.source }) }, d.summary || "Proposed rule update", h("span", { class: "small muted" }, " · Click to comment")), badge("review", "Draft")),
+  return h("section", { class: "rule-summary" }, h("div", { class: "rule-summary-heading" }, h("button", { type: "button", class: "rule-title-button", onclick: () => selectExample({ key: `${d.id}-rule`, title: d.summary || "Proposed rule update", payer_id: d.payer_id, effective_from: d.effective_from, params: d.params, code: d.code, source: d.source }) }, d.summary || "Proposed rule update", h("span", { class: "small muted" }, " · Click to comment")), badge("warning", "Draft")),
     h("p", { class: "muted" }, `${d.payer_name || activeRules?.payers[d.payer_id]?.name || d.payer_id || "Payer to confirm"} · ${d.payer_id || ""} · Service dates from ${d.effective_from || "to be confirmed"}`),
     changes.length ? h("dl", { class: "rule-diff" }, ...changes.map(([key, value]) => h("div", {}, h("dt", {}, FIELD_LABELS[key] || key.replaceAll("_", " ")), h("dd", {}, h("span", { class: "muted" }, ruleValue(prior?.params[key])), h("span", { class: "change-arrow", "aria-label": "changes to" }, " → "), h("strong", {}, ruleValue(value)))))) : null,
     d.code ? h("details", {}, h("summary", {}, "Proposed rule code"), h("pre", {}, d.code)) : null,
@@ -545,14 +543,15 @@ function regressionCard(r, key) {
 function renderRegressionChecks(report) {
   const root = $("regression-report"); root.hidden = !report;
   if (!report) return;
-  root.replaceChildren(h("strong", { class: !report.total ? "muted" : report.passed ? "ok" : "bad" },
-    !report.total ? "No historical claims available for regression checks" : report.passed
+  root.replaceChildren(h("strong", { class: report.pending_errors ? "bad" : !report.total ? "muted" : report.passed ? "ok" : "bad" },
+    report.pending_errors ? `Historical checking blocked: ${report.pending_errors} pending claims could not be checked` : !report.total ? "No historical claims available for regression checks" : report.passed
       ? `Historical regression checks passed · ${report.total.toLocaleString()} claims checked`
       : `Historical regression checks: ${report.failed.toLocaleString()} unexpected differences · ${report.total.toLocaleString()} claims checked`),
     report.total ? h("p", { class: "small" }, `${report.matched.toLocaleString()} match recorded outcomes · ${report.known_exceptions.toLocaleString()} recorded exceptions · ${report.failed.toLocaleString()} unexpected differences`) : null,
     report.total ? h("p", { class: "small muted" }, `Replays original submissions against available history. Recorded exceptions remain mismatches in the ${(report.accuracy * 100).toFixed(2)}% outcome agreement.`) : null,
     report.failed ? h("details", {}, h("summary", {}, `Unexpected differences (${report.failed})`),
       ...report.failures.map((r) => historicalRegressionCard(r))) : null,
+    report.pending ? h("details", {}, h("summary", {}, `Predictions for ${report.pending} historical claims with unknown outcomes`), h("p", { class: "small muted" }, "These forecasts update projected usage and are excluded from outcome agreement."), ...report.pending_predictions.map(historicalRegressionCard)) : null,
     report.known_exceptions ? h("details", {}, h("summary", {}, `Recorded exceptions (${report.known_exceptions})`),
       ...report.exceptions.map((r) => historicalRegressionCard(r))) : null);
 }
@@ -560,7 +559,7 @@ function historicalRegressionCard(r) {
   const data = { key: `history-regression-${r.claim_id}`, title: `Historical regression: ${r.claim_id}`, ...r };
   return h("div", { class: "example" }, h("div", { class: "example-content" }, h("strong", {}, r.claim_id),
     h("p", {}, `${r.payer} · Service ${r.date_of_service} · Submitted ${r.claim.submitted_date}`),
-    h("p", {}, `Recorded: ${r.actual_status === "paid" ? "Paid" : "Denied"}${r.actual_code ? " · " + r.actual_code : ""}`),
+    h("p", {}, `Recorded: ${r.actual_status === "paid" ? "Paid" : r.actual_status === "denied" ? "Denied" : "Outcome unknown"}${r.actual_code ? " · " + r.actual_code : ""}`),
     h("p", {}, `Predicted: ${STATUS_LABEL[r.status] || r.status}${r.codes.length ? " · " + r.codes.join(", ") : ""}`),
     r.exception_reason ? h("p", {}, r.exception_reason) : null,
     r.error ? h("p", { class: "warning" }, r.error) : null,

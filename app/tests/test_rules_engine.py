@@ -101,10 +101,10 @@ class VersionsAndValidation(unittest.TestCase):
         self.assertEqual(s.resolve("PY01", "2026-08-01")["params"]["timely_filing_days"], 50)
         self.assertIsNone(RuleStore().resolve("PY01", "2026-08-01"))
 
-    def test_unknown_payer_needs_review_not_paid(self):
+    def test_unknown_payer_cannot_be_checked(self):
         s = dict(payer_id="PY09", claim=dict(service_code="T1019", date_of_service="2026-07-01",
                                              submitted_date="2026-07-02", units=1), context={})
-        self.assertEqual(run_scenario(s, RULES)["status"], "manual_review")
+        self.assertEqual(run_scenario(s, RULES)["status"], "unable_to_check")
 
     def test_params_validation_rejects_unknown_and_bad_values(self):
         self.assertTrue(validate_params({"surprise": 1}))

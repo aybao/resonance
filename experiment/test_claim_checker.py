@@ -104,10 +104,10 @@ class ClaimCheckerTests(unittest.TestCase):
         self.assertEqual(claim, original)
         self.assertNotIn("status", claim_input(poisoned))
 
-    def test_unresolvable_input_is_review_not_fabricated_denial(self):
+    def test_unresolvable_input_is_error_not_fabricated_denial(self):
         claim, auth, visit = self.make()
         result = Checker([auth], [visit]).check(claim, State(), ["Invalid patient ID"])
-        self.assertEqual(result["status"], "manual_review")
+        self.assertEqual(result["status"], "unable_to_check")
         self.assertEqual(result["denial_codes"], [])
 
     def test_multiple_failures_are_a_set_and_match_any_reported_code(self):
@@ -120,7 +120,7 @@ class ClaimCheckerTests(unittest.TestCase):
         self.assertFalse(outcome_matches("denied", "D02", result["status"], result["denial_codes"]))
         self.assertTrue(outcome_matches("paid", "", "paid", []))
         self.assertFalse(outcome_matches("paid", "", "denied", ["D01"]))
-        self.assertFalse(outcome_matches("paid", "", "manual_review", []))
+        self.assertFalse(outcome_matches("paid", "", "unable_to_check", []))
         self.assertFalse(outcome_matches("denied", "", "denied", ["D01"]))
         import json
         rows = [dict(actual_status="denied", actual_denial_code="D07", predicted_status="denied",
@@ -168,16 +168,14 @@ class ClaimCheckerTests(unittest.TestCase):
             self.assertEqual(len(results), 3)
             self.assertEqual([r["export_duplicate"] for r in results], ["False", "True", "False"])
             self.assertEqual(results[0]["predicted_status"], "paid")
-            self.assertEqual(results[0]["decision"], "check_previous_claims")
             self.assertEqual(results[2]["predicted_denial_codes"], '["D02"]')
-            self.assertEqual(results[2]["decision"], "denied")
             self.assertEqual(results[2]["observed_prior_status"], "paid")
             first.update(status="paid", denial_code="", remark="Changed answer", paid_amount="40")
             write("sorted_test_data.csv", "claims_history.csv", [first, first, second])
             with redirect_stdout(io.StringIO()):
                 run(root, root / "artifacts2", root / "result2.csv", root / "metrics2.json")
             repeated = load_csv(root / "result2.csv")
-            fields = ["predicted_status", "predicted_denial_codes", "predicted_remark", "evidence", "proposed_changes", "decision"]
+            fields = ["predicted_status", "predicted_denial_codes", "predicted_remark", "evidence", "proposed_changes"]
             self.assertEqual([[r[f] for f in fields] for r in results], [[r[f] for f in fields] for r in repeated])
 
 

@@ -1,13 +1,13 @@
 # Claims-checking experiment
 
 A Python prototype that cleans synthetic billing exports, checks documented payer
-rules, predicts all applicable denial codes and flags uncertain authorization
-balances for review. It uses the Python standard library only: no packages, API
+rules, predicts all applicable denial codes and uses provisional predictions for
+earlier claims whose outcomes are unknown. It uses the Python standard library only: no packages, API
 keys or AI calls are required. Verified with Python 3.14.4.
 
 The original assignment data stays in `../Resonance - graduate preparation data/`.
 Scripts and generated outputs live here in `experiment/`. The discussion of
-findings is in [experiment_results.md](../experiment_results.md).
+findings is in [experiment_results.md](../plans/experiment_results.md).
 
 ## Run everything
 
@@ -29,7 +29,7 @@ The runner rebuilds the chronological splits, standalone history-cleaning output
 formatting reports, prediction CSV, metrics, cleaned supporting artifacts and the separate
 unknown-outcome comparison.
 Rerunning replaces generated outputs; it leaves the supplied files unchanged.
-Tests are a separate command and currently comprise **31 passing tests**.
+Tests are a separate command and currently comprise **24 passing tests**.
 
 Default paths are anchored to the scripts, so both working directories produce
 the same files. Explicit path arguments are interpreted relative to your current
@@ -43,14 +43,12 @@ directory, as usual.
 | `split_claims_history.py` | Parses submission dates, sorts oldest first and splits history at 1 October 2026 by default; preserves original field values, outcomes and duplicates |
 | `clean_data.py` | Cleans one CSV using explicit payer aliases, supported date formats, whitespace/case rules and identical-row deduplication; writes an audit trail; preserves unresolved invalid values |
 | `check_formatting.py` | Reports problems safe cleaning cannot resolve, including invalid values, required fields, conflicting IDs and missing references; flags missing claim authorization numbers as business inputs |
-| `claim_checker.py` | Cleans and validates the splits and context, replays claims, generates predictions/proposed fixes, applies the pending-claim review step, and calculates metrics |
-| `unknown_outcomes.py` | Compares ignoring/assuming/predicting unknown outcomes against range review; tests external pending rows, random hidden historical outcomes and a 30-day backlog; writes separate metrics and predictions |
-| `test_unknown_outcomes.py` | Tests the new replay’s temporal state, label isolation, review scoring and reproducible outputs |
-| `pending_claims.py` | Supporting module: computes authorization exposure to earlier claims with unknown outcomes and returns `check_previous_claims` where appropriate |
+| `claim_checker.py` | Cleans and validates the splits and context, replays claims, generates predictions/proposed fixes, forecasts unknown outcomes into the provisional ledger, and calculates metrics |
+| `unknown_outcomes.py` | Compares ignoring, assuming payment and predicting unknown outcomes; tests external pending rows, random hidden historical outcomes and a 30-day backlog; writes separate metrics and predictions |
+| `test_unknown_outcomes.py` | Tests the new replay’s temporal state, label isolation, error handling and reproducible outputs |
 | `paths.py` | Supporting module: defines the supplied-data, experiment and artifact directories independently of the shell's working directory |
 | `test_check_formatting.py` | Tests canonicalization, rejected formats, conflicting records, missing inputs and cleaning idempotence |
 | `test_claim_checker.py` | Tests payer-rule boundaries, historical state, multi-code scoring, input/output preservation and independence from test labels |
-| `test_pending_claims.py` | Tests balance ranges, exact-fit thresholds, date filtering, authorization matching, deduplication and retention of definite denials |
 
 ## Run individual steps
 
@@ -69,7 +67,7 @@ python3 check_formatting.py --claims sorted_prev_data_cleaned.csv --output prev_
 # Optional: inspect all original exports using the current checker.
 python3 check_formatting.py
 
-# 4. Rebuild predictions, review decisions, metrics and pipeline artifacts.
+# 4. Rebuild predictions, metrics and pipeline artifacts.
 python3 claim_checker.py
 ```
 
@@ -105,9 +103,9 @@ All paths in this table are relative to `experiment/`.
 | `formatting_report.json` | Formatting checker, or full runner | Current unresolved-issue audit across the original history, pending claims, authorizations and EVV exports; safe normalization differences are not listed |
 | `prev_data_formatting_report.json` | Scoped formatting checker, or full runner | Unresolved-issue audit of the standalone cleaned earlier history plus original authorization/EVV context |
 | `test_result.csv` | Claim checker | **1,097** result rows, preserving the original test row order; **1,090** unique claims are evaluated, with seven repeated export rows marked |
-| `unknown_outcomes_metrics.json` | Unknown-outcome experiment | Four-policy comparisons, every deterministic mask, temporal-backlog results, input hashes and protocol |
-| `unknown_outcomes_predictions.csv` | Unknown-outcome experiment | Per-target forecasts/decisions for all four external-pending policies; exposes false-denial cases |
-| `claim_metrics.json` | Claim checker | Baseline metrics, observed-prior diagnostic, payer/code breakdowns, cleaning summaries and separate pending-claim review metrics |
+| `unknown_outcomes_metrics.json` | Unknown-outcome experiment | Three-policy comparisons, every deterministic mask, temporal-backlog results, input hashes and protocol |
+| `unknown_outcomes_predictions.csv` | Unknown-outcome experiment | Per-target forecasts for all three external-pending policies; exposes false-denial cases |
+| `claim_metrics.json` | Claim checker | Baseline metrics, observed-prior diagnostic, payer/code breakdowns, cleaning summaries and provisional historical forecasts |
 | `claim_checker_artifacts/*.csv` | Claim checker via cleaner | Cleaned copies of both splits, pending claims, authorizations and EVV actually used by the pipeline |
 | `claim_checker_artifacts/*.cleaning.json` | Claim checker via cleaner | Cleaning audit for each pipeline input |
 | `claim_checker_artifacts/validation.json` | Claim checker via formatting checker | Validation reports for earlier history, test history and pending claims, each with authorization/EVV context |
@@ -122,11 +120,8 @@ missing record in the complete pack. It is a context warning, not a D08 denial.
 |---|---|
 | Original claim column names | Normalized claim inputs, before proposed business corrections |
 | `predicted_status`, `predicted_denial_codes`, `predicted_remark` | Baseline forecast and all applicable documented failures; codes are a JSON array representing a set, e.g. `["D01", "D03"]`; paid claims have `[]` |
-| `failed_checks`, `suggested_actions`, `warnings`, `evidence` | Reasons, rule sources, actions, uncertainty and supporting minutes, visits, units, balances and filing intervals |
-| `decision` | Operational result: `paid`, `denied`, `manual_review`, or `check_previous_claims`; use this to find claims needing review even when the baseline forecast says paid |
-| `authorization_balance_uncertain`, `potential_denial_codes` | Conditional authorization risk; a possible D02 is kept separate from definite baseline failures |
-| `unresolved_prior_claim_ids`, `unresolved_prior_units`, `authorization_balance_if_none_paid`, `authorization_balance_if_all_paid`, `previous_claims_action` | Earlier pending claims, their exposure, the conditional balance range and what to verify |
-| `proposed_changes`, `proposed_claim`, `fixed_auth_id`, `fixed_modifier`, `proposal_requires_review` | Suggested authorization/modifier changes; these require review and do not alter the prediction inputs |
+| `failed_checks`, `suggested_actions`, `warnings`, `evidence` | Reasons, rule sources, actions and supporting minutes, visits, units, balances and filing intervals |
+| `proposed_changes`, `proposed_claim`, `fixed_auth_id`, `fixed_modifier`, `proposal_requires_confirmation` | Suggested authorization/modifier changes; these require confirmation and do not alter the prediction inputs |
 | `actual_*` | Recorded outcomes retained for evaluation, excluded from the prediction interface |
 | `observed_prior_*` | Separate diagnostic forecast using observed earlier payments instead of predicted earlier test outcomes |
 | `status_correct`, `code_correct`, `error_category` | Baseline evaluation; `code_correct` means the actual denial code is in the predicted set, or a paid claim was predicted paid with no failures |
@@ -137,42 +132,27 @@ JSON-valued columns can be read with `json.loads()` after loading the CSV with
 
 ## Evaluation and limitations
 
-The baseline seeds balances with actual earlier paid claims, then uses predicted
-test outcomes to update authorization usage and daily totals. Paid and denied
-submissions both establish duplicate history. Bulletin versions use service
-dates, while replay ordering and the split use submission dates. Safe formatting
-fixes are applied automatically; business changes remain review proposals.
+The current pipeline interleaves earlier settled history, 546 unlabelled claims
+and the target cohort. Earlier confirmed paid outcomes consume recorded units;
+unknown outcomes and earlier target claims are predicted with the same checker.
+Predicted paid claims reserve provisional units, while denied predictions consume
+none. Every submitted claim still establishes duplicate history. Actual target
+outcomes are used only for scoring, or for the separately labelled diagnostic.
 
-Baseline status accuracy is **96.97%**; status-and-code-set accuracy is **96.42%**.
-The review step refers **14 unique claims**: ten actual D02 denials and four paid
-claims, leaving **23** actual denials still marked payable. These referrals are
-abstentions, not correct denial predictions. `main` in the metrics describes the
-baseline, while `pending_claims_review` describes operational review and coverage.
+The provisional model achieves **97.71% status accuracy** and **97.34% agreement
+with recorded status/code outcomes** on 1,090 unique targets. It leaves 23 denials
+predicted payable and produces **two false D02 denials on recorded paid claims**.
+The diagnostic using observed earlier target payments produces 1,062 matches
+versus the main run's 1,061. Missing contracts and correspondence remain unexplained.
 
-Pending claims are planned/unconfirmed submissions, so the balance range is
-conditional on the baseline ledger and deliberately conservative. Same-day
-pending exposure is excluded because the within-day order is unknown. No Summit
-contract amendment is inferred or implemented, and unspecified D99 outcomes
-remain unexplained. This test split has been inspected during development;
-subsequent results are exploratory. Full findings and recommendations are in
-[the experiment report](../experiment_results.md).
+`unknown_outcomes.py` separately compares ignore/all-paid/predicted policies.
+With all 2,740 earlier outcomes hidden, later agreement remains 96.24%, compared
+with 96.42% for the observed-history control without external pending claims.
+A hidden September backlog reproduces that control's downstream forecasts exactly.
+Neither test supplies ground truth for the 546 genuinely unlabelled rows.
 
-## Unknown-result claims: updated recommendation
-
-Run `python3 experiment/unknown_outcomes.py` from the repository root to reuse the
-validated artifacts, or run the full runner to rebuild everything. Defaults and
-`--artifacts`/`--output-dir` work independently of the shell's current directory.
-
-The existing model can supply provisional outcomes for earlier unresolved
-submissions. Including forecasts for the 546 unlabelled pending rows raises later
-status/code agreement from 96.42% to 97.34%, while introducing two false denials.
-With all 2,740 earlier historical outcomes hidden, later agreement is 96.24%,
-compared with the observed-history control's 96.42%. A hidden September backlog
-reproduces the control's downstream forecasts exactly.
-
-This supports a simpler provisional predicted ledger for the prototype, updating
-the original broad review recommendation. It does not establish actual submission
-or payment, validate the 546 unknown outcomes themselves, or prove greater safety
-than human review. Full methods, comparisons, counterexamples and limits are in
-[section 8 of the report](../experiment_results.md#8-use-provisional-predictions-for-earlier-unknown-outcomes).
-The web app has not been changed by this experiment.
+Provisional usage remains distinct from confirmed payer payment. Dates without
+adjudication timestamps and snapshot EVV availability are assumptions. This is
+an inspected synthetic cohort, so validate future changes on a fresh cohort.
+See [the full report](../plans/experiment_results.md) for methods, controls,
+per-mask results, counterexamples and the proposed ledger policy.

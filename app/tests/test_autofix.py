@@ -83,12 +83,12 @@ class AutomaticFixes(unittest.TestCase):
         self.assertEqual(rows[0]['clean']['auth_id'], '')
         self.assertIn('D07', rows[0]['denial_codes'])
 
-    def test_uncertain_pending_balance_prevents_auto_authorization(self):
+    def test_uncheckable_earlier_claim_does_not_create_a_balance_range(self):
         rows = check([claim_row(cid='C000301', freq='7', orig='C000099', units='8'),
                       claim_row(cid='C000302', dos='2026-07-02', sub='2026-07-06', auth='', units='3')])
-        self.assertEqual(rows[0]['status'], 'manual_review')
-        self.assertEqual(rows[1]['clean']['auth_id'], '')
-        self.assertIn('auth_id', rows[1]['proposed_changes'])
+        self.assertEqual(rows[0]['status'], 'unable_to_check')
+        self.assertEqual(rows[1]['clean']['auth_id'], 'AUTH00001')
+        self.assertNotIn('balance_range', rows[1])
 
     def test_explicit_user_edits_take_precedence(self):
         row = check([claim_row(auth='')], edits={'auth_id': ''})[0]

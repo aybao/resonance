@@ -24,7 +24,7 @@ DENIAL_CODES = {
     "D08": "Authorization not valid for this patient, service or date of service",
     "D09": "Billed units exceed the EVV-verified time",
     "D10": "Payer contract-specific denial",
-    "D99": "Other / referred for manual review",
+    "D99": "Other payer denial",
 }
 SERVICES = {"T1019", "T1005", "S5125"}
 DAYS = ["mon", "tue", "wed", "thu", "fri", "sat", "sun"]

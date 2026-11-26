@@ -7,7 +7,7 @@ import json
 from collections import defaultdict
 from datetime import datetime
 
-from .engine import Context, PendingReview, State, check_claim
+from .engine import Context, State, check_claim
 from .normalize import (AUTH_FIELDS, CLAIM_FIELDS, EVV_FIELDS, HISTORY_EXTRA, canonical, normalize_claims,
                         normalize_reference_rows, read_csv_text)
 
@@ -39,7 +39,7 @@ class Dataset:
                 seen.add(key)
                 unique.append(r)
         if kind == "history":
-            unique = [r for r in unique if r.get("status") in ("paid", "denied")]
+            unique = [r for r in unique if r.get("status") in ("paid", "denied", "pending")]
             unique.sort(key=lambda r: r["submitted_date"])
         setattr(self, {"authorizations": "authorizations", "evv": "visits", "history": "history"}[kind], unique)
         self.errors = [f"{kind}: {e}" for e in errors][:50] + [e for e in self.errors if not e.startswith(kind + ":")]
@@ -55,10 +55,13 @@ class Dataset:
     def ready(self):
         return bool(self.authorizations and self.visits)
 
-    def base_state(self):
+    def base_state(self, rules):
         state = State()
-        for r in self.history:
-            state.record(r, r["status"])
+        for row in self.history:
+            claim = {f: row.get(f, "") for f in CLAIM_FIELDS}
+            provisional = row["status"] == "pending"
+            status = check_claim(claim, state, self.ctx, rules)["status"] if provisional else row["status"]
+            state.record(claim, status, provisional=provisional)
         return state
 
 
@@ -139,8 +142,8 @@ def _fill_payers(records, ctx):
         r.update(clean=checked["clean"], issues=checked["issues"], duplicate_of=checked["duplicate_of"])
 
 
-def _apply_supported_fixes(record, state, ctx, rules, pending, trusted):
-    """Apply engine-supported fields, retaining explicit edits and uncertain balances."""
+def _apply_supported_fixes(record, state, ctx, rules, trusted):
+    """Apply engine-supported fields, retaining explicit user edits."""
     claim = record["clean"]
     result = check_claim(claim, state, ctx, rules)
     # Modifier first: the final authorization decision uses the corrected claim.
@@ -153,8 +156,6 @@ def _apply_supported_fixes(record, state, ctx, rules, pending, trusted):
         candidate = dict(claim, **{field: patch["value"]})
         checked = check_claim(candidate, state, ctx, rules)
         if checked.get("rule_error"):
-            continue
-        if field == "auth_id" and pending.assess(candidate, checked)["balance_uncertain"]:
             continue
         record["automatic_fixes"].append(dict(field=field, before=claim[field], after=patch["value"],
             reason=patch["reason"].replace("; confirm before use", ""), source_ids=[patch["value"]] if field == "auth_id" else [],
@@ -186,11 +187,7 @@ def run_batch(records, dataset, rules, overrides=None, *, autofix=True):
     def blocking(r):
         return any(i["severity"] == "error" and (not autofix or i["field"] not in FIXABLE) for i in r["issues"])
     valid = [r for r in records if not r["duplicate_of"] and not blocking(r)]
-    pending = PendingReview(ctx)
-    for r in records:  # rows with unresolved input are undecided: never assumed paid
-        if not r["duplicate_of"] and blocking(r):
-            pending.add(r["clean"])
-    state = dataset.base_state()
+    state = dataset.base_state(rules)
     submissions = defaultdict(list)
     for historical in dataset.history:
         submissions[State.duplicate_key(historical)].append(dict(
@@ -199,19 +196,14 @@ def run_batch(records, dataset, rules, overrides=None, *, autofix=True):
     outputs = {}
     for r in sorted(valid, key=lambda r: (r["clean"]["submitted_date"], r["line"])):
         claim = r["clean"]
-        base = _apply_supported_fixes(r, state, ctx, rules, pending, trusted) if autofix else check_claim(claim, state, ctx, rules)
+        base = _apply_supported_fixes(r, state, ctx, rules, trusted) if autofix else check_claim(claim, state, ctx, rules)
         if any(i["severity"] == "error" for i in r["issues"]):
-            pending.add(claim)
             continue
         base["duplicate_submissions"] = (copy.deepcopy(submissions[State.duplicate_key(claim)])
                                          if "D05" in base["denial_codes"] else [])
-        review = pending.assess(claim, base) if base["evidence"] else dict(status=base["status"], balance_uncertain=False)
-        outputs[r["line"]] = (base, review)
-        # Uncheckable claims are registered as submitted but never assumed paid.
-        decision = overrides.get(claim["claim_id"], {}).get("status") or review["status"]
-        if decision in ("check_previous_claims", "manual_review"):
-            pending.add(claim)
-        state.record(claim, "paid" if decision == "paid" else "other")
+        outputs[r["line"]] = base
+        decision = overrides.get(claim["claim_id"], {}).get("status") or base["status"]
+        state.record(claim, decision, provisional=True)
         submissions[State.duplicate_key(claim)].append(dict(
             source="batch", line=r["line"], status=decision, claim=dict(claim)))
     rows = []
@@ -222,23 +214,16 @@ def run_batch(records, dataset, rules, overrides=None, *, autofix=True):
                    automatic_fixes=r["automatic_fixes"],
                    duplicate_submissions=[],
                    issues=r["issues"], duplicate_of=r["duplicate_of"], proposed_changes={}, failures=[], warnings=[],
-                   evidence={}, balance_uncertain=False, unresolved_prior_claim_ids=[], balance_range=None,
-                   previous_claims_action="", rule_version=None)
+                   evidence={}, rule_version=None)
         if r["duplicate_of"]:
             row.update(status="duplicate_row", denial_codes=[], summary=f"Repeat of line {r['duplicate_of']}; not checked twice")
         elif errors:
-            row.update(status="manual_review", denial_codes=[], category="must_correct",
+            row.update(status="unable_to_check", denial_codes=[], category="must_correct",
                        summary="Input cannot be checked until corrected: " + "; ".join(f"{i['field']}: {i['message']}" for i in errors))
         else:
-            base, review = outputs[r["line"]]
+            base = outputs[r["line"]]
             row.update(base)
-            row.update(status=review["status"], balance_uncertain=review["balance_uncertain"],
-                       unresolved_prior_claim_ids=review.get("unresolved_prior_claim_ids", []),
-                       balance_range=review.get("balance_range"),
-                       previous_claims_action=review.get("previous_claims_action", ""))
             row["summary"] = base["remark"]
-            if review["status"] == "check_previous_claims":
-                row["summary"] = "Authorization balance uncertain: it fits only if earlier unresolved claims are not paid"
             row["denial_codes"] = list(base["denial_codes"])
         row["reference_data"] = claim_references(claim, ctx, visits_by_key)
         row["category"] = _category(row)
@@ -256,9 +241,9 @@ def run_batch(records, dataset, rules, overrides=None, *, autofix=True):
 def _category(row):
     if row["duplicate_of"]:
         return "duplicate_row"
-    if row["status"] == "manual_review" and any(i["severity"] == "error" for i in row["issues"]):
+    if row["status"] == "unable_to_check" and any(i["severity"] == "error" for i in row["issues"]):
         return "must_correct"
-    return {"denied": "denied", "check_previous_claims": "review", "manual_review": "review", "paid": "payable"}[row["status"]]
+    return {"denied": "denied", "unable_to_check": "unable_to_check", "paid": "payable"}[row["status"]]
 
 
 def summarize(rows):
@@ -291,7 +276,7 @@ def export_csv(rows, original_fieldnames):
         line.update(
             predicted_status=r["predicted_status"], predicted_denial_codes=";".join(r["predicted_codes"]),
             reasons=" | ".join(f["reason"] for f in r["failures"]) or r["summary"],
-            suggested_actions=" | ".join([f["suggestion"] for f in r["failures"]] + ([r["previous_claims_action"]] if r["previous_claims_action"] else [])),
+            suggested_actions=" | ".join([f["suggestion"] for f in r["failures"]]),
             proposed_changes=json.dumps({k: v["value"] for k, v in r["proposed_changes"].items()}) if r["proposed_changes"] else "",
             normalisation_changes="; ".join(f"{c['field']}: {c['before']!r}->{c['after']!r}" for c in r["changes"]),
             automatic_fixes=json.dumps(r["automatic_fixes"]), checked_claim=json.dumps(r["clean"]),

@@ -4,7 +4,7 @@ This document defines the architecture and testing schedule. The app implements
 code-generating rule updates using a standard AI skill, runtime example checks,
 and an isolated historical replay/demo. Rule code can express novel checks over
 the available data; claim execution remains deterministic. See
-[app/README.md](app/README.md) for commands and implementation limits. Live-AI
+[app/README.md](../app/README.md) for commands and implementation limits. Live-AI
 integration is an explicit on-demand check; automated tests use test transports.
 
 ## Results from evaluation
@@ -12,27 +12,25 @@ integration is an explicit on-demand check; automated tests use test transports.
 The original experiment evaluated **1,090 unique claims**. These results describe
 that experiment, rather than validation of the code-generating updater.
 
-| Measure | Original rules-only prediction | After previous-claim review step |
+| Measure | Rules-only control | Provisional predictions for unknown outcomes |
 |---|---:|---:|
-| Claims receiving a paid/denied decision | 1,090 (100%) | **1,076 (98.72%)** |
-| Correct paid/denied decisions, among automatic decisions | 1,057 / 1,090 (96.97%) | **1,053 / 1,076 (97.86%)** |
-| Correct status and matching code set, among automatic decisions | 1,051 / 1,090 (96.42%) | **1,047 / 1,076 (97.30%)** |
-| Actual denial code detected by the rules | 348 / 387 (89.92%) | **348 / 387 (89.92%)** |
-| Actual denials still marked payable | 33 | **23: 17 D99 + 6 D10** |
-| Claims classified as `check_previous_claims` | 0 | **14: 10 actually denied + 4 actually paid** |
-| Actually paid claims marked payable | 703 / 703 | **699 / 703**; four sent to review |
-| False definite denials on recorded paid claims | 0 / 703 | **0 / 703** |
+| Claims classified paid/denied | 1,090 | **1,090** |
+| Correct paid/denied status | 1,057 (96.97%) | **1,065 (97.71%)** |
+| Correct status and recorded denial code | 1,051 (96.42%) | **1,061 (97.34%)** |
+| Recorded denial codes detected | 348 / 387 | **360 / 387** |
+| Actual denials still predicted payable | 33 | **23: 17 D99 + 6 D10** |
+| False denials on paid claims | 0 / 703 | **2 / 703** |
 
-Review cases are excluded from automatic-decision accuracy; a denial-code match means the reported code appears in the predicted set.
+Unknown results are forecast with the existing deterministic checker. Predicted
+paid claims reserve provisional units; predicted denied claims consume none.
+Known payer outcomes remain unchanged. Pending or blank historical outcomes use
+this same process, with predicted usage identified separately in claim details.
+The two false denials, C012372 and C012381, remain explicit limitations. Missing
+contracts and payer correspondence still explain the D10/D99 discrepancies.
 
-After sending **14 claims to review**, **23 actually denied claims are still predicted payable**:
-
-- **6 D10 cases:** Denied under a Summit contract requirement, apparently whole-hour billing, which was not included in the supplied rules.
-- **17 D99 cases:** Fifteen have only vague contact/review remarks; two mention the same whole-hour requirement but were recorded as D99 rather than D10.
-
-Separately, **6 claims are correctly flagged as denied but have the wrong denial code**: four actual D10 cases flagged as D09, and two actual D02 cases flagged as D03.
-
-**Design conclusion:** Keep deterministic checks, review uncertain balances, and obtain the missing contracts/correspondence before adding rules for these exceptions; there is no demonstrated benefit yet from per-claim AI calls.
+**Design conclusion:** Use the provisional forecast ledger without per-claim AI
+calls. Invalid inputs, missing rules and execution failures produce an explicit
+Unable to check result. Keep rule-update approval separate from claim prediction.
 
 ## Proposed architecture
 
@@ -65,7 +63,7 @@ rather than an invented rule.
 Give the AI a standard skill containing:
 
 - The product context, claim-checking workflow, and distinction between safe
-  formatting, uniquely supported automatic fixes and corrections requiring review.
+  formatting, uniquely supported automatic fixes and corrections requiring explicit edits.
 - The input data formats, relevant clean example rows, and available supporting
   data such as authorizations, EVV visits, and prior claims.
 - Existing rule code, payer versions, effective dates, and source documents.
@@ -112,18 +110,18 @@ The user uploads a claims CSV. The system:
 2. Fills missing payers from unambiguous authorization coverage, applies uniquely
    supported authorization references and approved modifiers, and records the
    evidence for each change. Explicit edits take precedence. Ambiguous matches,
-   uncertain balances and other unresolved input problems remain for review.
+   invalid input problems must be corrected before checking.
 3. Applies the approved rules with the relevant authorization, EVV, and historical
    state, returning every detected denial code with reasons and suggested actions.
 4. Highlights automatic formatting and supported fixes, and separately identifies rows needing
-   correction or review, including uncertain authorization balances.
+   corrections, and shows provisional usage included in projected balances.
 5. Allows the user to correct fields or classifications and re-check the results.
 
 Clicking a claim shows its matching EVV visits, durations and verification state,
 plus referenced and related authorizations, coverage dates and remaining units
 at the point the claim was checked. Flag mismatched or missing references clearly.
 
-Business corrections require user review. A correction to one claim does not
+Business corrections without uniquely supported values require an explicit edit. A correction to one claim does not
 silently change the payer rules; that requires a separate rule update.
 
 **Rules setup and updates**
@@ -145,14 +143,13 @@ flowchart TD
     C1["Upload claims CSV"]
     C2["Normalize data and flag missing or invalid fields"]
     C3["Apply approved rules using EVV,<br/>authorizations and claim history"]
-    C4["Flag denials, suggested fixes<br/>and uncertain balances"]
-    C5["User reviews results and highlighted changes"]
+    C4["Flag denials, suggested fixes<br/>and projected usage"]
+    C5["User inspects predictions and highlighted changes"]
     C1 --> C2 --> C3 --> C4 --> C5
 ```
 
 AI helps maintain the rules; claim-by-claim checks execute deterministically,
-with unresolved evidence, ambiguous corrections and changes to care/amounts/dates
-left for user review. The demo scores original submissions before automatic fixes;
+with invalid inputs clearly separated from paid/denied predictions. The demo scores original submissions before automatic fixes;
 corrected rows remain visible separately.
 
 ## Testing
@@ -176,7 +173,7 @@ checks from tests and demonstrations run on demand.
 | Claims input validation | Automatically on each claims/reference-data upload and after a user edits a claim | Check the actual inputs before deterministic processing; this does not run the development test suite |
 | Unit and pipeline/API tests | On demand during development; after relevant code changes and before a release or demo | Verify normalization, rule boundaries, state handling, and integrated workflows |
 | Browser tests | After UI/workflow changes and before a demo or release; also on demand | Verify the upload, rule review, follow-up chat, acceptance, results, corrections, and export flows |
-| Historical accuracy report | At each replay stage; also on demand for a selected dataset and rule version | Report agreement with recorded outcomes, review workload, false alarms, and mismatched rows |
+| Historical accuracy report | At each replay stage; also on demand for a selected dataset and rule version | Report agreement with recorded outcomes, uncheckable inputs, false alarms, and mismatched rows |
 
 ### Historical replay and demo
 
@@ -209,7 +206,7 @@ later stage. Retain the checker's handling of earlier unresolved submissions.
 
 At each stage, check the entire pipeline and compare affected outcomes, earlier
 service dates, unrelated payers, authorization usage, daily totals, duplicates,
-and pending-claim review with the expected behaviour. A scripted test can use a
+and provisional usage with the expected behaviour. A scripted test can use a
 repeatable AI fixture; a live demo can use Claude. Assess generated code by its
 behaviour and output contract, rather than requiring identical code or prose.
 
@@ -255,7 +252,7 @@ expected code set, including the absence of unintended failures.
 | Authorizations | Missing reference → D07; wrong payer/patient/service/date → D08; exact remaining balance passes, one unit over → D02 |
 | Filing and modifiers | Exact deadline passes, next day fails; test both sides of effective dates, plus Harbor weekdays and weekends |
 | Historical state | Paid claims consume units; denied claims do not; both establish duplicate history; corrected claims are exempt; Harbor totals span services |
-| Uncertainty and output | Pending claims trigger review only when they could change the balance decision; exclude later claims; retain definite denials; output every detected code and keep proposed edits separate |
+| Provisional state and output | Predict unknown historical outcomes; predicted paid claims reserve capacity, denied predictions do not; preserve settled outcomes and label provisional usage. Return all detected codes or an explicit input/execution error |
 | Generated rule code | Validate the input/output contract, execution limits, malformed examples, failure handling, persistence, and novel rules outside the legacy parameter vocabulary |
 
 The existing app and experiment tests provide a starting point. Browser coverage
@@ -269,7 +266,7 @@ These run during development after relevant changes, before a release/demo, and
 on demand, as specified in the testing schedule.
 
 - **Upload to results:** Process a small fixture containing payable, denied,
-  multiple-failure, malformed and review cases through the full pipeline; verify
+  multiple-failure, malformed and execution-error cases through the full pipeline; verify
   displayed changes, explanations and downloaded CSV, preserving source data.
 - **Sequential batch:** Include prior paid/denied claims, authorization exhaustion,
   daily limits, duplicates and pending submissions; check results against an
@@ -278,7 +275,7 @@ on demand, as specified in the testing schedule.
   update; affected outcomes must change as specified, while earlier service
   dates and unrelated payers retain their expected results.
 - **Browser workflow:** Exercise upload, chat revisions, example comments, rule
-  acceptance, claim review/corrections, and export. Also verify dated demo controls
+  acceptance, claim corrections, and export. Also verify dated demo controls
   and restoration of full-app state.
 
 ### Using examples to review a rule update
@@ -332,5 +329,5 @@ set. Controlled tests should use full expected sets.
 The more flexible updater allows new rules when supporting payer evidence is
 supplied. Historical replay on already inspected data is a diagnostic/demo, not a
 fresh accuracy estimate; use a new holdout for future claims about generalization.
-Report review workload and false alarms alongside accuracy. See
+Report uncheckable inputs and false alarms alongside accuracy. See
 [experiment_results.md](experiment_results.md) for the full evaluation.

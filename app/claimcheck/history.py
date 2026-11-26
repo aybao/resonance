@@ -21,7 +21,8 @@ def replay(dataset, rules):
         rows.append(dict(claim={k: h.get(k, "") for k in CLAIM_FIELDS}, claim_id=h["claim_id"], payer=h["payer"], date_of_service=h["date_of_service"],
                          actual_status=h["status"], actual_code=h["denial_code"], remark=h.get("remark", ""),
                          status=r["status"], codes=r["denial_codes"], error=r.get("rule_error")))
-        state.record(h, h["status"])
+        state.record(claim, h["status"] if h["status"] in ("paid", "denied") else r["status"],
+                     provisional=h["status"] not in ("paid", "denied"))
     return rows
 
 
@@ -34,7 +35,10 @@ def regression_report(dataset, rules, exceptions_path=None):
     """
     path = Path(exceptions_path) if exceptions_path is not None else EXCEPTIONS_PATH
     known = json.loads(path.read_text()) if path.exists() else {}
-    rows = replay(dataset, rules)
+    history = replay(dataset, rules)
+    rows = [r for r in history if r["actual_status"] in ("paid", "denied")]
+    pending = [r for r in history if r["actual_status"] not in ("paid", "denied")]
+    pending_errors = sum(r["status"] == "unable_to_check" for r in pending)
     failures, exceptions = [], []
     matched = 0
     for row in rows:
@@ -50,20 +54,23 @@ def regression_report(dataset, rules, exceptions_path=None):
                        and ("recorded_remark" not in expected or expected["recorded_remark"] == row["remark"]))
         row["exception_reason"] = expected["reason"] if allowed else ""
         (exceptions if allowed else failures).append(row)
-    return dict(total=len(rows), matched=matched, known_exceptions=len(exceptions),
-                failed=len(failures), passed=not failures if rows else None,
+    return dict(total=len(rows), pending=len(pending), pending_predictions=pending, pending_errors=pending_errors, matched=matched, known_exceptions=len(exceptions),
+                failed=len(failures), passed=False if pending_errors else (not failures if rows else None),
                 failures=failures, exceptions=exceptions,
                 accuracy=matched / len(rows) if rows else None,
                 basis="Original historical claims using earlier recorded outcomes")
 
 
 def matches(row):
+    if row["actual_status"] not in ("paid", "denied"):
+        return False
     if row["actual_status"] == "denied":
         return row["status"] == "denied" and row["actual_code"] in row["codes"]
     return row["status"] == "paid" and not row["codes"]
 
 
 def accuracy(rows):
+    rows = [r for r in rows if r["actual_status"] in ("paid", "denied")]
     n = len(rows)
     ok = sum(matches(r) for r in rows)
     denied = [r for r in rows if r["actual_status"] == "denied"]
@@ -71,7 +78,7 @@ def accuracy(rows):
                 actual_denied=len(denied), actual_denied_code_detected=sum(matches(r) for r in denied),
                 missed_denials=sum(r["status"] == "paid" for r in denied),
                 false_alarms=sum(r["actual_status"] == "paid" and r["status"] == "denied" for r in rows),
-                manual_review=sum(r["status"] == "manual_review" for r in rows))
+                unable_to_check=sum(r["status"] == "unable_to_check" for r in rows))
 
 
 def impact(dataset, old_rules, new_rules, limit=None):
@@ -79,6 +86,8 @@ def impact(dataset, old_rules, new_rules, limit=None):
     a, b = replay(dataset, old_rules), replay(dataset, new_rules)
     changed = []
     for x, y in zip(a, b):
+        if x["actual_status"] not in ("paid", "denied"):
+            continue
         if (x["status"], x["codes"]) != (y["status"], y["codes"]):
             changed.append(dict(claim=x["claim"], claim_id=x["claim_id"], payer=x["payer"], date_of_service=x["date_of_service"],
                                 before=dict(status=x["status"], codes=x["codes"]),

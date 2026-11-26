@@ -1,42 +1,43 @@
 {
-  "evaluation": "Denied: recorded code is in predicted set. Paid: predicted paid with an empty set. Manual review never counts as a match.",
+  "evaluation": "Denied: recorded code is in predicted set. Paid: predicted paid with an empty set. Uncheckable claims never count as matches.",
   "main": {
     "total": 1090,
     "labelled": 1090,
-    "status_correct": 1057,
-    "status_accuracy": 0.9697247706422019,
+    "status_correct": 1065,
+    "status_accuracy": 0.9770642201834863,
     "always_paid_baseline": 0.6449541284403669,
-    "status_and_code_set_correct": 1051,
-    "status_and_code_set_accuracy": 0.9642201834862385,
+    "status_and_code_set_correct": 1061,
+    "status_and_code_set_accuracy": 0.9733944954128441,
     "actual_denied": 387,
     "actual_paid": 703,
-    "denial_code_correct": 348,
-    "denial_code_accuracy": 0.8992248062015504,
-    "denial_recall": 0.9147286821705426,
-    "denied_reason_detected": 348,
-    "additional_unconfirmed_codes": 70,
-    "missed_denials": 33,
-    "false_alarms": 0,
-    "manual_review": 0,
+    "denial_code_correct": 360,
+    "denial_code_accuracy": 0.9302325581395349,
+    "denial_recall": 0.9405684754521964,
+    "denied_reason_detected": 360,
+    "additional_unconfirmed_codes": 73,
+    "missed_denials": 23,
+    "false_alarms": 2,
+    "unable_to_check": 0,
     "error_categories": {
       "contract_or_unspecified_denial": 27,
-      "rule_or_data_disagreement": 12
+      "rule_or_data_disagreement": 1,
+      "state_sensitive_mismatch": 1
     },
     "confusion": {
-      "paid -> [] (paid)": 703,
+      "paid -> [] (paid)": 701,
       "D07 -> [\"D07\"] (denied)": 14,
-      "D09 -> [\"D09\"] (denied)": 53,
+      "D09 -> [\"D09\"] (denied)": 51,
       "D03 -> [\"D03\"] (denied)": 110,
       "D01 -> [\"D01\"] (denied)": 33,
       "D99 -> [] (paid)": 17,
-      "D06 -> [\"D06\"] (denied)": 31,
+      "D06 -> [\"D06\"] (denied)": 30,
       "D10 -> [] (paid)": 6,
       "D07 -> [\"D06\", \"D07\"] (denied)": 1,
       "D05 -> [\"D05\", \"D06\"] (denied)": 3,
       "D01 -> [\"D01\", \"D03\"] (denied)": 8,
       "D08 -> [\"D08\"] (denied)": 19,
-      "D02 -> [] (paid)": 10,
-      "D02 -> [\"D02\", \"D03\"] (denied)": 5,
+      "D02 -> [\"D02\"] (denied)": 20,
+      "D02 -> [\"D02\", \"D03\"] (denied)": 7,
       "D05 -> [\"D05\"] (denied)": 12,
       "D01 -> [\"D01\", \"D02\"] (denied)": 1,
       "D04 -> [\"D04\"] (denied)": 9,
@@ -44,58 +45,58 @@
       "D09 -> [\"D03\", \"D09\"] (denied)": 14,
       "D01 -> [\"D01\", \"D07\"] (denied)": 1,
       "D10 -> [\"D09\"] (denied)": 4,
+      "paid -> [\"D02\"] (denied)": 2,
       "D01 -> [\"D01\", \"D04\"] (denied)": 1,
       "D09 -> [\"D06\", \"D09\"] (denied)": 3,
       "D09 -> [\"D08\", \"D09\"] (denied)": 1,
-      "D02 -> [\"D02\"] (denied)": 10,
+      "D09 -> [\"D02\", \"D09\"] (denied)": 3,
       "D04 -> [\"D04\", \"D06\"] (denied)": 2,
       "D01 -> [\"D01\", \"D06\"] (denied)": 1,
-      "D09 -> [\"D02\", \"D09\"] (denied)": 1,
       "D08 -> [\"D03\", \"D08\"] (denied)": 4,
       "D01 -> [\"D01\", \"D03\", \"D08\"] (denied)": 1,
       "D07 -> [\"D03\", \"D07\"] (denied)": 3,
       "D03 -> [\"D03\", \"D05\"] (denied)": 1,
       "D09 -> [\"D02\", \"D03\", \"D09\"] (denied)": 1,
       "D01 -> [\"D01\", \"D02\", \"D03\"] (denied)": 1,
-      "D02 -> [\"D03\"] (denied)": 2,
       "D09 -> [\"D03\", \"D08\", \"D09\"] (denied)": 1,
       "D09 -> [\"D03\", \"D07\", \"D09\"] (denied)": 1,
-      "D09 -> [\"D03\", \"D05\", \"D09\"] (denied)": 1
+      "D09 -> [\"D03\", \"D05\", \"D09\"] (denied)": 1,
+      "D06 -> [\"D02\", \"D06\"] (denied)": 1
     }
   },
   "observed_prior_diagnostic": {
     "total": 1090,
     "labelled": 1090,
-    "status_correct": 1057,
-    "status_accuracy": 0.9697247706422019,
+    "status_correct": 1066,
+    "status_accuracy": 0.9779816513761468,
     "always_paid_baseline": 0.6449541284403669,
-    "status_and_code_set_correct": 1051,
-    "status_and_code_set_accuracy": 0.9642201834862385,
+    "status_and_code_set_correct": 1062,
+    "status_and_code_set_accuracy": 0.9743119266055046,
     "actual_denied": 387,
     "actual_paid": 703,
-    "denial_code_correct": 348,
-    "denial_code_accuracy": 0.8992248062015504,
-    "denial_recall": 0.9147286821705426,
-    "denied_reason_detected": 348,
-    "additional_unconfirmed_codes": 70,
-    "missed_denials": 33,
-    "false_alarms": 0,
-    "manual_review": 0,
+    "denial_code_correct": 360,
+    "denial_code_accuracy": 0.9302325581395349,
+    "denial_recall": 0.9405684754521964,
+    "denied_reason_detected": 360,
+    "additional_unconfirmed_codes": 73,
+    "missed_denials": 23,
+    "false_alarms": 1,
+    "unable_to_check": 0,
     "confusion": {
-      "paid -> [] (paid)": 703,
+      "paid -> [] (paid)": 702,
       "D07 -> [\"D07\"] (denied)": 14,
-      "D09 -> [\"D09\"] (denied)": 53,
+      "D09 -> [\"D09\"] (denied)": 51,
       "D03 -> [\"D03\"] (denied)": 110,
       "D01 -> [\"D01\"] (denied)": 33,
       "D99 -> [] (paid)": 17,
-      "D06 -> [\"D06\"] (denied)": 31,
+      "D06 -> [\"D06\"] (denied)": 30,
       "D10 -> [] (paid)": 6,
       "D07 -> [\"D06\", \"D07\"] (denied)": 1,
       "D05 -> [\"D05\", \"D06\"] (denied)": 3,
       "D01 -> [\"D01\", \"D03\"] (denied)": 8,
       "D08 -> [\"D08\"] (denied)": 19,
-      "D02 -> [] (paid)": 10,
-      "D02 -> [\"D02\", \"D03\"] (denied)": 5,
+      "D02 -> [\"D02\"] (denied)": 20,
+      "D02 -> [\"D02\", \"D03\"] (denied)": 7,
       "D05 -> [\"D05\"] (denied)": 12,
       "D01 -> [\"D01\", \"D02\"] (denied)": 1,
       "D04 -> [\"D04\"] (denied)": 9,
@@ -103,87 +104,3154 @@
       "D09 -> [\"D03\", \"D09\"] (denied)": 14,
       "D01 -> [\"D01\", \"D07\"] (denied)": 1,
       "D10 -> [\"D09\"] (denied)": 4,
+      "paid -> [\"D02\"] (denied)": 1,
       "D01 -> [\"D01\", \"D04\"] (denied)": 1,
       "D09 -> [\"D06\", \"D09\"] (denied)": 3,
       "D09 -> [\"D08\", \"D09\"] (denied)": 1,
-      "D02 -> [\"D02\"] (denied)": 10,
+      "D09 -> [\"D02\", \"D09\"] (denied)": 3,
       "D04 -> [\"D04\", \"D06\"] (denied)": 2,
       "D01 -> [\"D01\", \"D06\"] (denied)": 1,
-      "D09 -> [\"D02\", \"D09\"] (denied)": 1,
       "D08 -> [\"D03\", \"D08\"] (denied)": 4,
       "D01 -> [\"D01\", \"D03\", \"D08\"] (denied)": 1,
       "D07 -> [\"D03\", \"D07\"] (denied)": 3,
       "D03 -> [\"D03\", \"D05\"] (denied)": 1,
       "D09 -> [\"D02\", \"D03\", \"D09\"] (denied)": 1,
       "D01 -> [\"D01\", \"D02\", \"D03\"] (denied)": 1,
-      "D02 -> [\"D03\"] (denied)": 2,
       "D09 -> [\"D03\", \"D08\", \"D09\"] (denied)": 1,
       "D09 -> [\"D03\", \"D07\", \"D09\"] (denied)": 1,
-      "D09 -> [\"D03\", \"D05\", \"D09\"] (denied)": 1
+      "D09 -> [\"D03\", \"D05\", \"D09\"] (denied)": 1,
+      "D06 -> [\"D02\", \"D06\"] (denied)": 1
     }
   },
-  "pending_claims_review": {
-    "reviewed": 14,
-    "review_rate": 0.012844036697247707,
-    "reviewed_actual_denied": 10,
-    "reviewed_actual_paid": 4,
-    "reviewed_actual_codes": {
-      "D02": 10,
-      "paid": 4
-    },
-    "balance_uncertainty_flags": 20,
-    "remaining_payable_missed_denials": 23,
-    "false_definite_denials": 0,
-    "automatic_decisions": 1076,
-    "automatic_decision_coverage": 0.9871559633027523,
-    "correct_automatic_code_matches": 1047,
-    "automatic_code_match_rate": 0.9730483271375465,
-    "correct_automatic_code_matches_all_claims": 0.9605504587155963,
-    "note": "Review is an abstention, not a correctly predicted denial. Main metrics remain baseline forecasts; decision is the operational gate."
+  "provisional_history": {
+    "claims": 546,
+    "forecasts": [
+      {
+        "claim_id": "C021761",
+        "status": "paid",
+        "codes": []
+      },
+      {
+        "claim_id": "C021790",
+        "status": "paid",
+        "codes": []
+      },
+      {
+        "claim_id": "C019100",
+        "status": "paid",
+        "codes": []
+      },
+      {
+        "claim_id": "C019757",
+        "status": "denied",
+        "codes": [
+          "D09"
+        ]
+      },
+      {
+        "claim_id": "C021256",
+        "status": "paid",
+        "codes": []
+      },
+      {
+        "claim_id": "C021357",
+        "status": "paid",
+        "codes": []
+      },
+      {
+        "claim_id": "C020141",
+        "status": "denied",
+        "codes": [
+          "D01"
+        ]
+      },
+      {
+        "claim_id": "C020874",
+        "status": "paid",
+        "codes": []
+      },
+      {
+        "claim_id": "C021362",
+        "status": "paid",
+        "codes": []
+      },
+      {
+        "claim_id": "C019929",
+        "status": "paid",
+        "codes": []
+      },
+      {
+        "claim_id": "C020410",
+        "status": "paid",
+        "codes": []
+      },
+      {
+        "claim_id": "C020611",
+        "status": "paid",
+        "codes": []
+      },
+      {
+        "claim_id": "C020633",
+        "status": "paid",
+        "codes": []
+      },
+      {
+        "claim_id": "C019231",
+        "status": "paid",
+        "codes": []
+      },
+      {
+        "claim_id": "C019388",
+        "status": "denied",
+        "codes": [
+          "D09"
+        ]
+      },
+      {
+        "claim_id": "C019514",
+        "status": "paid",
+        "codes": []
+      },
+      {
+        "claim_id": "C021181",
+        "status": "paid",
+        "codes": []
+      },
+      {
+        "claim_id": "C019045",
+        "status": "paid",
+        "codes": []
+      },
+      {
+        "claim_id": "C020706",
+        "status": "paid",
+        "codes": []
+      },
+      {
+        "claim_id": "C019391",
+        "status": "paid",
+        "codes": []
+      },
+      {
+        "claim_id": "C019470",
+        "status": "denied",
+        "codes": [
+          "D01"
+        ]
+      },
+      {
+        "claim_id": "C020700",
+        "status": "paid",
+        "codes": []
+      },
+      {
+        "claim_id": "C021163",
+        "status": "paid",
+        "codes": []
+      },
+      {
+        "claim_id": "C019223",
+        "status": "paid",
+        "codes": []
+      },
+      {
+        "claim_id": "C019230",
+        "status": "paid",
+        "codes": []
+      },
+      {
+        "claim_id": "C019263",
+        "status": "paid",
+        "codes": []
+      },
+      {
+        "claim_id": "C020229",
+        "status": "paid",
+        "codes": []
+      },
+      {
+        "claim_id": "C020959",
+        "status": "paid",
+        "codes": []
+      },
+      {
+        "claim_id": "C019112",
+        "status": "denied",
+        "codes": [
+          "D01"
+        ]
+      },
+      {
+        "claim_id": "C019438",
+        "status": "paid",
+        "codes": []
+      },
+      {
+        "claim_id": "C020240",
+        "status": "paid",
+        "codes": []
+      },
+      {
+        "claim_id": "C019006",
+        "status": "paid",
+        "codes": []
+      },
+      {
+        "claim_id": "C019023",
+        "status": "paid",
+        "codes": []
+      },
+      {
+        "claim_id": "C019674",
+        "status": "paid",
+        "codes": []
+      },
+      {
+        "claim_id": "C020104",
+        "status": "paid",
+        "codes": []
+      },
+      {
+        "claim_id": "C020307",
+        "status": "paid",
+        "codes": []
+      },
+      {
+        "claim_id": "C020465",
+        "status": "paid",
+        "codes": []
+      },
+      {
+        "claim_id": "C020569",
+        "status": "paid",
+        "codes": []
+      },
+      {
+        "claim_id": "C019445",
+        "status": "paid",
+        "codes": []
+      },
+      {
+        "claim_id": "C019935",
+        "status": "paid",
+        "codes": []
+      },
+      {
+        "claim_id": "C020321",
+        "status": "denied",
+        "codes": [
+          "D09"
+        ]
+      },
+      {
+        "claim_id": "C020433",
+        "status": "paid",
+        "codes": []
+      },
+      {
+        "claim_id": "C019232",
+        "status": "paid",
+        "codes": []
+      },
+      {
+        "claim_id": "C019684",
+        "status": "paid",
+        "codes": []
+      },
+      {
+        "claim_id": "C020020",
+        "status": "paid",
+        "codes": []
+      },
+      {
+        "claim_id": "C020071",
+        "status": "paid",
+        "codes": []
+      },
+      {
+        "claim_id": "C021766",
+        "status": "denied",
+        "codes": [
+          "D09"
+        ]
+      },
+      {
+        "claim_id": "C021770",
+        "status": "paid",
+        "codes": []
+      },
+      {
+        "claim_id": "C019068",
+        "status": "paid",
+        "codes": []
+      },
+      {
+        "claim_id": "C020185",
+        "status": "paid",
+        "codes": []
+      },
+      {
+        "claim_id": "C020441",
+        "status": "denied",
+        "codes": [
+          "D09"
+        ]
+      },
+      {
+        "claim_id": "C020555",
+        "status": "paid",
+        "codes": []
+      },
+      {
+        "claim_id": "C020593",
+        "status": "denied",
+        "codes": [
+          "D09"
+        ]
+      },
+      {
+        "claim_id": "C019504",
+        "status": "paid",
+        "codes": []
+      },
+      {
+        "claim_id": "C020605",
+        "status": "paid",
+        "codes": []
+      },
+      {
+        "claim_id": "C020830",
+        "status": "paid",
+        "codes": []
+      },
+      {
+        "claim_id": "C020847",
+        "status": "paid",
+        "codes": []
+      },
+      {
+        "claim_id": "C020987",
+        "status": "paid",
+        "codes": []
+      },
+      {
+        "claim_id": "C021173",
+        "status": "paid",
+        "codes": []
+      },
+      {
+        "claim_id": "C021401",
+        "status": "paid",
+        "codes": []
+      },
+      {
+        "claim_id": "C019716",
+        "status": "paid",
+        "codes": []
+      },
+      {
+        "claim_id": "C020123",
+        "status": "paid",
+        "codes": []
+      },
+      {
+        "claim_id": "C020497",
+        "status": "paid",
+        "codes": []
+      },
+      {
+        "claim_id": "C020965",
+        "status": "paid",
+        "codes": []
+      },
+      {
+        "claim_id": "C021407",
+        "status": "denied",
+        "codes": [
+          "D06"
+        ]
+      },
+      {
+        "claim_id": "C019147",
+        "status": "paid",
+        "codes": []
+      },
+      {
+        "claim_id": "C021119",
+        "status": "paid",
+        "codes": []
+      },
+      {
+        "claim_id": "C021221",
+        "status": "paid",
+        "codes": []
+      },
+      {
+        "claim_id": "C020417",
+        "status": "paid",
+        "codes": []
+      },
+      {
+        "claim_id": "C021087",
+        "status": "paid",
+        "codes": []
+      },
+      {
+        "claim_id": "C021276",
+        "status": "paid",
+        "codes": []
+      },
+      {
+        "claim_id": "C021285",
+        "status": "denied",
+        "codes": [
+          "D01"
+        ]
+      },
+      {
+        "claim_id": "C021326",
+        "status": "paid",
+        "codes": []
+      },
+      {
+        "claim_id": "C021747",
+        "status": "paid",
+        "codes": []
+      },
+      {
+        "claim_id": "C020674",
+        "status": "paid",
+        "codes": []
+      },
+      {
+        "claim_id": "C020730",
+        "status": "paid",
+        "codes": []
+      },
+      {
+        "claim_id": "C021331",
+        "status": "denied",
+        "codes": [
+          "D06"
+        ]
+      },
+      {
+        "claim_id": "C019715",
+        "status": "paid",
+        "codes": []
+      },
+      {
+        "claim_id": "C019916",
+        "status": "paid",
+        "codes": []
+      },
+      {
+        "claim_id": "C020848",
+        "status": "paid",
+        "codes": []
+      },
+      {
+        "claim_id": "C021053",
+        "status": "paid",
+        "codes": []
+      },
+      {
+        "claim_id": "C019573",
+        "status": "paid",
+        "codes": []
+      },
+      {
+        "claim_id": "C021779",
+        "status": "paid",
+        "codes": []
+      },
+      {
+        "claim_id": "C019276",
+        "status": "paid",
+        "codes": []
+      },
+      {
+        "claim_id": "C019450",
+        "status": "paid",
+        "codes": []
+      },
+      {
+        "claim_id": "C019880",
+        "status": "denied",
+        "codes": [
+          "D01"
+        ]
+      },
+      {
+        "claim_id": "C020137",
+        "status": "paid",
+        "codes": []
+      },
+      {
+        "claim_id": "C020139",
+        "status": "paid",
+        "codes": []
+      },
+      {
+        "claim_id": "C020233",
+        "status": "paid",
+        "codes": []
+      },
+      {
+        "claim_id": "C020934",
+        "status": "paid",
+        "codes": []
+      },
+      {
+        "claim_id": "C020964",
+        "status": "paid",
+        "codes": []
+      },
+      {
+        "claim_id": "C020990",
+        "status": "paid",
+        "codes": []
+      },
+      {
+        "claim_id": "C019459",
+        "status": "paid",
+        "codes": []
+      },
+      {
+        "claim_id": "C019810",
+        "status": "paid",
+        "codes": []
+      },
+      {
+        "claim_id": "C019933",
+        "status": "denied",
+        "codes": [
+          "D07"
+        ]
+      },
+      {
+        "claim_id": "C021162",
+        "status": "paid",
+        "codes": []
+      },
+      {
+        "claim_id": "C021700",
+        "status": "denied",
+        "codes": [
+          "D05",
+          "D09"
+        ]
+      },
+      {
+        "claim_id": "C021769",
+        "status": "paid",
+        "codes": []
+      },
+      {
+        "claim_id": "C019706",
+        "status": "paid",
+        "codes": []
+      },
+      {
+        "claim_id": "C020752",
+        "status": "denied",
+        "codes": [
+          "D01"
+        ]
+      },
+      {
+        "claim_id": "C021190",
+        "status": "paid",
+        "codes": []
+      },
+      {
+        "claim_id": "C021724",
+        "status": "denied",
+        "codes": [
+          "D05",
+          "D06"
+        ]
+      },
+      {
+        "claim_id": "C021774",
+        "status": "paid",
+        "codes": []
+      },
+      {
+        "claim_id": "C019046",
+        "status": "paid",
+        "codes": []
+      },
+      {
+        "claim_id": "C019545",
+        "status": "paid",
+        "codes": []
+      },
+      {
+        "claim_id": "C020061",
+        "status": "paid",
+        "codes": []
+      },
+      {
+        "claim_id": "C020178",
+        "status": "paid",
+        "codes": []
+      },
+      {
+        "claim_id": "C020371",
+        "status": "paid",
+        "codes": []
+      },
+      {
+        "claim_id": "C020667",
+        "status": "paid",
+        "codes": []
+      },
+      {
+        "claim_id": "C020898",
+        "status": "denied",
+        "codes": [
+          "D09"
+        ]
+      },
+      {
+        "claim_id": "C021301",
+        "status": "paid",
+        "codes": []
+      },
+      {
+        "claim_id": "C019458",
+        "status": "paid",
+        "codes": []
+      },
+      {
+        "claim_id": "C019498",
+        "status": "paid",
+        "codes": []
+      },
+      {
+        "claim_id": "C020623",
+        "status": "denied",
+        "codes": [
+          "D06"
+        ]
+      },
+      {
+        "claim_id": "C021101",
+        "status": "paid",
+        "codes": []
+      },
+      {
+        "claim_id": "C018972",
+        "status": "paid",
+        "codes": []
+      },
+      {
+        "claim_id": "C019340",
+        "status": "paid",
+        "codes": []
+      },
+      {
+        "claim_id": "C019394",
+        "status": "denied",
+        "codes": [
+          "D01"
+        ]
+      },
+      {
+        "claim_id": "C020365",
+        "status": "paid",
+        "codes": []
+      },
+      {
+        "claim_id": "C020765",
+        "status": "paid",
+        "codes": []
+      },
+      {
+        "claim_id": "C019559",
+        "status": "denied",
+        "codes": [
+          "D01"
+        ]
+      },
+      {
+        "claim_id": "C020194",
+        "status": "paid",
+        "codes": []
+      },
+      {
+        "claim_id": "C020505",
+        "status": "paid",
+        "codes": []
+      },
+      {
+        "claim_id": "C021021",
+        "status": "paid",
+        "codes": []
+      },
+      {
+        "claim_id": "C021242",
+        "status": "denied",
+        "codes": [
+          "D01"
+        ]
+      },
+      {
+        "claim_id": "C019155",
+        "status": "denied",
+        "codes": [
+          "D05"
+        ]
+      },
+      {
+        "claim_id": "C019471",
+        "status": "paid",
+        "codes": []
+      },
+      {
+        "claim_id": "C019566",
+        "status": "denied",
+        "codes": [
+          "D01"
+        ]
+      },
+      {
+        "claim_id": "C019771",
+        "status": "paid",
+        "codes": []
+      },
+      {
+        "claim_id": "C019185",
+        "status": "paid",
+        "codes": []
+      },
+      {
+        "claim_id": "C019435",
+        "status": "paid",
+        "codes": []
+      },
+      {
+        "claim_id": "C019541",
+        "status": "denied",
+        "codes": [
+          "D06"
+        ]
+      },
+      {
+        "claim_id": "C020008",
+        "status": "paid",
+        "codes": []
+      },
+      {
+        "claim_id": "C020523",
+        "status": "paid",
+        "codes": []
+      },
+      {
+        "claim_id": "C019272",
+        "status": "paid",
+        "codes": []
+      },
+      {
+        "claim_id": "C019347",
+        "status": "denied",
+        "codes": [
+          "D06"
+        ]
+      },
+      {
+        "claim_id": "C019362",
+        "status": "denied",
+        "codes": [
+          "D01"
+        ]
+      },
+      {
+        "claim_id": "C019412",
+        "status": "paid",
+        "codes": []
+      },
+      {
+        "claim_id": "C019521",
+        "status": "paid",
+        "codes": []
+      },
+      {
+        "claim_id": "C020748",
+        "status": "denied",
+        "codes": [
+          "D01"
+        ]
+      },
+      {
+        "claim_id": "C020904",
+        "status": "paid",
+        "codes": []
+      },
+      {
+        "claim_id": "C021195",
+        "status": "paid",
+        "codes": []
+      },
+      {
+        "claim_id": "C020616",
+        "status": "paid",
+        "codes": []
+      },
+      {
+        "claim_id": "C021112",
+        "status": "paid",
+        "codes": []
+      },
+      {
+        "claim_id": "C021177",
+        "status": "paid",
+        "codes": []
+      },
+      {
+        "claim_id": "C018989",
+        "status": "paid",
+        "codes": []
+      },
+      {
+        "claim_id": "C019422",
+        "status": "denied",
+        "codes": [
+          "D01"
+        ]
+      },
+      {
+        "claim_id": "C019599",
+        "status": "denied",
+        "codes": [
+          "D01"
+        ]
+      },
+      {
+        "claim_id": "C019724",
+        "status": "paid",
+        "codes": []
+      },
+      {
+        "claim_id": "C019734",
+        "status": "paid",
+        "codes": []
+      },
+      {
+        "claim_id": "C019913",
+        "status": "paid",
+        "codes": []
+      },
+      {
+        "claim_id": "C020215",
+        "status": "denied",
+        "codes": [
+          "D06"
+        ]
+      },
+      {
+        "claim_id": "C020324",
+        "status": "paid",
+        "codes": []
+      },
+      {
+        "claim_id": "C020511",
+        "status": "paid",
+        "codes": []
+      },
+      {
+        "claim_id": "C020955",
+        "status": "paid",
+        "codes": []
+      },
+      {
+        "claim_id": "C019294",
+        "status": "paid",
+        "codes": []
+      },
+      {
+        "claim_id": "C019615",
+        "status": "paid",
+        "codes": []
+      },
+      {
+        "claim_id": "C020152",
+        "status": "paid",
+        "codes": []
+      },
+      {
+        "claim_id": "C020226",
+        "status": "paid",
+        "codes": []
+      },
+      {
+        "claim_id": "C020516",
+        "status": "denied",
+        "codes": [
+          "D01"
+        ]
+      },
+      {
+        "claim_id": "C020563",
+        "status": "paid",
+        "codes": []
+      },
+      {
+        "claim_id": "C020880",
+        "status": "paid",
+        "codes": []
+      },
+      {
+        "claim_id": "C021161",
+        "status": "denied",
+        "codes": [
+          "D09"
+        ]
+      },
+      {
+        "claim_id": "C021802",
+        "status": "paid",
+        "codes": []
+      },
+      {
+        "claim_id": "C019248",
+        "status": "paid",
+        "codes": []
+      },
+      {
+        "claim_id": "C019447",
+        "status": "paid",
+        "codes": []
+      },
+      {
+        "claim_id": "C019944",
+        "status": "denied",
+        "codes": [
+          "D09"
+        ]
+      },
+      {
+        "claim_id": "C020420",
+        "status": "paid",
+        "codes": []
+      },
+      {
+        "claim_id": "C020531",
+        "status": "denied",
+        "codes": [
+          "D09"
+        ]
+      },
+      {
+        "claim_id": "C020658",
+        "status": "paid",
+        "codes": []
+      },
+      {
+        "claim_id": "C021243",
+        "status": "paid",
+        "codes": []
+      },
+      {
+        "claim_id": "C019553",
+        "status": "paid",
+        "codes": []
+      },
+      {
+        "claim_id": "C019877",
+        "status": "paid",
+        "codes": []
+      },
+      {
+        "claim_id": "C020113",
+        "status": "paid",
+        "codes": []
+      },
+      {
+        "claim_id": "C019044",
+        "status": "paid",
+        "codes": []
+      },
+      {
+        "claim_id": "C019105",
+        "status": "paid",
+        "codes": []
+      },
+      {
+        "claim_id": "C019151",
+        "status": "paid",
+        "codes": []
+      },
+      {
+        "claim_id": "C019371",
+        "status": "paid",
+        "codes": []
+      },
+      {
+        "claim_id": "C019463",
+        "status": "paid",
+        "codes": []
+      },
+      {
+        "claim_id": "C019466",
+        "status": "paid",
+        "codes": []
+      },
+      {
+        "claim_id": "C019872",
+        "status": "paid",
+        "codes": []
+      },
+      {
+        "claim_id": "C021316",
+        "status": "paid",
+        "codes": []
+      },
+      {
+        "claim_id": "C020342",
+        "status": "denied",
+        "codes": [
+          "D01"
+        ]
+      },
+      {
+        "claim_id": "C020532",
+        "status": "paid",
+        "codes": []
+      },
+      {
+        "claim_id": "C021182",
+        "status": "paid",
+        "codes": []
+      },
+      {
+        "claim_id": "C021302",
+        "status": "paid",
+        "codes": []
+      },
+      {
+        "claim_id": "C021800",
+        "status": "paid",
+        "codes": []
+      },
+      {
+        "claim_id": "C019588",
+        "status": "paid",
+        "codes": []
+      },
+      {
+        "claim_id": "C019597",
+        "status": "paid",
+        "codes": []
+      },
+      {
+        "claim_id": "C019982",
+        "status": "paid",
+        "codes": []
+      },
+      {
+        "claim_id": "C020288",
+        "status": "paid",
+        "codes": []
+      },
+      {
+        "claim_id": "C021078",
+        "status": "paid",
+        "codes": []
+      },
+      {
+        "claim_id": "C021140",
+        "status": "denied",
+        "codes": [
+          "D09"
+        ]
+      },
+      {
+        "claim_id": "C021718",
+        "status": "denied",
+        "codes": [
+          "D05"
+        ]
+      },
+      {
+        "claim_id": "C019240",
+        "status": "paid",
+        "codes": []
+      },
+      {
+        "claim_id": "C019958",
+        "status": "paid",
+        "codes": []
+      },
+      {
+        "claim_id": "C020483",
+        "status": "paid",
+        "codes": []
+      },
+      {
+        "claim_id": "C020816",
+        "status": "paid",
+        "codes": []
+      },
+      {
+        "claim_id": "C021374",
+        "status": "denied",
+        "codes": [
+          "D02"
+        ]
+      },
+      {
+        "claim_id": "C021600",
+        "status": "denied",
+        "codes": [
+          "D05"
+        ]
+      },
+      {
+        "claim_id": "C019317",
+        "status": "paid",
+        "codes": []
+      },
+      {
+        "claim_id": "C019383",
+        "status": "paid",
+        "codes": []
+      },
+      {
+        "claim_id": "C019699",
+        "status": "paid",
+        "codes": []
+      },
+      {
+        "claim_id": "C019897",
+        "status": "denied",
+        "codes": [
+          "D07"
+        ]
+      },
+      {
+        "claim_id": "C020036",
+        "status": "paid",
+        "codes": []
+      },
+      {
+        "claim_id": "C020059",
+        "status": "paid",
+        "codes": []
+      },
+      {
+        "claim_id": "C020470",
+        "status": "paid",
+        "codes": []
+      },
+      {
+        "claim_id": "C020708",
+        "status": "paid",
+        "codes": []
+      },
+      {
+        "claim_id": "C021070",
+        "status": "paid",
+        "codes": []
+      },
+      {
+        "claim_id": "C021199",
+        "status": "paid",
+        "codes": []
+      },
+      {
+        "claim_id": "C021383",
+        "status": "paid",
+        "codes": []
+      },
+      {
+        "claim_id": "C021585",
+        "status": "denied",
+        "codes": [
+          "D05"
+        ]
+      },
+      {
+        "claim_id": "C019378",
+        "status": "paid",
+        "codes": []
+      },
+      {
+        "claim_id": "C019667",
+        "status": "paid",
+        "codes": []
+      },
+      {
+        "claim_id": "C019920",
+        "status": "paid",
+        "codes": []
+      },
+      {
+        "claim_id": "C020251",
+        "status": "paid",
+        "codes": []
+      },
+      {
+        "claim_id": "C020398",
+        "status": "denied",
+        "codes": [
+          "D06"
+        ]
+      },
+      {
+        "claim_id": "C020791",
+        "status": "paid",
+        "codes": []
+      },
+      {
+        "claim_id": "C021592",
+        "status": "denied",
+        "codes": [
+          "D05",
+          "D06"
+        ]
+      },
+      {
+        "claim_id": "C021703",
+        "status": "denied",
+        "codes": [
+          "D05",
+          "D06",
+          "D09"
+        ]
+      },
+      {
+        "claim_id": "C019859",
+        "status": "paid",
+        "codes": []
+      },
+      {
+        "claim_id": "C019992",
+        "status": "paid",
+        "codes": []
+      },
+      {
+        "claim_id": "C020379",
+        "status": "paid",
+        "codes": []
+      },
+      {
+        "claim_id": "C020709",
+        "status": "paid",
+        "codes": []
+      },
+      {
+        "claim_id": "C021008",
+        "status": "paid",
+        "codes": []
+      },
+      {
+        "claim_id": "C021249",
+        "status": "denied",
+        "codes": [
+          "D01"
+        ]
+      },
+      {
+        "claim_id": "C021652",
+        "status": "denied",
+        "codes": [
+          "D05"
+        ]
+      },
+      {
+        "claim_id": "C019644",
+        "status": "paid",
+        "codes": []
+      },
+      {
+        "claim_id": "C019698",
+        "status": "paid",
+        "codes": []
+      },
+      {
+        "claim_id": "C019932",
+        "status": "paid",
+        "codes": []
+      },
+      {
+        "claim_id": "C020637",
+        "status": "paid",
+        "codes": []
+      },
+      {
+        "claim_id": "C020930",
+        "status": "paid",
+        "codes": []
+      },
+      {
+        "claim_id": "C021801",
+        "status": "paid",
+        "codes": []
+      },
+      {
+        "claim_id": "C019089",
+        "status": "paid",
+        "codes": []
+      },
+      {
+        "claim_id": "C019169",
+        "status": "paid",
+        "codes": []
+      },
+      {
+        "claim_id": "C019233",
+        "status": "paid",
+        "codes": []
+      },
+      {
+        "claim_id": "C019420",
+        "status": "paid",
+        "codes": []
+      },
+      {
+        "claim_id": "C020867",
+        "status": "paid",
+        "codes": []
+      },
+      {
+        "claim_id": "C020995",
+        "status": "paid",
+        "codes": []
+      },
+      {
+        "claim_id": "C019019",
+        "status": "denied",
+        "codes": [
+          "D07"
+        ]
+      },
+      {
+        "claim_id": "C019430",
+        "status": "paid",
+        "codes": []
+      },
+      {
+        "claim_id": "C019494",
+        "status": "paid",
+        "codes": []
+      },
+      {
+        "claim_id": "C019750",
+        "status": "paid",
+        "codes": []
+      },
+      {
+        "claim_id": "C020331",
+        "status": "paid",
+        "codes": []
+      },
+      {
+        "claim_id": "C020388",
+        "status": "paid",
+        "codes": []
+      },
+      {
+        "claim_id": "C020586",
+        "status": "paid",
+        "codes": []
+      },
+      {
+        "claim_id": "C021044",
+        "status": "paid",
+        "codes": []
+      },
+      {
+        "claim_id": "C021269",
+        "status": "paid",
+        "codes": []
+      },
+      {
+        "claim_id": "C021755",
+        "status": "paid",
+        "codes": []
+      },
+      {
+        "claim_id": "C019953",
+        "status": "paid",
+        "codes": []
+      },
+      {
+        "claim_id": "C020166",
+        "status": "paid",
+        "codes": []
+      },
+      {
+        "claim_id": "C021672",
+        "status": "denied",
+        "codes": [
+          "D05"
+        ]
+      },
+      {
+        "claim_id": "C018965",
+        "status": "paid",
+        "codes": []
+      },
+      {
+        "claim_id": "C019056",
+        "status": "paid",
+        "codes": []
+      },
+      {
+        "claim_id": "C019402",
+        "status": "paid",
+        "codes": []
+      },
+      {
+        "claim_id": "C019577",
+        "status": "denied",
+        "codes": [
+          "D09"
+        ]
+      },
+      {
+        "claim_id": "C019787",
+        "status": "paid",
+        "codes": []
+      },
+      {
+        "claim_id": "C019847",
+        "status": "denied",
+        "codes": [
+          "D01"
+        ]
+      },
+      {
+        "claim_id": "C020015",
+        "status": "paid",
+        "codes": []
+      },
+      {
+        "claim_id": "C021231",
+        "status": "paid",
+        "codes": []
+      },
+      {
+        "claim_id": "C019037",
+        "status": "denied",
+        "codes": [
+          "D09"
+        ]
+      },
+      {
+        "claim_id": "C019220",
+        "status": "paid",
+        "codes": []
+      },
+      {
+        "claim_id": "C019804",
+        "status": "denied",
+        "codes": [
+          "D09"
+        ]
+      },
+      {
+        "claim_id": "C019890",
+        "status": "denied",
+        "codes": [
+          "D09"
+        ]
+      },
+      {
+        "claim_id": "C020172",
+        "status": "paid",
+        "codes": []
+      },
+      {
+        "claim_id": "C020244",
+        "status": "paid",
+        "codes": []
+      },
+      {
+        "claim_id": "C021014",
+        "status": "paid",
+        "codes": []
+      },
+      {
+        "claim_id": "C018970",
+        "status": "paid",
+        "codes": []
+      },
+      {
+        "claim_id": "C018998",
+        "status": "paid",
+        "codes": []
+      },
+      {
+        "claim_id": "C019327",
+        "status": "paid",
+        "codes": []
+      },
+      {
+        "claim_id": "C020831",
+        "status": "paid",
+        "codes": []
+      },
+      {
+        "claim_id": "C020890",
+        "status": "paid",
+        "codes": []
+      },
+      {
+        "claim_id": "C021727",
+        "status": "paid",
+        "codes": []
+      },
+      {
+        "claim_id": "C021784",
+        "status": "paid",
+        "codes": []
+      },
+      {
+        "claim_id": "C019308",
+        "status": "paid",
+        "codes": []
+      },
+      {
+        "claim_id": "C019323",
+        "status": "paid",
+        "codes": []
+      },
+      {
+        "claim_id": "C019690",
+        "status": "denied",
+        "codes": [
+          "D06",
+          "D08"
+        ]
+      },
+      {
+        "claim_id": "C019781",
+        "status": "paid",
+        "codes": []
+      },
+      {
+        "claim_id": "C019878",
+        "status": "denied",
+        "codes": [
+          "D07"
+        ]
+      },
+      {
+        "claim_id": "C019961",
+        "status": "paid",
+        "codes": []
+      },
+      {
+        "claim_id": "C020456",
+        "status": "denied",
+        "codes": [
+          "D06"
+        ]
+      },
+      {
+        "claim_id": "C020639",
+        "status": "paid",
+        "codes": []
+      },
+      {
+        "claim_id": "C021691",
+        "status": "denied",
+        "codes": [
+          "D02",
+          "D05"
+        ]
+      },
+      {
+        "claim_id": "C021753",
+        "status": "paid",
+        "codes": []
+      },
+      {
+        "claim_id": "C019127",
+        "status": "denied",
+        "codes": [
+          "D09"
+        ]
+      },
+      {
+        "claim_id": "C020626",
+        "status": "paid",
+        "codes": []
+      },
+      {
+        "claim_id": "C020840",
+        "status": "denied",
+        "codes": [
+          "D09"
+        ]
+      },
+      {
+        "claim_id": "C020888",
+        "status": "paid",
+        "codes": []
+      },
+      {
+        "claim_id": "C021069",
+        "status": "paid",
+        "codes": []
+      },
+      {
+        "claim_id": "C019088",
+        "status": "denied",
+        "codes": [
+          "D05"
+        ]
+      },
+      {
+        "claim_id": "C019505",
+        "status": "denied",
+        "codes": [
+          "D03"
+        ]
+      },
+      {
+        "claim_id": "C019600",
+        "status": "paid",
+        "codes": []
+      },
+      {
+        "claim_id": "C019817",
+        "status": "paid",
+        "codes": []
+      },
+      {
+        "claim_id": "C019882",
+        "status": "paid",
+        "codes": []
+      },
+      {
+        "claim_id": "C021015",
+        "status": "paid",
+        "codes": []
+      },
+      {
+        "claim_id": "C019193",
+        "status": "paid",
+        "codes": []
+      },
+      {
+        "claim_id": "C019960",
+        "status": "paid",
+        "codes": []
+      },
+      {
+        "claim_id": "C020080",
+        "status": "paid",
+        "codes": []
+      },
+      {
+        "claim_id": "C020457",
+        "status": "paid",
+        "codes": []
+      },
+      {
+        "claim_id": "C020474",
+        "status": "paid",
+        "codes": []
+      },
+      {
+        "claim_id": "C020724",
+        "status": "denied",
+        "codes": [
+          "D02"
+        ]
+      },
+      {
+        "claim_id": "C020002",
+        "status": "paid",
+        "codes": []
+      },
+      {
+        "claim_id": "C020133",
+        "status": "paid",
+        "codes": []
+      },
+      {
+        "claim_id": "C020358",
+        "status": "paid",
+        "codes": []
+      },
+      {
+        "claim_id": "C020450",
+        "status": "denied",
+        "codes": [
+          "D05"
+        ]
+      },
+      {
+        "claim_id": "C020691",
+        "status": "denied",
+        "codes": [
+          "D04"
+        ]
+      },
+      {
+        "claim_id": "C020792",
+        "status": "denied",
+        "codes": [
+          "D03"
+        ]
+      },
+      {
+        "claim_id": "C021620",
+        "status": "denied",
+        "codes": [
+          "D05"
+        ]
+      },
+      {
+        "claim_id": "C021707",
+        "status": "denied",
+        "codes": [
+          "D05",
+          "D06"
+        ]
+      },
+      {
+        "claim_id": "C019280",
+        "status": "paid",
+        "codes": []
+      },
+      {
+        "claim_id": "C019635",
+        "status": "paid",
+        "codes": []
+      },
+      {
+        "claim_id": "C019733",
+        "status": "paid",
+        "codes": []
+      },
+      {
+        "claim_id": "C019968",
+        "status": "paid",
+        "codes": []
+      },
+      {
+        "claim_id": "C020281",
+        "status": "denied",
+        "codes": [
+          "D05"
+        ]
+      },
+      {
+        "claim_id": "C020294",
+        "status": "denied",
+        "codes": [
+          "D02"
+        ]
+      },
+      {
+        "claim_id": "C020879",
+        "status": "paid",
+        "codes": []
+      },
+      {
+        "claim_id": "C021017",
+        "status": "denied",
+        "codes": [
+          "D01"
+        ]
+      },
+      {
+        "claim_id": "C021390",
+        "status": "paid",
+        "codes": []
+      },
+      {
+        "claim_id": "C019053",
+        "status": "paid",
+        "codes": []
+      },
+      {
+        "claim_id": "C019712",
+        "status": "paid",
+        "codes": []
+      },
+      {
+        "claim_id": "C019714",
+        "status": "paid",
+        "codes": []
+      },
+      {
+        "claim_id": "C020100",
+        "status": "paid",
+        "codes": []
+      },
+      {
+        "claim_id": "C020836",
+        "status": "denied",
+        "codes": [
+          "D01"
+        ]
+      },
+      {
+        "claim_id": "C021003",
+        "status": "paid",
+        "codes": []
+      },
+      {
+        "claim_id": "C021275",
+        "status": "paid",
+        "codes": []
+      },
+      {
+        "claim_id": "C021308",
+        "status": "denied",
+        "codes": [
+          "D09"
+        ]
+      },
+      {
+        "claim_id": "C021393",
+        "status": "denied",
+        "codes": [
+          "D06"
+        ]
+      },
+      {
+        "claim_id": "C021748",
+        "status": "paid",
+        "codes": []
+      },
+      {
+        "claim_id": "C019379",
+        "status": "paid",
+        "codes": []
+      },
+      {
+        "claim_id": "C019975",
+        "status": "denied",
+        "codes": [
+          "D01"
+        ]
+      },
+      {
+        "claim_id": "C020556",
+        "status": "paid",
+        "codes": []
+      },
+      {
+        "claim_id": "C020970",
+        "status": "paid",
+        "codes": []
+      },
+      {
+        "claim_id": "C021075",
+        "status": "paid",
+        "codes": []
+      },
+      {
+        "claim_id": "C021336",
+        "status": "paid",
+        "codes": []
+      },
+      {
+        "claim_id": "C018986",
+        "status": "denied",
+        "codes": [
+          "D05"
+        ]
+      },
+      {
+        "claim_id": "C019741",
+        "status": "paid",
+        "codes": []
+      },
+      {
+        "claim_id": "C019788",
+        "status": "paid",
+        "codes": []
+      },
+      {
+        "claim_id": "C019841",
+        "status": "paid",
+        "codes": []
+      },
+      {
+        "claim_id": "C019911",
+        "status": "denied",
+        "codes": [
+          "D01"
+        ]
+      },
+      {
+        "claim_id": "C020052",
+        "status": "paid",
+        "codes": []
+      },
+      {
+        "claim_id": "C020439",
+        "status": "paid",
+        "codes": []
+      },
+      {
+        "claim_id": "C020741",
+        "status": "paid",
+        "codes": []
+      },
+      {
+        "claim_id": "C020932",
+        "status": "denied",
+        "codes": [
+          "D09"
+        ]
+      },
+      {
+        "claim_id": "C021025",
+        "status": "paid",
+        "codes": []
+      },
+      {
+        "claim_id": "C021325",
+        "status": "paid",
+        "codes": []
+      },
+      {
+        "claim_id": "C021344",
+        "status": "denied",
+        "codes": [
+          "D06"
+        ]
+      },
+      {
+        "claim_id": "C019207",
+        "status": "paid",
+        "codes": []
+      },
+      {
+        "claim_id": "C019937",
+        "status": "denied",
+        "codes": [
+          "D02"
+        ]
+      },
+      {
+        "claim_id": "C020116",
+        "status": "paid",
+        "codes": []
+      },
+      {
+        "claim_id": "C020118",
+        "status": "denied",
+        "codes": [
+          "D02"
+        ]
+      },
+      {
+        "claim_id": "C020203",
+        "status": "paid",
+        "codes": []
+      },
+      {
+        "claim_id": "C020905",
+        "status": "denied",
+        "codes": [
+          "D09"
+        ]
+      },
+      {
+        "claim_id": "C019120",
+        "status": "paid",
+        "codes": []
+      },
+      {
+        "claim_id": "C019624",
+        "status": "paid",
+        "codes": []
+      },
+      {
+        "claim_id": "C019900",
+        "status": "denied",
+        "codes": [
+          "D09"
+        ]
+      },
+      {
+        "claim_id": "C020175",
+        "status": "denied",
+        "codes": [
+          "D07"
+        ]
+      },
+      {
+        "claim_id": "C020429",
+        "status": "paid",
+        "codes": []
+      },
+      {
+        "claim_id": "C021287",
+        "status": "denied",
+        "codes": [
+          "D02"
+        ]
+      },
+      {
+        "claim_id": "C021661",
+        "status": "denied",
+        "codes": [
+          "D05"
+        ]
+      },
+      {
+        "claim_id": "C021797",
+        "status": "denied",
+        "codes": [
+          "D02"
+        ]
+      },
+      {
+        "claim_id": "C019662",
+        "status": "paid",
+        "codes": []
+      },
+      {
+        "claim_id": "C019777",
+        "status": "paid",
+        "codes": []
+      },
+      {
+        "claim_id": "C020302",
+        "status": "paid",
+        "codes": []
+      },
+      {
+        "claim_id": "C020515",
+        "status": "denied",
+        "codes": [
+          "D07"
+        ]
+      },
+      {
+        "claim_id": "C020537",
+        "status": "denied",
+        "codes": [
+          "D07",
+          "D09"
+        ]
+      },
+      {
+        "claim_id": "C021776",
+        "status": "paid",
+        "codes": []
+      },
+      {
+        "claim_id": "C019918",
+        "status": "paid",
+        "codes": []
+      },
+      {
+        "claim_id": "C020714",
+        "status": "denied",
+        "codes": [
+          "D02"
+        ]
+      },
+      {
+        "claim_id": "C021682",
+        "status": "denied",
+        "codes": [
+          "D05"
+        ]
+      },
+      {
+        "claim_id": "C019181",
+        "status": "denied",
+        "codes": [
+          "D01"
+        ]
+      },
+      {
+        "claim_id": "C019534",
+        "status": "paid",
+        "codes": []
+      },
+      {
+        "claim_id": "C020264",
+        "status": "paid",
+        "codes": []
+      },
+      {
+        "claim_id": "C021236",
+        "status": "paid",
+        "codes": []
+      },
+      {
+        "claim_id": "C021632",
+        "status": "denied",
+        "codes": [
+          "D05"
+        ]
+      },
+      {
+        "claim_id": "C021675",
+        "status": "denied",
+        "codes": [
+          "D05"
+        ]
+      },
+      {
+        "claim_id": "C021709",
+        "status": "denied",
+        "codes": [
+          "D05"
+        ]
+      },
+      {
+        "claim_id": "C021731",
+        "status": "paid",
+        "codes": []
+      },
+      {
+        "claim_id": "C019819",
+        "status": "paid",
+        "codes": []
+      },
+      {
+        "claim_id": "C020157",
+        "status": "paid",
+        "codes": []
+      },
+      {
+        "claim_id": "C020648",
+        "status": "paid",
+        "codes": []
+      },
+      {
+        "claim_id": "C020790",
+        "status": "paid",
+        "codes": []
+      },
+      {
+        "claim_id": "C020906",
+        "status": "paid",
+        "codes": []
+      },
+      {
+        "claim_id": "C020980",
+        "status": "denied",
+        "codes": [
+          "D06"
+        ]
+      },
+      {
+        "claim_id": "C021127",
+        "status": "paid",
+        "codes": []
+      },
+      {
+        "claim_id": "C021292",
+        "status": "denied",
+        "codes": [
+          "D02",
+          "D03"
+        ]
+      },
+      {
+        "claim_id": "C021366",
+        "status": "paid",
+        "codes": []
+      },
+      {
+        "claim_id": "C021649",
+        "status": "denied",
+        "codes": [
+          "D03",
+          "D05"
+        ]
+      },
+      {
+        "claim_id": "C021803",
+        "status": "paid",
+        "codes": []
+      },
+      {
+        "claim_id": "C019003",
+        "status": "paid",
+        "codes": []
+      },
+      {
+        "claim_id": "C019547",
+        "status": "paid",
+        "codes": []
+      },
+      {
+        "claim_id": "C020859",
+        "status": "denied",
+        "codes": [
+          "D04"
+        ]
+      },
+      {
+        "claim_id": "C021310",
+        "status": "paid",
+        "codes": []
+      },
+      {
+        "claim_id": "C021368",
+        "status": "denied",
+        "codes": [
+          "D06"
+        ]
+      },
+      {
+        "claim_id": "C018966",
+        "status": "paid",
+        "codes": []
+      },
+      {
+        "claim_id": "C019392",
+        "status": "paid",
+        "codes": []
+      },
+      {
+        "claim_id": "C019464",
+        "status": "denied",
+        "codes": [
+          "D01"
+        ]
+      },
+      {
+        "claim_id": "C019506",
+        "status": "denied",
+        "codes": [
+          "D06"
+        ]
+      },
+      {
+        "claim_id": "C019632",
+        "status": "paid",
+        "codes": []
+      },
+      {
+        "claim_id": "C019869",
+        "status": "paid",
+        "codes": []
+      },
+      {
+        "claim_id": "C020683",
+        "status": "denied",
+        "codes": [
+          "D02",
+          "D09"
+        ]
+      },
+      {
+        "claim_id": "C020743",
+        "status": "paid",
+        "codes": []
+      },
+      {
+        "claim_id": "C021093",
+        "status": "denied",
+        "codes": [
+          "D09"
+        ]
+      },
+      {
+        "claim_id": "C021333",
+        "status": "paid",
+        "codes": []
+      },
+      {
+        "claim_id": "C019096",
+        "status": "paid",
+        "codes": []
+      },
+      {
+        "claim_id": "C019118",
+        "status": "paid",
+        "codes": []
+      },
+      {
+        "claim_id": "C019288",
+        "status": "paid",
+        "codes": []
+      },
+      {
+        "claim_id": "C019556",
+        "status": "paid",
+        "codes": []
+      },
+      {
+        "claim_id": "C020219",
+        "status": "paid",
+        "codes": []
+      },
+      {
+        "claim_id": "C020222",
+        "status": "paid",
+        "codes": []
+      },
+      {
+        "claim_id": "C020434",
+        "status": "paid",
+        "codes": []
+      },
+      {
+        "claim_id": "C020546",
+        "status": "paid",
+        "codes": []
+      },
+      {
+        "claim_id": "C021169",
+        "status": "paid",
+        "codes": []
+      },
+      {
+        "claim_id": "C021334",
+        "status": "denied",
+        "codes": [
+          "D06"
+        ]
+      },
+      {
+        "claim_id": "C019382",
+        "status": "paid",
+        "codes": []
+      },
+      {
+        "claim_id": "C019487",
+        "status": "paid",
+        "codes": []
+      },
+      {
+        "claim_id": "C020258",
+        "status": "paid",
+        "codes": []
+      },
+      {
+        "claim_id": "C021108",
+        "status": "paid",
+        "codes": []
+      },
+      {
+        "claim_id": "C019529",
+        "status": "paid",
+        "codes": []
+      },
+      {
+        "claim_id": "C019561",
+        "status": "paid",
+        "codes": []
+      },
+      {
+        "claim_id": "C019909",
+        "status": "paid",
+        "codes": []
+      },
+      {
+        "claim_id": "C019939",
+        "status": "denied",
+        "codes": [
+          "D06"
+        ]
+      },
+      {
+        "claim_id": "C019625",
+        "status": "paid",
+        "codes": []
+      },
+      {
+        "claim_id": "C020273",
+        "status": "paid",
+        "codes": []
+      },
+      {
+        "claim_id": "C020364",
+        "status": "paid",
+        "codes": []
+      },
+      {
+        "claim_id": "C020490",
+        "status": "paid",
+        "codes": []
+      },
+      {
+        "claim_id": "C020734",
+        "status": "paid",
+        "codes": []
+      },
+      {
+        "claim_id": "C020756",
+        "status": "paid",
+        "codes": []
+      },
+      {
+        "claim_id": "C020858",
+        "status": "paid",
+        "codes": []
+      },
+      {
+        "claim_id": "C021133",
+        "status": "paid",
+        "codes": []
+      },
+      {
+        "claim_id": "C019893",
+        "status": "paid",
+        "codes": []
+      },
+      {
+        "claim_id": "C020312",
+        "status": "denied",
+        "codes": [
+          "D09"
+        ]
+      },
+      {
+        "claim_id": "C020368",
+        "status": "denied",
+        "codes": [
+          "D02"
+        ]
+      },
+      {
+        "claim_id": "C020406",
+        "status": "denied",
+        "codes": [
+          "D06"
+        ]
+      },
+      {
+        "claim_id": "C020807",
+        "status": "paid",
+        "codes": []
+      },
+      {
+        "claim_id": "C021147",
+        "status": "paid",
+        "codes": []
+      },
+      {
+        "claim_id": "C021346",
+        "status": "paid",
+        "codes": []
+      },
+      {
+        "claim_id": "C019355",
+        "status": "paid",
+        "codes": []
+      },
+      {
+        "claim_id": "C019367",
+        "status": "paid",
+        "codes": []
+      },
+      {
+        "claim_id": "C020096",
+        "status": "denied",
+        "codes": [
+          "D08"
+        ]
+      },
+      {
+        "claim_id": "C021158",
+        "status": "denied",
+        "codes": [
+          "D03"
+        ]
+      },
+      {
+        "claim_id": "C021262",
+        "status": "paid",
+        "codes": []
+      },
+      {
+        "claim_id": "C021351",
+        "status": "paid",
+        "codes": []
+      },
+      {
+        "claim_id": "C019032",
+        "status": "paid",
+        "codes": []
+      },
+      {
+        "claim_id": "C019076",
+        "status": "paid",
+        "codes": []
+      },
+      {
+        "claim_id": "C019145",
+        "status": "paid",
+        "codes": []
+      },
+      {
+        "claim_id": "C019419",
+        "status": "paid",
+        "codes": []
+      },
+      {
+        "claim_id": "C019650",
+        "status": "paid",
+        "codes": []
+      },
+      {
+        "claim_id": "C019994",
+        "status": "paid",
+        "codes": []
+      },
+      {
+        "claim_id": "C020029",
+        "status": "paid",
+        "codes": []
+      },
+      {
+        "claim_id": "C020352",
+        "status": "paid",
+        "codes": []
+      },
+      {
+        "claim_id": "C020774",
+        "status": "paid",
+        "codes": []
+      },
+      {
+        "claim_id": "C020852",
+        "status": "paid",
+        "codes": []
+      },
+      {
+        "claim_id": "C021216",
+        "status": "paid",
+        "codes": []
+      },
+      {
+        "claim_id": "C019168",
+        "status": "paid",
+        "codes": []
+      },
+      {
+        "claim_id": "C019213",
+        "status": "denied",
+        "codes": [
+          "D02"
+        ]
+      },
+      {
+        "claim_id": "C020087",
+        "status": "paid",
+        "codes": []
+      },
+      {
+        "claim_id": "C020145",
+        "status": "paid",
+        "codes": []
+      },
+      {
+        "claim_id": "C020798",
+        "status": "paid",
+        "codes": []
+      },
+      {
+        "claim_id": "C019329",
+        "status": "denied",
+        "codes": [
+          "D02"
+        ]
+      },
+      {
+        "claim_id": "C019495",
+        "status": "paid",
+        "codes": []
+      },
+      {
+        "claim_id": "C020064",
+        "status": "paid",
+        "codes": []
+      },
+      {
+        "claim_id": "C020718",
+        "status": "paid",
+        "codes": []
+      },
+      {
+        "claim_id": "C021057",
+        "status": "paid",
+        "codes": []
+      },
+      {
+        "claim_id": "C021061",
+        "status": "paid",
+        "codes": []
+      },
+      {
+        "claim_id": "C021640",
+        "status": "denied",
+        "codes": [
+          "D05"
+        ]
+      },
+      {
+        "claim_id": "C019826",
+        "status": "paid",
+        "codes": []
+      },
+      {
+        "claim_id": "C020931",
+        "status": "denied",
+        "codes": [
+          "D01"
+        ]
+      },
+      {
+        "claim_id": "C020947",
+        "status": "denied",
+        "codes": [
+          "D03",
+          "D09"
+        ]
+      },
+      {
+        "claim_id": "C021628",
+        "status": "denied",
+        "codes": [
+          "D05",
+          "D06"
+        ]
+      },
+      {
+        "claim_id": "C019627",
+        "status": "denied",
+        "codes": [
+          "D08"
+        ]
+      },
+      {
+        "claim_id": "C019851",
+        "status": "paid",
+        "codes": []
+      },
+      {
+        "claim_id": "C020007",
+        "status": "paid",
+        "codes": []
+      },
+      {
+        "claim_id": "C021224",
+        "status": "denied",
+        "codes": [
+          "D07"
+        ]
+      },
+      {
+        "claim_id": "C019361",
+        "status": "denied",
+        "codes": [
+          "D02"
+        ]
+      },
+      {
+        "claim_id": "C019581",
+        "status": "paid",
+        "codes": []
+      },
+      {
+        "claim_id": "C020570",
+        "status": "denied",
+        "codes": [
+          "D05"
+        ]
+      },
+      {
+        "claim_id": "C020596",
+        "status": "paid",
+        "codes": []
+      },
+      {
+        "claim_id": "C019227",
+        "status": "paid",
+        "codes": []
+      },
+      {
+        "claim_id": "C019654",
+        "status": "paid",
+        "codes": []
+      },
+      {
+        "claim_id": "C019861",
+        "status": "paid",
+        "codes": []
+      },
+      {
+        "claim_id": "C020938",
+        "status": "denied",
+        "codes": [
+          "D09"
+        ]
+      },
+      {
+        "claim_id": "C021670",
+        "status": "denied",
+        "codes": [
+          "D05"
+        ]
+      },
+      {
+        "claim_id": "C018987",
+        "status": "denied",
+        "codes": [
+          "D02",
+          "D03"
+        ]
+      },
+      {
+        "claim_id": "C020395",
+        "status": "paid",
+        "codes": []
+      },
+      {
+        "claim_id": "C018960",
+        "status": "paid",
+        "codes": []
+      },
+      {
+        "claim_id": "C020975",
+        "status": "denied",
+        "codes": [
+          "D03"
+        ]
+      },
+      {
+        "claim_id": "C021039",
+        "status": "paid",
+        "codes": []
+      },
+      {
+        "claim_id": "C019795",
+        "status": "paid",
+        "codes": []
+      },
+      {
+        "claim_id": "C021582",
+        "status": "denied",
+        "codes": [
+          "D03",
+          "D05"
+        ]
+      },
+      {
+        "claim_id": "C021615",
+        "status": "denied",
+        "codes": [
+          "D03",
+          "D05"
+        ]
+      },
+      {
+        "claim_id": "C019591",
+        "status": "paid",
+        "codes": []
+      },
+      {
+        "claim_id": "C020130",
+        "status": "paid",
+        "codes": []
+      },
+      {
+        "claim_id": "C021609",
+        "status": "denied",
+        "codes": [
+          "D05"
+        ]
+      },
+      {
+        "claim_id": "C021733",
+        "status": "paid",
+        "codes": []
+      },
+      {
+        "claim_id": "C018978",
+        "status": "paid",
+        "codes": []
+      },
+      {
+        "claim_id": "C020108",
+        "status": "paid",
+        "codes": []
+      },
+      {
+        "claim_id": "C020210",
+        "status": "paid",
+        "codes": []
+      },
+      {
+        "claim_id": "C019478",
+        "status": "denied",
+        "codes": [
+          "D03",
+          "D07"
+        ]
+      },
+      {
+        "claim_id": "C021067",
+        "status": "paid",
+        "codes": []
+      },
+      {
+        "claim_id": "C020051",
+        "status": "denied",
+        "codes": [
+          "D03"
+        ]
+      },
+      {
+        "claim_id": "C020651",
+        "status": "paid",
+        "codes": []
+      },
+      {
+        "claim_id": "C019060",
+        "status": "denied",
+        "codes": [
+          "D05"
+        ]
+      },
+      {
+        "claim_id": "C019300",
+        "status": "denied",
+        "codes": [
+          "D03"
+        ]
+      },
+      {
+        "claim_id": "C019834",
+        "status": "denied",
+        "codes": [
+          "D02"
+        ]
+      },
+      {
+        "claim_id": "C019941",
+        "status": "paid",
+        "codes": []
+      },
+      {
+        "claim_id": "C021106",
+        "status": "paid",
+        "codes": []
+      },
+      {
+        "claim_id": "C019985",
+        "status": "denied",
+        "codes": [
+          "D08"
+        ]
+      },
+      {
+        "claim_id": "C020333",
+        "status": "paid",
+        "codes": []
+      },
+      {
+        "claim_id": "C019163",
+        "status": "paid",
+        "codes": []
+      },
+      {
+        "claim_id": "C019518",
+        "status": "paid",
+        "codes": []
+      },
+      {
+        "claim_id": "C021642",
+        "status": "denied",
+        "codes": [
+          "D05",
+          "D06"
+        ]
+      },
+      {
+        "claim_id": "C020745",
+        "status": "denied",
+        "codes": [
+          "D03"
+        ]
+      },
+      {
+        "claim_id": "C020903",
+        "status": "denied",
+        "codes": [
+          "D09"
+        ]
+      },
+      {
+        "claim_id": "C019136",
+        "status": "paid",
+        "codes": []
+      },
+      {
+        "claim_id": "C019250",
+        "status": "denied",
+        "codes": [
+          "D03",
+          "D09"
+        ]
+      },
+      {
+        "claim_id": "C019609",
+        "status": "denied",
+        "codes": [
+          "D03"
+        ]
+      },
+      {
+        "claim_id": "C020782",
+        "status": "denied",
+        "codes": [
+          "D08"
+        ]
+      },
+      {
+        "claim_id": "C019675",
+        "status": "denied",
+        "codes": [
+          "D01"
+        ]
+      },
+      {
+        "claim_id": "C019178",
+        "status": "denied",
+        "codes": [
+          "D03"
+        ]
+      },
+      {
+        "claim_id": "C020735",
+        "status": "denied",
+        "codes": [
+          "D06"
+        ]
+      },
+      {
+        "claim_id": "C019259",
+        "status": "denied",
+        "codes": [
+          "D03"
+        ]
+      },
+      {
+        "claim_id": "C019439",
+        "status": "paid",
+        "codes": []
+      },
+      {
+        "claim_id": "C018952",
+        "status": "denied",
+        "codes": [
+          "D03"
+        ]
+      },
+      {
+        "claim_id": "C021033",
+        "status": "paid",
+        "codes": []
+      },
+      {
+        "claim_id": "C019762",
+        "status": "denied",
+        "codes": [
+          "D02",
+          "D03"
+        ]
+      },
+      {
+        "claim_id": "C020577",
+        "status": "denied",
+        "codes": [
+          "D03"
+        ]
+      },
+      {
+        "claim_id": "C020914",
+        "status": "denied",
+        "codes": [
+          "D03"
+        ]
+      },
+      {
+        "claim_id": "C021149",
+        "status": "denied",
+        "codes": [
+          "D01"
+        ]
+      },
+      {
+        "claim_id": "C019010",
+        "status": "paid",
+        "codes": []
+      },
+      {
+        "claim_id": "C020349",
+        "status": "denied",
+        "codes": [
+          "D01"
+        ]
+      },
+      {
+        "claim_id": "C020684",
+        "status": "denied",
+        "codes": [
+          "D03"
+        ]
+      },
+      {
+        "claim_id": "C021207",
+        "status": "denied",
+        "codes": [
+          "D03"
+        ]
+      },
+      {
+        "claim_id": "C020424",
+        "status": "denied",
+        "codes": [
+          "D03"
+        ]
+      },
+      {
+        "claim_id": "C019085",
+        "status": "denied",
+        "codes": [
+          "D03"
+        ]
+      },
+      {
+        "claim_id": "C019199",
+        "status": "denied",
+        "codes": [
+          "D06"
+        ]
+      },
+      {
+        "claim_id": "C020922",
+        "status": "paid",
+        "codes": []
+      },
+      {
+        "claim_id": "C019794",
+        "status": "denied",
+        "codes": [
+          "D03"
+        ]
+      },
+      {
+        "claim_id": "C020322",
+        "status": "paid",
+        "codes": []
+      },
+      {
+        "claim_id": "C020045",
+        "status": "denied",
+        "codes": [
+          "D03"
+        ]
+      },
+      {
+        "claim_id": "C019885",
+        "status": "denied",
+        "codes": [
+          "D03"
+        ]
+      },
+      {
+        "claim_id": "C021680",
+        "status": "denied",
+        "codes": [
+          "D03",
+          "D05"
+        ]
+      },
+      {
+        "claim_id": "C021742",
+        "status": "denied",
+        "codes": [
+          "D03"
+        ]
+      },
+      {
+        "claim_id": "C020822",
+        "status": "denied",
+        "codes": [
+          "D03",
+          "D05"
+        ]
+      },
+      {
+        "claim_id": "C019409",
+        "status": "paid",
+        "codes": []
+      },
+      {
+        "claim_id": "C019336",
+        "status": "denied",
+        "codes": [
+          "D03"
+        ]
+      },
+      {
+        "claim_id": "C020865",
+        "status": "denied",
+        "codes": [
+          "D03"
+        ]
+      }
+    ],
+    "counts": {
+      "paid": 383,
+      "denied": 163
+    }
   },
   "by_payer": {
     "PY01": {
       "total": 398,
       "labelled": 398,
-      "status_correct": 389,
-      "status_accuracy": 0.9773869346733668,
+      "status_correct": 393,
+      "status_accuracy": 0.9874371859296482,
       "always_paid_baseline": 0.5804020100502513,
-      "status_and_code_set_correct": 387,
-      "status_and_code_set_accuracy": 0.9723618090452262,
+      "status_and_code_set_correct": 393,
+      "status_and_code_set_accuracy": 0.9874371859296482,
       "actual_denied": 167,
       "actual_paid": 231,
-      "denial_code_correct": 156,
-      "denial_code_accuracy": 0.9341317365269461,
-      "denial_recall": 0.9461077844311377,
-      "denied_reason_detected": 156,
-      "additional_unconfirmed_codes": 40,
-      "missed_denials": 9,
+      "denial_code_correct": 162,
+      "denial_code_accuracy": 0.9700598802395209,
+      "denial_recall": 0.9700598802395209,
+      "denied_reason_detected": 162,
+      "additional_unconfirmed_codes": 41,
+      "missed_denials": 5,
       "false_alarms": 0,
-      "manual_review": 0,
+      "unable_to_check": 0,
       "error_categories": {
-        "rule_or_data_disagreement": 6,
         "contract_or_unspecified_denial": 5
       },
       "confusion": {
         "paid -> [] (paid)": 231,
         "D07 -> [\"D07\"] (denied)": 2,
-        "D09 -> [\"D09\"] (denied)": 18,
+        "D09 -> [\"D09\"] (denied)": 17,
         "D03 -> [\"D03\"] (denied)": 74,
         "D01 -> [\"D01\", \"D03\"] (denied)": 8,
         "D08 -> [\"D08\"] (denied)": 9,
         "D01 -> [\"D01\"] (denied)": 8,
-        "D02 -> [\"D02\", \"D03\"] (denied)": 4,
-        "D02 -> [] (paid)": 4,
+        "D02 -> [\"D02\", \"D03\"] (denied)": 6,
+        "D02 -> [\"D02\"] (denied)": 9,
         "D99 -> [] (paid)": 5,
         "D05 -> [\"D05\"] (denied)": 6,
         "D09 -> [\"D03\", \"D09\"] (denied)": 12,
         "D09 -> [\"D08\", \"D09\"] (denied)": 1,
-        "D02 -> [\"D02\"] (denied)": 5,
+        "D09 -> [\"D02\", \"D09\"] (denied)": 1,
         "D08 -> [\"D03\", \"D08\"] (denied)": 2,
         "D01 -> [\"D01\", \"D03\", \"D08\"] (denied)": 1,
         "D07 -> [\"D03\", \"D07\"] (denied)": 2,
         "D03 -> [\"D03\", \"D05\"] (denied)": 1,
-        "D02 -> [\"D03\"] (denied)": 2,
         "D09 -> [\"D03\", \"D08\", \"D09\"] (denied)": 1,
         "D09 -> [\"D03\", \"D07\", \"D09\"] (denied)": 1,
         "D09 -> [\"D03\", \"D05\", \"D09\"] (denied)": 1
@@ -192,75 +3260,76 @@
     "PY02": {
       "total": 404,
       "labelled": 404,
-      "status_correct": 393,
-      "status_accuracy": 0.9727722772277227,
+      "status_correct": 396,
+      "status_accuracy": 0.9801980198019802,
       "always_paid_baseline": 0.7079207920792079,
-      "status_and_code_set_correct": 393,
-      "status_and_code_set_accuracy": 0.9727722772277227,
+      "status_and_code_set_correct": 396,
+      "status_and_code_set_accuracy": 0.9801980198019802,
       "actual_denied": 118,
       "actual_paid": 286,
-      "denial_code_correct": 107,
-      "denial_code_accuracy": 0.9067796610169492,
-      "denial_recall": 0.9067796610169492,
-      "denied_reason_detected": 107,
-      "additional_unconfirmed_codes": 12,
-      "missed_denials": 11,
-      "false_alarms": 0,
-      "manual_review": 0,
+      "denial_code_correct": 111,
+      "denial_code_accuracy": 0.940677966101695,
+      "denial_recall": 0.940677966101695,
+      "denied_reason_detected": 111,
+      "additional_unconfirmed_codes": 13,
+      "missed_denials": 7,
+      "false_alarms": 1,
+      "unable_to_check": 0,
       "error_categories": {
         "contract_or_unspecified_denial": 7,
-        "rule_or_data_disagreement": 4
+        "rule_or_data_disagreement": 1
       },
       "confusion": {
-        "paid -> [] (paid)": 286,
+        "paid -> [] (paid)": 285,
         "D09 -> [\"D09\"] (denied)": 20,
         "D01 -> [\"D01\"] (denied)": 13,
         "D99 -> [] (paid)": 7,
-        "D06 -> [\"D06\"] (denied)": 31,
+        "D06 -> [\"D06\"] (denied)": 30,
         "D07 -> [\"D06\", \"D07\"] (denied)": 1,
         "D05 -> [\"D05\", \"D06\"] (denied)": 3,
-        "D02 -> [] (paid)": 4,
+        "D02 -> [\"D02\"] (denied)": 8,
         "D07 -> [\"D07\"] (denied)": 7,
         "D04 -> [\"D04\"] (denied)": 9,
         "D08 -> [\"D08\"] (denied)": 9,
         "D01 -> [\"D01\", \"D07\"] (denied)": 1,
+        "paid -> [\"D02\"] (denied)": 1,
         "D01 -> [\"D01\", \"D04\"] (denied)": 1,
         "D09 -> [\"D06\", \"D09\"] (denied)": 3,
         "D04 -> [\"D04\", \"D06\"] (denied)": 2,
         "D01 -> [\"D01\", \"D06\"] (denied)": 1,
         "D05 -> [\"D05\"] (denied)": 2,
-        "D02 -> [\"D02\"] (denied)": 4
+        "D06 -> [\"D02\", \"D06\"] (denied)": 1
       }
     },
     "PY03": {
       "total": 288,
       "labelled": 288,
-      "status_correct": 275,
-      "status_accuracy": 0.9548611111111112,
+      "status_correct": 276,
+      "status_accuracy": 0.9583333333333334,
       "always_paid_baseline": 0.6458333333333334,
-      "status_and_code_set_correct": 271,
-      "status_and_code_set_accuracy": 0.9409722222222222,
+      "status_and_code_set_correct": 272,
+      "status_and_code_set_accuracy": 0.9444444444444444,
       "actual_denied": 102,
       "actual_paid": 186,
-      "denial_code_correct": 85,
-      "denial_code_accuracy": 0.8333333333333334,
-      "denial_recall": 0.8725490196078431,
-      "denied_reason_detected": 85,
-      "additional_unconfirmed_codes": 18,
-      "missed_denials": 13,
-      "false_alarms": 0,
-      "manual_review": 0,
+      "denial_code_correct": 87,
+      "denial_code_accuracy": 0.8529411764705882,
+      "denial_recall": 0.8921568627450981,
+      "denied_reason_detected": 87,
+      "additional_unconfirmed_codes": 19,
+      "missed_denials": 11,
+      "false_alarms": 1,
+      "unable_to_check": 0,
       "error_categories": {
         "contract_or_unspecified_denial": 15,
-        "rule_or_data_disagreement": 2
+        "state_sensitive_mismatch": 1
       },
       "confusion": {
-        "paid -> [] (paid)": 186,
+        "paid -> [] (paid)": 185,
         "D01 -> [\"D01\"] (denied)": 12,
         "D10 -> [] (paid)": 6,
         "D03 -> [\"D03\"] (denied)": 36,
         "D05 -> [\"D05\"] (denied)": 4,
-        "D09 -> [\"D09\"] (denied)": 15,
+        "D09 -> [\"D09\"] (denied)": 14,
         "D01 -> [\"D01\", \"D02\"] (denied)": 1,
         "D99 -> [] (paid)": 5,
         "D07 -> [\"D03\", \"D07\", \"D09\"] (denied)": 1,
@@ -268,9 +3337,9 @@
         "D09 -> [\"D03\", \"D09\"] (denied)": 2,
         "D10 -> [\"D09\"] (denied)": 4,
         "D07 -> [\"D07\"] (denied)": 5,
-        "D02 -> [] (paid)": 2,
-        "D02 -> [\"D02\"] (denied)": 1,
-        "D09 -> [\"D02\", \"D09\"] (denied)": 1,
+        "D02 -> [\"D02\"] (denied)": 3,
+        "D09 -> [\"D02\", \"D09\"] (denied)": 2,
+        "paid -> [\"D02\"] (denied)": 1,
         "D07 -> [\"D03\", \"D07\"] (denied)": 1,
         "D09 -> [\"D02\", \"D03\", \"D09\"] (denied)": 1,
         "D01 -> [\"D01\", \"D02\", \"D03\"] (denied)": 1,
@@ -283,11 +3352,11 @@
     "paid": {
       "total": 703,
       "labelled": 703,
-      "status_correct": 703,
-      "status_accuracy": 1.0,
+      "status_correct": 701,
+      "status_accuracy": 0.9971550497866287,
       "always_paid_baseline": 1.0,
-      "status_and_code_set_correct": 703,
-      "status_and_code_set_accuracy": 1.0,
+      "status_and_code_set_correct": 701,
+      "status_and_code_set_accuracy": 0.9971550497866287,
       "actual_denied": 0,
       "actual_paid": 703,
       "denial_code_correct": 0,
@@ -296,11 +3365,15 @@
       "denied_reason_detected": 0,
       "additional_unconfirmed_codes": 0,
       "missed_denials": 0,
-      "false_alarms": 0,
-      "manual_review": 0,
-      "error_categories": {},
+      "false_alarms": 2,
+      "unable_to_check": 0,
+      "error_categories": {
+        "rule_or_data_disagreement": 1,
+        "state_sensitive_mismatch": 1
+      },
       "confusion": {
-        "paid -> [] (paid)": 703
+        "paid -> [] (paid)": 701,
+        "paid -> [\"D02\"] (denied)": 2
       }
     },
     "D01": {
@@ -320,7 +3393,7 @@
       "additional_unconfirmed_codes": 16,
       "missed_denials": 0,
       "false_alarms": 0,
-      "manual_review": 0,
+      "unable_to_check": 0,
       "error_categories": {},
       "confusion": {
         "D01 -> [\"D01\"] (denied)": 33,
@@ -336,29 +3409,25 @@
     "D02": {
       "total": 27,
       "labelled": 27,
-      "status_correct": 17,
-      "status_accuracy": 0.6296296296296297,
+      "status_correct": 27,
+      "status_accuracy": 1.0,
       "always_paid_baseline": 0.0,
-      "status_and_code_set_correct": 15,
-      "status_and_code_set_accuracy": 0.5555555555555556,
+      "status_and_code_set_correct": 27,
+      "status_and_code_set_accuracy": 1.0,
       "actual_denied": 27,
       "actual_paid": 0,
-      "denial_code_correct": 15,
-      "denial_code_accuracy": 0.5555555555555556,
-      "denial_recall": 0.6296296296296297,
-      "denied_reason_detected": 15,
+      "denial_code_correct": 27,
+      "denial_code_accuracy": 1.0,
+      "denial_recall": 1.0,
+      "denied_reason_detected": 27,
       "additional_unconfirmed_codes": 7,
-      "missed_denials": 10,
+      "missed_denials": 0,
       "false_alarms": 0,
-      "manual_review": 0,
-      "error_categories": {
-        "rule_or_data_disagreement": 12
-      },
+      "unable_to_check": 0,
+      "error_categories": {},
       "confusion": {
-        "D02 -> [] (paid)": 10,
-        "D02 -> [\"D02\", \"D03\"] (denied)": 5,
-        "D02 -> [\"D02\"] (denied)": 10,
-        "D02 -> [\"D03\"] (denied)": 2
+        "D02 -> [\"D02\"] (denied)": 20,
+        "D02 -> [\"D02\", \"D03\"] (denied)": 7
       }
     },
     "D03": {
@@ -378,7 +3447,7 @@
       "additional_unconfirmed_codes": 1,
       "missed_denials": 0,
       "false_alarms": 0,
-      "manual_review": 0,
+      "unable_to_check": 0,
       "error_categories": {},
       "confusion": {
         "D03 -> [\"D03\"] (denied)": 110,
@@ -402,7 +3471,7 @@
       "additional_unconfirmed_codes": 2,
       "missed_denials": 0,
       "false_alarms": 0,
-      "manual_review": 0,
+      "unable_to_check": 0,
       "error_categories": {},
       "confusion": {
         "D04 -> [\"D04\"] (denied)": 9,
@@ -426,7 +3495,7 @@
       "additional_unconfirmed_codes": 3,
       "missed_denials": 0,
       "false_alarms": 0,
-      "manual_review": 0,
+      "unable_to_check": 0,
       "error_categories": {},
       "confusion": {
         "D05 -> [\"D05\", \"D06\"] (denied)": 3,
@@ -447,13 +3516,14 @@
       "denial_code_accuracy": 1.0,
       "denial_recall": 1.0,
       "denied_reason_detected": 31,
-      "additional_unconfirmed_codes": 0,
+      "additional_unconfirmed_codes": 1,
       "missed_denials": 0,
       "false_alarms": 0,
-      "manual_review": 0,
+      "unable_to_check": 0,
       "error_categories": {},
       "confusion": {
-        "D06 -> [\"D06\"] (denied)": 31
+        "D06 -> [\"D06\"] (denied)": 30,
+        "D06 -> [\"D02\", \"D06\"] (denied)": 1
       }
     },
     "D07": {
@@ -473,7 +3543,7 @@
       "additional_unconfirmed_codes": 6,
       "missed_denials": 0,
       "false_alarms": 0,
-      "manual_review": 0,
+      "unable_to_check": 0,
       "error_categories": {},
       "confusion": {
         "D07 -> [\"D07\"] (denied)": 14,
@@ -499,7 +3569,7 @@
       "additional_unconfirmed_codes": 4,
       "missed_denials": 0,
       "false_alarms": 0,
-      "manual_review": 0,
+      "unable_to_check": 0,
       "error_categories": {},
       "confusion": {
         "D08 -> [\"D08\"] (denied)": 19,
@@ -520,17 +3590,17 @@
       "denial_code_accuracy": 1.0,
       "denial_recall": 1.0,
       "denied_reason_detected": 76,
-      "additional_unconfirmed_codes": 27,
+      "additional_unconfirmed_codes": 29,
       "missed_denials": 0,
       "false_alarms": 0,
-      "manual_review": 0,
+      "unable_to_check": 0,
       "error_categories": {},
       "confusion": {
-        "D09 -> [\"D09\"] (denied)": 53,
+        "D09 -> [\"D09\"] (denied)": 51,
         "D09 -> [\"D03\", \"D09\"] (denied)": 14,
         "D09 -> [\"D06\", \"D09\"] (denied)": 3,
         "D09 -> [\"D08\", \"D09\"] (denied)": 1,
-        "D09 -> [\"D02\", \"D09\"] (denied)": 1,
+        "D09 -> [\"D02\", \"D09\"] (denied)": 3,
         "D09 -> [\"D02\", \"D03\", \"D09\"] (denied)": 1,
         "D09 -> [\"D03\", \"D08\", \"D09\"] (denied)": 1,
         "D09 -> [\"D03\", \"D07\", \"D09\"] (denied)": 1,
@@ -554,7 +3624,7 @@
       "additional_unconfirmed_codes": 4,
       "missed_denials": 6,
       "false_alarms": 0,
-      "manual_review": 0,
+      "unable_to_check": 0,
       "error_categories": {
         "contract_or_unspecified_denial": 10
       },
@@ -580,7 +3650,7 @@
       "additional_unconfirmed_codes": 0,
       "missed_denials": 17,
       "false_alarms": 0,
-      "manual_review": 0,
+      "unable_to_check": 0,
       "error_categories": {
         "contract_or_unspecified_denial": 17
       },
@@ -592,7 +3662,7 @@
   "output_rows": 1097,
   "unique_test_rows": 1090,
   "proposed_corrections": 54,
-  "multiple_failures": 57,
+  "multiple_failures": 62,
   "cleaning": {
     "sorted_prev_data.csv": {
       "source": "/home/angela/Documents/cvs/resonance/experiment/sorted_prev_data.csv",

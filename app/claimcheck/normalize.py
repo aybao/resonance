@@ -30,7 +30,7 @@ ENUMS = {
     "service_code": {"T1019", "T1005", "S5125"},
     "modifier": {"U1", "U2", "U3"},
     "frequency_code": {"1", "7"},
-    "status": {"paid", "denied"},
+    "status": {"paid", "denied", "pending"},
     "verification_status": {"verified", "rejected", "manual_edit_pending"},
     "denial_code": {f"D{i:02}" for i in range(1, 11)} | {"D99"},
 }
@@ -78,6 +78,8 @@ def canonical(field, value):
             value = value.upper()
         if field in {"status", "verification_status"}:
             value = value.lower()
+        if field == "status" and value in {"unknown", "unresolved", "submitted"}:
+            value = "pending"
         if value not in ENUMS[field]:
             raise ValueError("unsupported value")
     return value
@@ -162,6 +164,8 @@ def normalize_reference_rows(rows, fields):
             value = raw.get(field) or ""
             if field == "remark":
                 clean[field] = value
+            elif field == "status" and not value.strip():
+                clean[field] = "pending"
             elif not value.strip():
                 clean[field] = ""
                 if field not in OPTIONAL and field not in {"paid_amount"}:

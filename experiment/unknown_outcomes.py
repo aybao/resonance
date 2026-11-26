@@ -14,10 +14,9 @@ import random
 from statistics import mean
 
 from claim_checker import Checker, State, claim_input, load_csv, outcome_matches
-from pending_claims import PendingAuthorizationReview
 from paths import ARTIFACTS_DIR, EXPERIMENT_DIR
 
-POLICIES = ('ignore', 'assume_paid', 'predict', 'range_review')
+POLICIES = ('ignore', 'assume_paid', 'predict')
 SEEDS = (11, 23, 37, 51, 71)
 FRACTIONS = (0.25, 0.5, 1.0)
 
@@ -38,9 +37,6 @@ def simulate(prior, targets, checker, authorizations, observed, policy, pending=
         if row['claim_id'] not in seen:
             external.append(row)
             seen.add(row['claim_id'])
-    hidden = [r for r in prior if r['claim_id'] not in observed]
-    gate = PendingAuthorizationReview(hidden + external, authorizations,
-                                     set(observed) | {r['claim_id'] for r in targets})
     events = [(r['submitted_date'], 0, i, 'history', r) for i, r in enumerate(prior)]
     events += [(r['submitted_date'], 2, i, 'target', r) for i, r in enumerate(targets)]
     events += [(r['submitted_date'], 1 if pending_first else 3, i, 'pending', r) for i, r in enumerate(external)]
@@ -61,11 +57,8 @@ def simulate(prior, targets, checker, authorizations, observed, policy, pending=
                 state.record(row, 'unknown')
             continue
         result = checker.check(row, state)
-        review = gate.assess(row, result) if policy == 'range_review' else {'decision': result['status']}
         predictions[cid] = dict(status=result['status'], codes=result['denial_codes'],
-                                decision=review['decision'],
                                 authorization_remaining=result['evidence'].get('authorization_remaining'))
-        # Review is an abstention; retain the original experiment's forecast ledger.
         state.record(row, result['status'])
     return predictions, unknown_predictions
 
@@ -75,20 +68,12 @@ def evaluate(predictions, labels, reference=None):
     def matched(cid, result):
         label = labels[cid]
         return outcome_matches(label['status'], label['denial_code'], result['status'], result['codes'])
-    automatic = {cid: p for cid, p in predictions.items() if p['decision'] in ('paid', 'denied')}
-    reviewed = {cid: p for cid, p in predictions.items() if p['decision'] not in ('paid', 'denied')}
     matches = sum(matched(cid, p) for cid, p in predictions.items())
-    correct_automatic = sum(matched(cid, p) for cid, p in automatic.items())
     result = dict(total=total, status_correct=sum(p['status'] == labels[cid]['status'] for cid, p in predictions.items()),
                   code_matches=matches, code_accuracy=matches / total if total else None,
-                  correct_automatic=correct_automatic, automatic=len(automatic),
-                  automatic_coverage=len(automatic) / total if total else None,
-                  automatic_accuracy=correct_automatic / len(automatic) if automatic else None,
-                  correct_automatic_all_claims=correct_automatic / total if total else None,
-                  reviews=len(reviewed), reviewed_paid=sum(labels[cid]['status'] == 'paid' for cid in reviewed),
-                  reviewed_denied=sum(labels[cid]['status'] == 'denied' for cid in reviewed),
-                  payable_denials=sum(p['decision'] == 'paid' and labels[cid]['status'] == 'denied' for cid, p in predictions.items()),
-                  false_denials=sum(p['decision'] == 'denied' and labels[cid]['status'] == 'paid' for cid, p in predictions.items()),
+                  unable_to_check=sum(p['status'] == 'unable_to_check' for p in predictions.values()),
+                  payable_denials=sum(p['status'] == 'paid' and labels[cid]['status'] == 'denied' for cid, p in predictions.items()),
+                  false_denials=sum(p['status'] == 'denied' and labels[cid]['status'] == 'paid' for cid, p in predictions.items()),
                   d02_detected=sum(p['status'] == 'denied' and 'D02' in p['codes'] and labels[cid]['denial_code'] == 'D02' for cid, p in predictions.items()))
     if reference is not None:
         changed = [cid for cid, p in predictions.items() if (p['status'], p['codes']) != (reference[cid]['status'], reference[cid]['codes'])]
@@ -158,7 +143,7 @@ def run(artifacts=ARTIFACTS_DIR, output_dir=EXPERIMENT_DIR):
     for fraction in FRACTIONS:
         for policy in POLICIES:
             group = [r for r in sensitivity if r['fraction'] == fraction and r['policy'] == policy]
-            fields = ('code_matches', 'code_accuracy', 'false_denials', 'payable_denials', 'reviews', 'reviewed_paid', 'correct_automatic', 'changed', 'gained_matches', 'lost_matches')
+            fields = ('code_matches', 'code_accuracy', 'false_denials', 'payable_denials', 'changed', 'gained_matches', 'lost_matches')
             aggregates.append(dict(fraction=fraction, policy=policy, runs=len(group),
                 **{field: dict(mean=mean(r[field] for r in group), minimum=min(r[field] for r in group), maximum=max(r[field] for r in group)) for field in fields}))
 
@@ -173,7 +158,7 @@ def run(artifacts=ARTIFACTS_DIR, output_dir=EXPERIMENT_DIR):
                            'External pending rows have no outcomes; their own forecast accuracy cannot be measured.',
                            'External rows are included before same-day targets; a reverse-order prediction sensitivity is also reported.',
                            'History is treated as submitted; external pending submission itself is an assumption in predict/assume-paid.',
-                           'Review is an abstention, not a successful denial. Earlier target outcomes are always predicted.',
+                           'Earlier target outcomes are always predicted.',
                            'All source data and original experiment metrics/results remain unchanged.'])
     metrics = dict(protocol=protocol, observed_history_control=evaluate(reference, labels),
                    external_pending_comparison=main, masked_history_runs=sensitivity, masked_history_summary=aggregates,
@@ -182,7 +167,7 @@ def run(artifacts=ARTIFACTS_DIR, output_dir=EXPERIMENT_DIR):
     (output_dir / 'unknown_outcomes_metrics.json').write_text(json.dumps(metrics, indent=2) + '\n')
     with (output_dir / 'unknown_outcomes_predictions.csv').open('w', newline='') as f:
         writer = csv.DictWriter(f, lineterminator='\n', fieldnames=['claim_id','actual_status','actual_denial_code'] +
-            [f'{policy}_{field}' for policy in POLICIES for field in ('status','codes','decision','authorization_remaining')])
+            [f'{policy}_{field}' for policy in POLICIES for field in ('status','codes','authorization_remaining')])
         writer.writeheader()
         for claim in targets:
             cid = claim['claim_id']
@@ -194,11 +179,11 @@ def run(artifacts=ARTIFACTS_DIR, output_dir=EXPERIMENT_DIR):
     print(f"Unknown-outcome comparison: {len(targets)} labelled targets; {len(pending)} unlabelled claims")
     for policy, result in main.items():
         print(f"  {policy}: {result['code_matches']}/{result['total']} forecast matches; "
-              f"{result['false_denials']} false denials; {result['reviews']} reviews")
+              f"{result['false_denials']} false denials")
     print(f"Recent backlog: {len(backlog_ids)} hidden outcomes from {backlog_start}")
     for policy, result in backlog.items():
         print(f"  {policy}: {result['code_matches']}/{result['total']} forecast matches; "
-              f"{result['false_denials']} false denials; {result['reviews']} reviews")
+              f"{result['false_denials']} false denials")
     print(f"Full metrics and paired predictions written to {output_dir}")
     return metrics
 

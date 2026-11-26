@@ -19,6 +19,8 @@ class State:
     def __init__(self):
         self.auth_used = Counter()
         self.daily_paid = Counter()
+        self.provisional_auth_used = Counter()
+        self.provisional_auth_claims = defaultdict(list)
         self.submissions = defaultdict(list)
         self.by_id = {}
 
@@ -30,12 +32,15 @@ class State:
     def daily_key(c):
         return (c["payer"], c["patient_id"], c["date_of_service"])
 
-    def record(self, claim, status):
+    def record(self, claim, status, provisional=False):
         self.submissions[self.duplicate_key(claim)].append(claim["claim_id"])
         self.by_id[claim["claim_id"]] = claim
         if status == "paid" and str(claim.get("units", "")).isdigit():
             self.auth_used[claim["auth_id"]] += int(claim["units"])
             self.daily_paid[self.daily_key(claim)] += int(claim["units"])
+            if provisional:
+                self.provisional_auth_used[claim["auth_id"]] += int(claim["units"])
+                self.provisional_auth_claims[claim["auth_id"]].append(claim["claim_id"])
 
 
 class Context:
@@ -78,10 +83,10 @@ def check_claim(claim, state, ctx, rules):
         submitted = date.fromisoformat(claim["submitted_date"])
         units = int(claim["units"])
     except (ValueError, KeyError):
-        return _blank_result("manual_review", "Missing or invalid date/units")
+        return _blank_result("unable_to_check", "Missing or invalid date/units")
     version = rules.resolve(claim["payer"], claim["date_of_service"])
     if version is None:
-        return _blank_result("manual_review", "No approved rules for this payer on the date of service",
+        return _blank_result("unable_to_check", "No approved rules for this payer on the date of service",
                              ["Add rules for this payer and date in the Rules tab"])
     p = version["params"]
     failures, warnings, patches = [], list(p.get("notes", [])), []
@@ -119,14 +124,14 @@ def check_claim(claim, state, ctx, rules):
         if valid:
             remaining = int(auth["units_authorized"]) - state.auth_used[auth["auth_id"]]
             if units > remaining:
-                fail("D02", f"Billed {units} units; authorization has {remaining} remaining",
+                fail("D02", f"Billed {units} units; authorization has {remaining} projected units remaining",
                      "Reconcile prior payments and balance; request more authorization if appropriate. Do not reduce documented care automatically.")
 
     days = (submitted - dos).days
     limit = p["timely_filing_days"]
     if limit is not None and days > limit:
         fail("D03", f"Submitted {days} days after service; limit is {limit}",
-             "Review any payer exception or appeal route. Do not change the actual submission or service date.")
+             "Check any payer exception or appeal route. Do not change the actual submission or service date.")
 
     mod_rules = [m for m in p["modifier_rules"] if m["service_code"] == claim["service_code"]]
     specific = [m for m in mod_rules if m["days"] and DAYS[dos.weekday()] in m["days"]]
@@ -145,13 +150,13 @@ def check_claim(claim, state, ctx, rules):
                  "Locate the visit or resolve verification with the coordinator; do not mark a visit verified automatically.")
         elif units > supported:
             fail("D09", f"Billed {units} units; {minutes:g} verified minutes support {supported}",
-                 f"At most {supported} units are supported by current EVV; changing units/amount needs review.")
+                 f"At most {supported} units are supported by current EVV; confirm documented care before changing units or amounts.")
 
     daily_before = state.daily_paid[State.daily_key(claim)]
     cap = p["daily_max_units"]
     if cap is not None and daily_before + units > cap:
-        fail("D06", f"Paid daily total {daily_before} plus {units} billed units exceeds {cap}",
-             "Review all services paid for this member and date; confirm any exception with the payer.")
+        fail("D06", f"Projected daily usage {daily_before} plus {units} billed units exceeds {cap}",
+             "Check all services paid for this member and date; confirm any exception with the payer.")
 
     transforms = ([version["code"]] if version.get("code") else []) + [u["code"] for u in rules.updates]
     if transforms:
@@ -169,7 +174,7 @@ def check_claim(claim, state, ctx, rules):
             for source in transforms:
                 failures = apply_code(source, claim, context, failures)
         except RuleCodeError as exc:
-            result = _blank_result("manual_review", "Approved rule could not execute; review required", [str(exc)])
+            result = _blank_result("unable_to_check", "Approved rule could not execute; fix the rule to check this claim", [str(exc)])
             result["rule_error"] = str(exc)
             return result
         for failure in failures:
@@ -184,51 +189,17 @@ def check_claim(claim, state, ctx, rules):
 
     failures.sort(key=lambda f: f["code"])  # alphabetical for stable output, not priority
     corr_warning = any(w.startswith("Correction reference") for w in warnings)
-    status = "denied" if failures else ("manual_review" if corr_warning else "paid")
+    status = "denied" if failures else ("unable_to_check" if corr_warning else "paid")
     return dict(
         status=status, denial_codes=[f["code"] for f in failures],
         remark=" | ".join(f["reason"] for f in failures) if failures else
-        ("No documented rule violation detected" if status == "paid" else "Correction requires review"),
+        ("No documented rule violation detected" if status == "paid" else "Original claim reference is missing or does not match"),
         failures=failures, warnings=warnings,
         proposed_changes={f: dict(value=v, reason=r) for f, v, r in patches},
         evidence=dict(verified_minutes=minutes, evv_supported_units=supported,
                       verified_visit_ids=evv["verified_ids"], unverified_visit_ids=evv["other_ids"],
                       authorization_remaining=remaining, daily_paid_before=daily_before,
+                      authorization_predicted_usage=state.provisional_auth_used[claim["auth_id"]],
+                      authorization_provisional_claim_ids=list(state.provisional_auth_claims[claim["auth_id"]]),
                       filing_days=days, filing_limit=limit, prior_submission_ids=list(dup_ids)),
         rule_version=version["version"])
-
-
-class PendingReview:
-    """Earlier claims whose outcome cannot be determined are never assumed paid or denied.
-
-    The ledger counts only decided claims. Undecided earlier claims on the same authorization
-    (needing review, or with unresolved input) widen the balance to a range; if the claim fits
-    only at the top of that range the balance is uncertain, so the user is asked to check the
-    earlier claims instead of guessing. Definite denials are kept.
-    """
-
-    def __init__(self, ctx):
-        self.ctx = ctx
-        self.by_auth = defaultdict(list)
-
-    def add(self, row):
-        """Register an undecided claim (cleaned fields) if it draws on a valid authorization."""
-        a = self.ctx.authorizations.get(row.get("auth_id"))
-        if a and str(row.get("units", "")).isdigit() and row.get("submitted_date") and \
-                (a["payer_id"], a["patient_id"], a["service_code"]) == (row["payer"], row["patient_id"], row["service_code"]) \
-                and a["start_date"] <= row["date_of_service"] <= a["end_date"]:
-            self.by_auth[row["auth_id"]].append(row)
-
-    def assess(self, claim, baseline):
-        remaining = baseline["evidence"].get("authorization_remaining")
-        earlier = [r for r in self.by_auth.get(claim["auth_id"], [])
-                   if r["submitted_date"] < claim["submitted_date"] and r["claim_id"] != claim["claim_id"]]
-        units = sum(int(r["units"]) for r in earlier)
-        lower = max(0, remaining - units) if remaining is not None else None
-        uncertain = remaining is not None and bool(earlier) and lower < int(claim["units"]) <= remaining
-        status = "check_previous_claims" if uncertain and baseline["status"] == "paid" else baseline["status"]
-        return dict(status=status, balance_uncertain=uncertain,
-                    unresolved_prior_claim_ids=[r["claim_id"] for r in earlier] if uncertain else [],
-                    balance_range=[lower, remaining] if uncertain else None,
-                    previous_claims_action=("Confirm whether the listed earlier claims were submitted and paid; "
-                                            "reconcile the payer balance before submitting this claim.") if uncertain else "")

@@ -31,7 +31,7 @@ tr.click{cursor:pointer}tr.click:hover{background:#f0f4fb}tr.sel{background:#e6e
 td.fixed{background:var(--fix)}
 .badge{display:inline-block;border-radius:10px;padding:1px 9px;font-size:12px;font-weight:600}
 .b-payable,.b-paid{background:var(--ok-bg);color:var(--ok)}.b-denied{background:var(--bad-bg);color:var(--bad)}
-.b-review,.b-check_previous_claims,.b-manual_review,.b-must_correct,.b-duplicate_row{background:var(--warn-bg);color:var(--warn)}
+.b-warning,.b-unable_to_check,.b-must_correct,.b-duplicate_row{background:var(--warn-bg);color:var(--warn)}
 .code{font-family:ui-monospace,monospace;background:#eef1f6;border-radius:4px;padding:0 5px;margin-right:3px}
 .failure{border-left:3px solid var(--bad);padding:4px 10px;margin:6px 0;background:#fffafa}
 .warning{border-left:3px solid var(--warn);padding:4px 10px;margin:6px 0;background:#fffcf5}
