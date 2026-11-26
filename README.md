@@ -86,8 +86,8 @@ have several codes. **Auto-formatted** is a filter, not a payment outcome.
    in the conversation.
 4. Check **Execution checks passed**, then approve the changed synthetic examples
    as a group. Expand any saved regressions and historical prediction changes.
-   Historical changes require a separate group approval; changing history or saved
-   expectations also requires a reason/source. Check payer and service dates carefully.
+   Historical changes require a separate group approval. A reason/source for
+   changed history or saved expectations is optional. Check payer and service dates carefully.
 5. Click **Accept new rule** (or **Approve changes and accept rule**) once. No
    individual example approval is required. Current claims are re-checked and
    saved regression checks appear on the claims dashboard after every batch check.

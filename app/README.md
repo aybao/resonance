@@ -47,7 +47,7 @@ not been verified; automated/browser tests use an injected test transport.
   example to attach its context to a message, or request an edit directly. Every revision is compared with the
   accepted rules. Each example has a **Raise issue** button; individual example
   approval is not required. Unchanged controls run in the background. Conflicting
-  saved expectations need an explicit reason/source before acceptance. New versions and example baselines persist in `state/rules.json`.
+  saved expectations need explicit approval; a reason/source is optional. New versions and example baselines persist in `state/rules.json`.
 - **Historical demo:** starts on April 30, 2026 with base manuals. Use
   **Fast forward: update system data** to reach June 30, then upload the June CSV
   from `../demo-data/claim-checking-csvs/` into Check claims. Fast forward updates
@@ -82,7 +82,7 @@ After every response the app validates code and examples, executes before/after
 comparisons, runs saved tests, and reports historical impact. Acceptance rechecks
 the exact candidate and rejects stale review approval. Changed synthetic examples
 and changed historical predictions each need group approval. Historical changes
-and saved regressions require a recorded reason/source. All changed historical
+and saved regressions allow an optional reason/source. All changed historical
 rows are available for review with payer and service dates. Invalid code/output, execution errors and conflicting
 confirmed expectations block acceptance. Single rule acceptance saves changed
 outputs as regression baselines with `accepted_with_rule` provenance, distinct

@@ -248,11 +248,6 @@ def activate(draft, store, dataset, regression_reason="", *, review_token="", ap
         raise DraftError("Approve the synthetic example changes before accepting")
     if review["historical_count"] and approve_history is not True:
         raise DraftError("Approve the historical prediction changes before accepting")
-    if review["historical_count"] and not regression_reason.strip():
-        raise DraftError("Give the reason/source for changing historical predictions; check payer and effective service dates")
-    if ev["regressions"] and not regression_reason.strip():
-        raise DraftError(f"{len(ev['regressions'])} saved example test(s) would change; "
-                         "give the reason/source for changing earlier expectations")
     global_update = draft.get("code") is not None
     if global_update:
         version = store.add_update(draft["code"], source=draft["source"], summary=draft["summary"], approved_at=_now())

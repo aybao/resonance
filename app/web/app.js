@@ -478,7 +478,7 @@ function updateOutput(view) {
   if (ev.impact) {
     const i = ev.impact;
     output.append(h("p", { class: "history-impact" }, h("strong", {}, `${i.changed_count} historical prediction${i.changed_count === 1 ? "" : "s"} would change.`), ` ${i.now_correct} would match their recorded outcome; ${i.now_wrong} would stop matching.`));
-    if (i.changed_count) output.append(h("p", { class: "warning" }, "Historical predictions usually stay unchanged for a future-dated rule. Check each payer and service date against the source; explain any retroactive changes before approving."),
+    if (i.changed_count) output.append(h("p", { class: "warning" }, "Historical predictions usually stay unchanged for a future-dated rule. Check each payer and service date against the source; optionally explain retroactive changes below."),
       h("details", { class: "historical-changes" }, h("summary", {}, `Review historical changes (${i.changed_count})`), ...i.examples.map((c) => {
         const data = { key: `${d.id}-history-${c.claim_id}`, title: `Historical claim ${c.claim_id}`, ...c };
         return h("div", { class: "example" }, h("div", { class: "example-content" }, h("strong", {}, c.claim_id),
@@ -492,12 +492,12 @@ function updateOutput(view) {
   const history = h("input", { type: "checkbox", class: "approve-history" });
   const needsSynthetic = !!review && !!(review.synthetic_count || review.regression_count);
   const needsHistory = !!review?.historical_count;
-  const needsReason = needsHistory || ev.regressions.length > 0;
-  const reason = h("textarea", { rows: "2", placeholder: "Reason and source for changing earlier expectations or historical predictions", "aria-label": "Reason and source for changed expectations" });
+  const showReason = needsHistory || ev.regressions.length > 0;
+  const reason = h("textarea", { rows: "2", placeholder: "Optional: reason or source for these changes", "aria-label": "Reason or source for changes (optional)" });
   const approvals = h("div", { class: "semantic-approval activation-row" }, h("h3", {}, "Approve the reviewed changes"),
     needsSynthetic ? h("label", { class: "approval-option" }, synthetic, `I approve ${review.synthetic_count} changed synthetic examples and ${review.regression_count} changed saved expectations.`) : null,
     needsHistory ? h("label", { class: "approval-option" }, history, `I approve ${review.historical_count} changed historical predictions after checking payer and service dates.`) : null,
-    needsReason ? reason : null);
+    showReason ? h("label", {}, "Reason or source (optional)", reason) : null);
   output.append(approvals);
   const activate = h("button", { type: "button", disabled: !ev.can_activate, "data-blocked": String(!ev.can_activate), onclick: () => ruleTask(async () => {
     try {
@@ -517,7 +517,7 @@ function updateOutput(view) {
     await loadRules(); await refreshResults();
     $("rules-status").textContent = "Rules saved; loaded claims rechecked.";
   }, "Activating reviewed rules…") }, needsHistory || ev.regressions.length ? "Approve changes and accept rule" : "Accept new rule");
-  const updateApproval = () => { activate.disabled = !ev.can_activate || (needsSynthetic && !synthetic.checked) || (needsHistory && !history.checked) || (needsReason && !reason.value.trim()); activate.dataset.blocked = String(activate.disabled); };
+  const updateApproval = () => { activate.disabled = !ev.can_activate || (needsSynthetic && !synthetic.checked) || (needsHistory && !history.checked); activate.dataset.blocked = String(activate.disabled); };
   synthetic.addEventListener("change", updateApproval); history.addEventListener("change", updateApproval); reason.addEventListener("input", updateApproval); updateApproval();
   output.append(h("div", { class: "rule-actions activation-row" }, activate, h("span", { class: "small muted" }, ev.can_activate ? "Accepting saves the rules and rechecks loaded claims." : "Resolve the issues above before accepting.")));
   return output;

@@ -154,7 +154,7 @@ class Workflow(unittest.TestCase):
             self.assertIn("D03", c["before"]["codes"])
             self.assertNotIn("D03", c["after"]["codes"])
 
-    def test_regression_against_saved_tests_needs_a_reason(self):
+    def test_regression_requires_approval_and_preserves_optional_reason(self):
         d, _ = self.drafted()
         for r in evaluate(d, self.store, self.ds)["examples"]:
             decide(d, r["id"], "set", r["actual"]["codes"])

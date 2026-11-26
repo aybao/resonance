@@ -49,18 +49,17 @@ class RegressionReview(unittest.TestCase):
         self.assertTrue(version['review']['approved_synthetic'])
         self.assertFalse(d['decisions'])
 
-    def test_history_requires_separate_approval_and_reason(self):
+    def test_history_requires_approval_but_reason_is_optional(self):
         load_sample(self.ds, SAMPLE)
         d = self.draft()
         ev = evaluate(d, self.store, self.ds)
         self.assertGreater(ev['review']['historical_count'], 0)
         with self.assertRaisesRegex(DraftError, 'historical'):
             activate(d, self.store, self.ds, review_token=ev['review']['token'], approve_synthetic=True)
-        with self.assertRaisesRegex(DraftError, 'reason/source'):
-            activate(d, self.store, self.ds, **approval(d, self.store, self.ds))
-        v = approved_activate(d, self.store, self.ds, 'Retroactive payer correction in test source')
+        v = activate(d, self.store, self.ds, **approval(d, self.store, self.ds))
         self.assertEqual(len(v['review']['historical_changes']), ev['review']['historical_count'])
-        self.assertIn('Retroactive', v['review']['reason'])
+        self.assertEqual(v['review']['reason'], '')
+        self.assertTrue(v['review']['approved_history'])
 
     def test_historical_examples_are_not_truncated(self):
         load_sample(self.ds, SAMPLE)
@@ -98,10 +97,9 @@ class RegressionReview(unittest.TestCase):
         second = self.draft({**UPDATE, 'code': UPDATE['code'].replace('50', '30')})
         ev = evaluate(second, self.store, self.ds)
         self.assertTrue(ev['regressions'])
-        with self.assertRaisesRegex(DraftError, 'reason/source'):
-            activate(second, self.store, self.ds, **approval(second, self.store, self.ds))
-        approved_activate(second, self.store, self.ds, 'Payer corrected test source')
+        activate(second, self.store, self.ds, '   ', **approval(second, self.store, self.ds))
         self.assertTrue(saved.get('superseded_by'))
+        self.assertEqual(saved['superseded_reason'], '')
         self.assertTrue(any(t.get('supersedes') == saved['id'] for t in self.store.acceptance))
         self.assertEqual(regression_report(self.store)['failed'], 0)
 

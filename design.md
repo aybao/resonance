@@ -169,7 +169,7 @@ checks from tests and demonstrations run on demand.
 | Historical replay | On demand through the replay script; also before a demo or after a material checker/updater change | Exercise the dated bulletin updates and claim batches against known expectations |
 | Guided demo | On demand; the presenter advances the same replay script one stage at a time | Demonstrate the checker, chat-based rule updates, changing history, and measured results |
 | Candidate execution validation | Automatically after each AI response, including every follow-up revision, and again before acceptance | Check code and example formats, bounded execution and output structure; errors block semantic approval |
-| Semantic review | After successful execution checks for each proposal/revision | Request group approval of changed synthetic examples and separate approval of all changed historical predictions; disclose saved regressions and require a reason/source for regressions or historical changes |
+| Semantic review | After successful execution checks for each proposal/revision | Request group approval of changed synthetic examples and separate approval of all changed historical predictions; disclose saved regressions and allow an optional reason/source for regressions or historical changes |
 | Candidate regression checks | Automatically after each candidate revision | Run saved, user-confirmed examples and unchanged control cases against the candidate |
 | Acceptance checks | Automatically when the user clicks **Accept new rule**, before activation | Re-check the exact candidate being accepted and resolve conflicting confirmed expectations |
 | Active-rule regression checks | Every claims batch check/recheck, including uploads, edits and rule activation | Run non-superseded saved cases against active rules; report failures on the dashboard independently of batch predictions |
@@ -295,7 +295,7 @@ establishes the expected behaviour where a new rule is unclear.
    Users can request a correction or payer clarification without approving
    examples individually.
 3. Show which outcomes differ under the overall proposed update and why. Let the
-   user comment on a rule/example or request another edit; record a reason/source
+   user comment on a rule/example or request another edit; optionally record a reason/source
    for deliberate changes to earlier confirmed expectations.
 4. After group approval of synthetic changes and separate approval of historical
    changes, a single acceptance action saves the update without per-example clicks.
@@ -310,9 +310,9 @@ confirmed tests. Unchanged control cases do not require a user decision.
 When the user clicks **Accept new rule**, rerun validation and regressions against
 the exact candidate and current state. Block activation for execution/format
 errors or unresolved conflicts with confirmed expectations. A deliberate change
-to an earlier confirmed expectation requires a recorded reason/source and user
-confirmation. Historical prediction changes also require explicit group approval
-and a reason/source, with all affected rows available in the chat. Show payer and
+to an earlier confirmed expectation requires user confirmation; a reason/source
+is optional. Historical prediction changes also require explicit group approval
+with an optional reason/source and all affected rows available in the chat. Show payer and
 service dates to check effective-date conditions; retroactive changes may be
 legitimate. Bind approval to the evaluated candidate and comparison results; reject
 stale approval after revisions or state changes. Do not run the full historical

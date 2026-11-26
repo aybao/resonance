@@ -457,13 +457,13 @@ The user approves changed synthetic examples (including saved regressions) as on
 group and changed historical predictions as a separate group. All historical
 changes are available in the expandable list, including service dates and
 before/after predictions. Recorded payer outcomes remain unchanged. Historical
-changes and saved regressions require a reason/source. Future-dated rules usually
+changes and saved regressions allow an optional reason/source. Future-dated rules usually
 leave earlier service untouched; arbitrary multi-payer code has no single effective
 date field, so scope is checked by executing cases and user review, not by guessing
 an effective date from Python source.
 
 A final acceptance request includes `review_token`, `approve_synthetic`,
-`approve_history` and `regression_reason`. The server re-evaluates and hashes the
+`approve_history` and optional `regression_reason`. The server re-evaluates and hashes the
 candidate, accepted store and results, rejecting missing/stale approval or missing
 group consent. The accepted version stores counts, the review fingerprint, reason
 and historical before/after changes. Approval is recorded once per update, never
@@ -820,7 +820,7 @@ is the repeatable automated path; it never silently replaces a failed live call.
 | No historical comparison | Use demo mode and known demo claim IDs. One unknown ID suppresses the comparison for the batch. |
 | No improvement after a bulletin | Check service dates, the loaded submission period, and whether the proposal was accepted. Northwind first changes the supplied September monthly results. |
 | Source/file error during chat | The frontend keeps the pending input on failure. Remove an empty attachment or revise and resend. |
-| Acceptance blocked | Read validation errors, clarifying questions, explicit expectation conflicts or saved-check regressions. A reason/source is needed for intentional changes to saved expectations. |
+| Acceptance blocked | Read validation errors, clarifying questions, explicit expectation conflicts or saved-check regressions. Explicit approval is needed for intentional changes to saved expectations; a reason/source is optional. |
 | New rule fails on a later claim | It is sent to manual review; prior example success did not prove all branches. |
 | Balances do not explain a recorded D02 | Opening balances, missing transactions/pending submissions or synthetic inconsistencies may need reconciliation. Do not change documented care to fit a label. |
 | D10/D99 remains unexplained | Obtain the contract or correspondence; the app does not invent missing payer requirements. |

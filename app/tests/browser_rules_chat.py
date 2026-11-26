@@ -141,7 +141,8 @@ def main():
             if args.screenshots:
                 (args.screenshots / 'rules-mobile.png').write_bytes(base64.b64decode(wd('GET', f'/session/{sid}/screenshot')))
             assert js('return [...document.querySelectorAll(".activation-row")].filter(e=>!e.hidden).at(-1).querySelector("button").disabled')
-            js('const box=[...document.querySelectorAll(".semantic-approval")].find(e=>!e.hidden); box.querySelectorAll("input[type=checkbox]").forEach(c=>{c.checked=true;c.dispatchEvent(new Event("change"))}); const reason=box.querySelector("textarea"); if(reason){reason.value="Reviewed test contract and service dates";reason.dispatchEvent(new Event("input"))}')
+            js('const box=[...document.querySelectorAll(".semantic-approval")].find(e=>!e.hidden); box.querySelectorAll("input[type=checkbox]").forEach(c=>{c.checked=true;c.dispatchEvent(new Event("change"))}); const reason=box.querySelector("textarea"); if(reason){reason.value="";reason.dispatchEvent(new Event("input"))}')
+            assert js('return ![...document.querySelectorAll(".activation-row")].filter(e=>!e.hidden).at(-1).querySelector("button").disabled')
             js('[...document.querySelectorAll(".activation-row")].filter(e=>!e.hidden).at(-1).querySelector("button").click()')
             wait('return !ruleBusy && document.querySelector(".activation-success") !== null')
             assert js('return !$("rule-composer").hidden')

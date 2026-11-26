@@ -29,7 +29,7 @@ to open local sockets.
 | Active-rule regression report | Every claims check/recheck: uploads, edits, relevant reference replacements and rule activation. Run active saved scenarios, report pass/fail and expandable failures separately from claims. | Claims runtime, both modes. |
 | Historical impact diagnostic | Each valid draft evaluation when recorded reference history exists. Uses observed earlier outcomes. | Rules-updater runtime; not the monthly demo score. |
 | Semantic approval | After execution/output checks succeed, approve changed synthetic cases as a group and historical changes separately. All historical rows are disclosed with payer/service dates. | Rules-updater runtime. |
-| Acceptance validation | On final acceptance, re-evaluate and compare the review fingerprint; reject missing/stale group approvals. Historical changes and saved regressions need a reason/source. | Rules-updater runtime. |
+| Acceptance validation | On final acceptance, re-evaluate and compare the review fingerprint; reject missing/stale group approvals. Historical changes and saved regressions allow an optional reason/source. | Rules-updater runtime. |
 | Worker execution/output limits | Every generated-code execution, including later ordinary claims. Failures become errors or review outcomes. | Runtime, both modes. |
 | Monthly upload comparison | After a demo batch is checked/re-checked, if all claim IDs are known to the demo source. | Web demo runtime. |
 | Fast-forward date validation | On demo advance. Updates references and clears the batch; it does not run claims/tests. | Web demo runtime. |
@@ -94,8 +94,8 @@ approval of historical changes, with no per-example clicks. Changed actual outpu
 have `user_confirmed` provenance. Neither generated snapshots nor a user clicking
 accept are a statistical accuracy estimate. Clarification questions, invalid
 code/examples, execution failures and conflicts with explicit expectations block
-acceptance. Earlier saved-check changes and historical prediction changes require a
-recorded reason/source. Approval is bound to the exact candidate, accepted baseline
+acceptance. Reasons/sources for earlier saved-check changes and historical
+prediction changes are optional; explicit group approval remains required. Approval is bound to the exact candidate, accepted baseline
 and comparison results; a revision or changed results requires fresh consent.
 
 Superseded saved cases remain in the audit trail and receive replacement baselines
@@ -311,7 +311,7 @@ Source: [test_drafts.py](app/tests/test_drafts.py). Exercises the rules-updater 
 | `test_activate_saves_version_and_acceptance_tests_and_changes_outcomes_by_date` | Acceptance saves the global code and explicit examples, changes affected execution, and preserves the earlier legacy baseline. |
 | `test_single_acceptance_saves_changed_actual_outputs_with_distinct_provenance` | Whole-rule acceptance needs no individual decisions and saves only changed actual outputs as accepted_with_rule baselines. |
 | `test_impact_on_history_shows_changed_outcomes_for_affected_dates_only` | Historical impact lists only Northwind claims on/after the intended boundary whose filing codes change. |
-| `test_regression_against_saved_tests_needs_a_reason` | A later update conflicting with saved examples cannot be accepted without a reason; supersession retains that reason. |
+| `test_regression_requires_approval_and_preserves_optional_reason` | Conflicting updates need explicit approval; an optional supplied reason is retained on supersession. |
 | `test_unclear_examples_are_recorded_not_saved_as_tests` | The explicit decision API records payer-clarification cases on the version without promoting them to confirmed expected-output tests. |
 | `test_persistence_round_trip` | Saving/reloading the rule snapshot preserves its contents. |
 
@@ -422,11 +422,11 @@ inside the app.
 |---|---|
 | `test_execution_failure_never_offers_semantic_approval_or_mutates_rules` | Invalid output blocks approval and preserves accepted state. |
 | `test_changed_synthetic_examples_need_one_explicit_group_approval` | One explicit boolean approval covers changed synthetic examples; strings cannot substitute for consent. |
-| `test_history_requires_separate_approval_and_reason` | Synthetic consent alone cannot approve history; reason/source and historical approval are persisted. |
+| `test_history_requires_approval_but_reason_is_optional` | Synthetic consent alone cannot approve history; separate historical approval succeeds without a written reason. |
 | `test_historical_examples_are_not_truncated` | Every changed historical prediction is available, not just the former first 25; fixture changes respect service dates. |
 | `test_approval_is_invalidated_by_revision_or_baseline_changes` | Previously reviewed fingerprints cannot approve revised code or changed accepted rules. |
 | `test_new_history_invalidates_previous_approval` | Newly loaded comparison history requires renewed review. |
-| `test_saved_regressions_are_replaced_and_old_expectations_preserved` | Deliberate regressions retain old baselines/reasons and create passing replacements, including cases absent from the proposal. |
+| `test_saved_regressions_are_replaced_and_old_expectations_preserved` | Deliberate regressions retain old baselines, allow blank reasons and create passing replacements, including cases absent from the proposal. |
 | `test_runtime_regressions_run_again_for_claim_upload_and_edit` | Rechecks rerun saved cases and expose unexpected active-rule changes without hiding claim results. |
 
 

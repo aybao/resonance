@@ -46,7 +46,7 @@ def accept_bulletin(session, payer, live=False, interactive=False):
             raise ValueError('Live proposal not accepted; raise an issue or revise it in the web chat')
     reason = 'Source-transcribed bulletin verified against independent fixture rules'
     if live and (ev['regressions'] or ev['review']['historical_count']):
-        reason = input('Reason/source for changing saved expectations or historical predictions: ').strip()
+        reason = input('Reason/source for changing saved expectations or historical predictions (optional): ').strip()
     return session.activate(draft['id'], reason, review_token=ev['review']['token'],
                             approve_synthetic=True, approve_history=True)
 
