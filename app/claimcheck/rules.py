@@ -127,6 +127,9 @@ class RuleStore:
             for payer in self.payers.values():
                 for version in payer["versions"]:
                     version.setdefault("code", "")
+                    notes = version["params"].get("notes", [])
+                    version["params"]["notes"] = [n for n in notes if n !=
+                        "Summit agency contract requirements (section 9.5) are not supplied; D10 cannot be determined."]
 
     # persistence -------------------------------------------------------
     def save(self):
@@ -213,7 +216,7 @@ def baseline_store(path=None):
     store.add_version("PY03", base, dict(
         evv={"required": True, "rounding": "full_units"}, authorization={"required": True},
         timely_filing_days=60, modifier_rules=[], daily_max_units=None, duplicate_check=True,
-        notes=["Summit agency contract requirements (section 9.5) are not supplied; D10 cannot be determined."]),
+        notes=[]),
         source="Summit Network Provider Handbook sections 9.1-9.5", summary="Summit handbook", payer_name="Summit Care Partners")
     return store
 
