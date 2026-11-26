@@ -21,10 +21,11 @@ class Session:
         self.lock = threading.RLock()
         self.sample_dir = sample_dir
         self.rules_path = Path(state_dir) / "rules.json"
-        self.rules = RuleStore(self.rules_path)
-        if not self.rules.payers or self.rules.snapshot() == baseline_store().snapshot():
-            self.rules = full_store(self.rules_path)  # Fresh full-app sessions include all supplied bulletins.
-            self.rules.save()
+        # Every server start begins from the base manuals plus the supplied bulletins. Rule updates approved
+        # in an earlier run are deliberately not reloaded; the file is rewritten to match this clean state.
+        self.rules = full_store()
+        self.rules.path = self.rules_path
+        self.rules.save()
         self.dataset = Dataset()
         self.ai = ai or AIClient()
         self.drafts = {}
@@ -138,6 +139,7 @@ class Session:
             original = run_batch(records, dataset, self.rules, self.overrides, autofix=False)
             for row, submitted in zip(self.rows, original):
                 row["original_prediction"] = {key: submitted[key] for key in ("clean", "status", "denial_codes")}
+                row["original_prediction"]["rule_error"] = submitted.get("rule_error")
             self.demo.compare(self.rows)
         for r, rec in zip(self.rows, records):
             r["edits"] = rec["edits"]

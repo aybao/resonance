@@ -13,6 +13,25 @@ from replay_history import run_replay, accept_bulletin
 
 
 class HistoricalDemo(unittest.TestCase):
+    def test_demo_does_not_whitelist_an_execution_failure(self):
+        from claimcheck import replay_demo
+        self.session.start_demo()
+        self.session.advance_demo('2026-06-30')
+        actual = next(r for r in self.session.demo.source.history if r['submitted_date'].startswith('2026-06'))
+        self.session.rules.add_update('def apply_rule(claim, context, failures):\n    return 42')
+        expected = {actual['claim_id']: dict(actual_status=actual['status'], actual_code=actual['denial_code'],
+                    predicted_status='unable_to_check', predicted_codes=[], reason='Deliberately invalid waiver',
+                    replay_period_end=actual['submitted_date'])}
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / 'exceptions.json'
+            path.write_text(json.dumps(expected))
+            with patch.object(replay_demo, 'EXCEPTIONS_PATH', path):
+                result = self.session.upload_claims(claims_csv([actual]))
+        self.assertTrue(result['rows'][0]['original_prediction']['rule_error'])
+        self.assertFalse(result['demo_report']['passed'])
+        self.assertEqual(result['demo_report']['known_exceptions'], 0)
+        self.assertEqual(result['demo_report']['unexpected_mismatches'], 1)
+
     def setUp(self):
         self.tmp = tempfile.TemporaryDirectory()
         self.session = Session(state_dir=self.tmp.name)
@@ -172,11 +191,13 @@ class HistoricalDemo(unittest.TestCase):
             self.assertFalse(report['passed'])
             self.assertEqual(report['unexpected_mismatches'], 1)
 
-    def test_pristine_old_baseline_migrates_to_full_but_custom_rules_are_preserved(self):
+    def test_server_start_ignores_saved_rule_updates_and_uses_manuals_plus_bulletins(self):
         path = Path(self.tmp.name) / 'legacy'
         rules = baseline_store(path / 'rules.json')
         rules.save()
         self.assertEqual(Session(state_dir=path).rules.resolve('PY01', '2026-08-01')['params']['timely_filing_days'], 45)
         rules.add_version('PY01', '2026-07-01', {'timely_filing_days': 35}, source='User memo')
         rules.save()
-        self.assertEqual(Session(state_dir=path).rules.resolve('PY01', '2026-08-01')['params']['timely_filing_days'], 35)
+        fresh = Session(state_dir=path).rules
+        self.assertEqual(fresh.resolve('PY01', '2026-08-01')['params']['timely_filing_days'], 45)  # saved 35-day memo not reloaded
+        self.assertEqual(fresh.updates, [])

@@ -47,7 +47,7 @@ not been verified; automated/browser tests use an injected test transport.
   example to attach its context to a message, or request an edit directly. Every revision is compared with the
   accepted rules. Each example has a **Raise issue** button; individual example
   approval is not required. Unchanged controls run in the background. Conflicting
-  saved expectations need explicit approval; a reason/source is optional. New versions and example baselines persist in `state/rules.json`.
+  saved expectations need explicit approval; a reason/source is optional. Accepted updates are written to `state/rules.json` for the CLI helpers but are not reloaded: every server start begins from the base manuals plus the supplied bulletins.
 - **Historical demo:** starts on April 30, 2026 with base manuals. Use
   **Fast forward: update system data** to reach June 30, then upload the June CSV
   from `../demo-data/claim-checking-csvs/` into Check claims. Fast forward updates
@@ -134,7 +134,7 @@ are revealed; only earlier periods seed the observed ledger. Submission date
 proxies availability because adjudication dates are absent.
 
 Replay checks pass only when discrepancies exactly match the inspected,
-claim-specific [exception fixture](sample_data/replay_exceptions.md). Every
+claim-specific [exception fixture](../demo-data/replay_exceptions.md). Every
 exception remains in the reported accuracy and mismatch list. The replay cannot
 silently whitelist new failures. Different cutoffs can expose unexpected
 mismatches. This is an inspected regression dataset, not a new holdout.
@@ -184,3 +184,10 @@ forecast usage. Predicted paid claims reserve units in the projected ledger;
 settled outcomes remain unchanged. The claim detail identifies predicted usage
 separately. Valid claims receive paid/denied predictions; invalid inputs, missing
 rules and execution errors return Unable to check or Must correct.
+
+Regression verification covers historical runtime results, saved rule examples,
+strict cohort-specific demo exceptions and a fresh rebuild of the committed
+experiment metrics/predictions. The runtime and demo use the single canonical
+exception list in `demo-data/`; the former app-local copy has been removed.
+Pending historical forecast changes are included in rule-update approval even
+though those rows cannot be scored against unknown outcomes.

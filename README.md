@@ -1,6 +1,6 @@
 # Claim pre-check
 
-A prototype web app for home-care billing teams to check claims before submission.
+A prototype web app for home-care billing teams to check claims before submission. This runs on synthetic data. 
 It combines deterministic claim checks with an AI assistant for creating and
 updating payer rules. This is a demonstration using synthetic data; a “Likely
 paid” result is not a payment guarantee.
@@ -20,24 +20,39 @@ The app can:
 
 Use Python 3.10 or newer and a modern browser. The app uses the Python standard
 library; there is no package installation or frontend build step. Generated rule
-execution uses Unix process/resource facilities and is developed/tested on Linux.
+execution uses Unix process/resource facilities and is developed/tested on Linux. 
 
-From the repository root:
+The AI assistant uses an API key, and needs ANTHROPIC_API_KEY in the environment before the server is started. 
 
+Start at repository root.
+
+To set for only one session and run:
 ```bash
+export ANTHROPIC_API_KEY="api-key-here"
 python3 app/server.py
 ```
 
+To set permanently:
+```bash
+echo 'export ANTHROPIC_API_KEY="your-api-key-here"' >> ~/.zshrc
+```
+
+Then run:
+```bash
+source ~/.zshrc
+python3 app/server.py 
+```
+
 Open [http://127.0.0.1:8000](http://127.0.0.1:8000). Add `--port 8001` if needed.
+
+Environment variable `ANTHROPIC_MODEL` can override the configured model. Checking
+claims and running the fixture-based tests/replay do not require an API key.
+
 Sample authorizations, visits and claim history load automatically. Fresh full-app
 state includes the supplied payer manuals and both dated bulletins.
 
-To use the AI assistant, set `ANTHROPIC_API_KEY` in the environment **before**
-starting the server. `ANTHROPIC_MODEL` can override the configured model. Checking
-claims and running the fixture-based tests/replay do not require an API key.
-Never put a real key in source files or documentation.
 
-## Check claims and understand the results
+## User guide: Check claims
 
 1. In **Check claims**, upload/drop a claims CSV, or choose **Use sample claims**
    in full-app mode. Use [the sample CSV](app/sample_data/claims_to_check.csv) as
@@ -73,7 +88,7 @@ have several codes. **Auto-formatted** is a filter, not a payment outcome.
 
 ## Create or update rules
 
-1. Open **Payer rules**. The chatbox is available immediately. Type a prompt,
+1. Open **Payer rules**. Type a prompt,
    paste Markdown, attach a `.md`/`.markdown` document, or combine a prompt and
    attachment. File selection only stages the attachment; click **Send** to submit.
    Enter sends and Shift+Enter adds a line.
@@ -95,7 +110,7 @@ have several codes. **Auto-formatted** is a filter, not a payment outcome.
    Revising a proposal or changing its comparison results requires fresh approval.
 
 
-Accepted rules and example baselines persist in `app/state/rules.json` by default.
+Accepted rules are written to `app/state/rules.json`, but a server restart begins again from the base manuals plus the supplied bulletins.
 Claims, edits, reference-data replacements and conversations are session-local.
 A browser refresh loses the displayed chat; stopping the server loses in-memory
 session data. AI-proposed examples and acceptance are not independent evidence
@@ -141,3 +156,22 @@ Run the app's developer tests from the repository root:
 ```bash
 python3 -m unittest discover -s app/tests -t app
 ```
+
+
+## Assumptions:
+
+The workflow I have assumed here is that the agency worker currently has some kind of system which computes the claims they need to submit.
+
+I assume the output of that system is a CSV of claims as provided, and the needed format for submission to the payers is similar. I have left this output as an annotated CSV - presumably they might need to sort by payer, strip some fields, etc.
+
+
+### Data:
+The historical demo runs only on the data in claims_history.csv. It assumes splits data artificially based on submission date - older data is assumed to have defined results, and the test data is assumed to be submitted in order, with older claims having unknown outcome. 
+
+In general, the system assumes that all relevant historical claim data is avaliable.
+
+
+### Security:
+There are inherent risks in allowing the AI to write code according to user prompts. We currently assume the user will not attempt to prompt inject and hack the system, etc.
+
+We also assume that users have full proper access to see patient and worker data and no anonymisation is required. 
