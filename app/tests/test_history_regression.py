@@ -6,7 +6,8 @@ import tempfile
 import unittest
 from unittest.mock import patch
 
-from claimcheck.history import regression_report
+from claimcheck.drafts import evaluate, new_draft, refresh_boundary_examples
+from claimcheck.history import compare_regression, regression_report
 from claimcheck.pipeline import Dataset, load_sample
 from claimcheck.rules import full_store, baseline_store
 from tests.test_drafts import SAMPLE
@@ -14,6 +15,38 @@ from tests.test_pipeline import dataset, claim_row
 
 
 class HistoricalRegression(unittest.TestCase):
+    def test_rule_update_evaluation_runs_historical_regression(self):
+        ds = Dataset()
+        load_sample(ds, SAMPLE)
+        base = full_store()
+        same = compare_regression(ds, base, full_store())
+        self.assertEqual((same['new_failure_count'], same['resolved_count']), (0, 0))
+        self.assertTrue(same['before']['passed'] and same['after']['passed'])
+        # A harmful update (1-day filing limit) must surface newly failing recorded outcomes.
+        draft = new_draft('PY01', '2026-08-01', {'timely_filing_days': 1}, source='test')
+        refresh_boundary_examples(draft, base)
+        ev = evaluate(draft, base, ds)
+        hr = ev['historical_regression']
+        self.assertGreater(hr['new_failure_count'], 0)
+        self.assertFalse(hr['after']['passed'])
+        self.assertTrue(all(f['payer'] == 'PY01' and f['date_of_service'] >= '2026-08-01' for f in hr['new_failures']))
+        self.assertEqual(ev['review']['new_historical_failures'], hr['new_failure_count'])
+
+    def test_exception_contract_is_strict_and_demo_periods_remain_scoped(self):
+        from claimcheck.history import exception_matches
+        row = dict(actual_status='denied', actual_code='D99', status='denied',
+                   codes=['D09', 'D02'], remark='Original remark', error=None)
+        expected = dict(actual_status='denied', actual_code='D99', predicted_status='denied',
+                        predicted_codes=['D02', 'D09'], recorded_remark='Original remark',
+                        replay_period_end='2026-07-31', additional_replay_period_ends=['2026-08-31'])
+        self.assertTrue(exception_matches(row, expected))
+        self.assertTrue(exception_matches(row, expected, '2026-08-31'))
+        self.assertFalse(exception_matches(row, expected, '2026-09-30'))
+        self.assertFalse(exception_matches(dict(row, remark='Changed remark'), expected))
+        self.assertFalse(exception_matches(dict(row, error='Rule failed'), expected))
+        unable = dict(expected, predicted_status='unable_to_check', predicted_codes=[])
+        self.assertFalse(exception_matches(dict(row, status='unable_to_check', codes=[]), unable))
+
     def fixture(self, auth='AUTH00001', code='D99'):
         claim = claim_row(cid='C000101', dos='2026-07-02', sub='2026-07-06', units='1', auth=auth)
         ds = dataset([claim + ['denied', '0', code, 'Reviewed source remark']])

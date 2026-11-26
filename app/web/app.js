@@ -486,7 +486,13 @@ function updateOutput(view) {
     ...ev.regressions.map((r) => regressionCard(r, `${d.id}-saved-${r.id}`))));
   if (ev.impact) {
     const i = ev.impact;
-    output.append(h("p", { class: "history-impact" }, h("strong", {}, `${i.changed_count} historical prediction${i.changed_count === 1 ? "" : "s"} would change.`), ` ${i.now_correct} would match their recorded outcome; ${i.now_wrong} would stop matching.`));
+    output.append(h("p", { class: "history-impact" }, h("strong", {}, `${i.changed_count} historical prediction${i.changed_count === 1 ? "" : "s"} would change.`), ` ${i.now_correct} would match their recorded outcome; ${i.now_wrong} would stop matching.${i.pending_changed ? " " + i.pending_changed + " pending forecasts change; their actual outcomes are unknown." : ""}`));
+    const hr = ev.historical_regression;
+    if (hr) output.append(h("p", { class: "historical-regression " + (hr.new_failure_count ? "warning" : "ok") },
+      h("strong", {}, "Historical regression: "),
+      `${hr.after.matched} of ${hr.after.total} recorded outcomes match and ${hr.after.known_exceptions} are pinned known exceptions (${hr.before.matched} / ${hr.before.known_exceptions} with current rules). `,
+      hr.new_failure_count ? `${hr.new_failure_count} claim${hr.new_failure_count === 1 ? "" : "s"} that passed or were known exceptions now mismatch: ${hr.new_failures.slice(0, 8).map((f) => f.claim_id).join(", ")}${hr.new_failure_count > 8 ? "…" : ""}.` : "No new unexpected mismatches.",
+      hr.resolved_count ? ` ${hr.resolved_count} previously failing claim${hr.resolved_count === 1 ? "" : "s"} now pass.` : ""));
     if (i.changed_count) output.append(h("p", { class: "warning" }, "Historical predictions usually stay unchanged for a future-dated rule. Check each payer and service date against the source; optionally explain retroactive changes below."),
       h("details", { class: "historical-changes" }, h("summary", {}, `Review historical changes (${i.changed_count})`), ...i.examples.map((c) => {
         const data = { key: `${d.id}-history-${c.claim_id}`, title: `Historical claim ${c.claim_id}`, ...c };

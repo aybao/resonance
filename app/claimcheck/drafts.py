@@ -16,7 +16,7 @@ from .code_rules import validate_code, RuleCodeError
 from .normalize import CLAIM_FIELDS
 
 from .examples import deterministic_boundary_examples, run_examples, validate_scenario
-from .history import impact
+from .history import compare_regression, impact, replay
 from .rules import DEFAULT_PARAMS, RuleStore, valid_date, validate_params
 
 
@@ -195,7 +195,12 @@ def evaluate(draft, store, dataset):
     saved = run_examples([t for t in store.acceptance if not t.get("superseded_by")], cand)
     ev["regressions"] = [t for t in saved if t["passed"] is False]
     ev["checks"] = dict(examples_run=len(after), unchanged_controls=sum(not r["changed"] for r in after), saved_tests=len(saved))
-    ev["impact"] = impact(dataset, store, cand) if dataset.history else None
+    if dataset.history:
+        replays = (replay(dataset, store), replay(dataset, cand))
+        ev["impact"] = impact(dataset, store, cand, replays=replays)
+        ev["historical_regression"] = compare_regression(dataset, store, cand, replays=replays)
+    else:
+        ev["impact"] = ev["historical_regression"] = None
     errors = [r["actual"]["error"] for r in after if r["actual"].get("error")]
     errors += [r["actual"]["error"] for r in saved if r["actual"].get("error")]
     if ev["impact"]:
@@ -214,7 +219,8 @@ def evaluate(draft, store, dataset):
         token = hashlib.sha256(json.dumps(dict(draft=draft, store=store.snapshot(), evaluation=ev),
                                          sort_keys=True).encode()).hexdigest()
         ev["review"] = dict(token=token, synthetic_count=synthetic_count,
-                            regression_count=len(ev["regressions"]), historical_count=historical_count)
+                            regression_count=len(ev["regressions"]), historical_count=historical_count,
+                            new_historical_failures=(ev["historical_regression"] or {}).get("new_failure_count", 0))
     return ev
 
 
