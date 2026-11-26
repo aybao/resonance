@@ -43,7 +43,6 @@
     <div class="rules-heading">
       <h2>Create or update rules</h2>
       <p class="muted">Submit payer instructions as text or a Markdown file. Review the proposed rules and changed predictions before accepting.</p>
-      <p id="rules-status" class="small muted" role="status"></p>
     </div>
     <div id="rules-conversation" class="rules-conversation" aria-label="Rule update conversation" aria-live="polite">
       <div id="rules-empty" class="rules-empty"><h3>No rule proposal yet</h3><p>Attach a payer bulletin or describe the payer, effective date and rule change.</p></div>
@@ -51,6 +50,7 @@
     <form id="rule-composer" class="rule-composer">
       <div id="example-context" class="example-context" hidden></div>
       <div id="rule-attachment" class="rule-attachment" hidden></div>
+      <p id="rules-status" class="small muted" role="status"></p>
       <label for="rule-message">Message the rule assistant</label>
       <textarea id="rule-message" rows="2" placeholder="Describe a rule change, paste Markdown, or add a document…"></textarea>
       <div class="composer-footer">
