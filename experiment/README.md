@@ -26,9 +26,10 @@ python3 -m unittest discover -p 'test_*.py' -v
 ```
 
 The runner rebuilds the chronological splits, standalone history-cleaning outputs,
-formatting reports, prediction CSV, metrics and cleaned supporting artifacts.
+formatting reports, prediction CSV, metrics, cleaned supporting artifacts and the separate
+unknown-outcome comparison.
 Rerunning replaces generated outputs; it leaves the supplied files unchanged.
-Tests are a separate command and currently comprise **22 passing tests**.
+Tests are a separate command and currently comprise **31 passing tests**.
 
 Default paths are anchored to the scripts, so both working directories produce
 the same files. Explicit path arguments are interpreted relative to your current
@@ -43,6 +44,8 @@ directory, as usual.
 | `clean_data.py` | Cleans one CSV using explicit payer aliases, supported date formats, whitespace/case rules and identical-row deduplication; writes an audit trail; preserves unresolved invalid values |
 | `check_formatting.py` | Reports problems safe cleaning cannot resolve, including invalid values, required fields, conflicting IDs and missing references; flags missing claim authorization numbers as business inputs |
 | `claim_checker.py` | Cleans and validates the splits and context, replays claims, generates predictions/proposed fixes, applies the pending-claim review step, and calculates metrics |
+| `unknown_outcomes.py` | Compares ignoring/assuming/predicting unknown outcomes against range review; tests external pending rows, random hidden historical outcomes and a 30-day backlog; writes separate metrics and predictions |
+| `test_unknown_outcomes.py` | Tests the new replay’s temporal state, label isolation, review scoring and reproducible outputs |
 | `pending_claims.py` | Supporting module: computes authorization exposure to earlier claims with unknown outcomes and returns `check_previous_claims` where appropriate |
 | `paths.py` | Supporting module: defines the supplied-data, experiment and artifact directories independently of the shell's working directory |
 | `test_check_formatting.py` | Tests canonicalization, rejected formats, conflicting records, missing inputs and cleaning idempotence |
@@ -102,6 +105,8 @@ All paths in this table are relative to `experiment/`.
 | `formatting_report.json` | Formatting checker, or full runner | Current unresolved-issue audit across the original history, pending claims, authorizations and EVV exports; safe normalization differences are not listed |
 | `prev_data_formatting_report.json` | Scoped formatting checker, or full runner | Unresolved-issue audit of the standalone cleaned earlier history plus original authorization/EVV context |
 | `test_result.csv` | Claim checker | **1,097** result rows, preserving the original test row order; **1,090** unique claims are evaluated, with seven repeated export rows marked |
+| `unknown_outcomes_metrics.json` | Unknown-outcome experiment | Four-policy comparisons, every deterministic mask, temporal-backlog results, input hashes and protocol |
+| `unknown_outcomes_predictions.csv` | Unknown-outcome experiment | Per-target forecasts/decisions for all four external-pending policies; exposes false-denial cases |
 | `claim_metrics.json` | Claim checker | Baseline metrics, observed-prior diagnostic, payer/code breakdowns, cleaning summaries and separate pending-claim review metrics |
 | `claim_checker_artifacts/*.csv` | Claim checker via cleaner | Cleaned copies of both splits, pending claims, authorizations and EVV actually used by the pipeline |
 | `claim_checker_artifacts/*.cleaning.json` | Claim checker via cleaner | Cleaning audit for each pipeline input |
@@ -151,3 +156,23 @@ contract amendment is inferred or implemented, and unspecified D99 outcomes
 remain unexplained. This test split has been inspected during development;
 subsequent results are exploratory. Full findings and recommendations are in
 [the experiment report](../experiment_results.md).
+
+## Unknown-result claims: updated recommendation
+
+Run `python3 experiment/unknown_outcomes.py` from the repository root to reuse the
+validated artifacts, or run the full runner to rebuild everything. Defaults and
+`--artifacts`/`--output-dir` work independently of the shell's current directory.
+
+The existing model can supply provisional outcomes for earlier unresolved
+submissions. Including forecasts for the 546 unlabelled pending rows raises later
+status/code agreement from 96.42% to 97.34%, while introducing two false denials.
+With all 2,740 earlier historical outcomes hidden, later agreement is 96.24%,
+compared with the observed-history control's 96.42%. A hidden September backlog
+reproduces the control's downstream forecasts exactly.
+
+This supports a simpler provisional predicted ledger for the prototype, updating
+the original broad review recommendation. It does not establish actual submission
+or payment, validate the 546 unknown outcomes themselves, or prove greater safety
+than human review. Full methods, comparisons, counterexamples and limits are in
+[section 8 of the report](../experiment_results.md#8-use-provisional-predictions-for-earlier-unknown-outcomes).
+The web app has not been changed by this experiment.

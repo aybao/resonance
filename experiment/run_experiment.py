@@ -10,6 +10,7 @@ from claim_checker import run
 from clean_data import clean_file
 from paths import DATA_DIR, EXPERIMENT_DIR
 from split_claims_history import split_history
+from unknown_outcomes import run as run_unknown_outcomes
 
 
 def main():
@@ -28,6 +29,7 @@ def main():
             raise SystemExit(f"Resolve errors in {args.output_dir / name}")
     run(args.data_dir, args.output_dir / "claim_checker_artifacts",
         args.output_dir / "test_result.csv", args.output_dir / "claim_metrics.json", args.output_dir)
+    run_unknown_outcomes(args.output_dir / "claim_checker_artifacts", args.output_dir)
 
 
 if __name__ == "__main__":
